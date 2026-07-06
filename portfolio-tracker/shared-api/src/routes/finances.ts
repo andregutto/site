@@ -2581,17 +2581,23 @@ router.delete('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
 // pra carregar finance_moment_expenses/shares e pra ser exibido como saldo
 // (com lista de despesas) na página Pessoas.
 export async function getOrCreateDefaultPairMoment(userId: string, friendUserId: string): Promise<number> {
+  // is_pair_default=true também marca o Momento padrão de um GRUPO compartilhado
+  // (getOrCreateDefaultGroupMoment logo abaixo usa a mesma flag). Sem excluir
+  // shared_group_id aqui, se os dois usuários também compartilham um grupo, essa
+  // busca pode devolver o Momento do GRUPO em vez do 1:1 puro — bug real: o 1:1
+  // "vazio" era criado/achado corretamente, mas ficava sempre invisível porque a
+  // primeira busca já "acertava" o Momento do grupo por coincidência de membros.
   const { data: mine } = await supabaseAdmin
     .from('finance_moments')
     .select('id, finance_moment_members(user_id, status)')
-    .eq('user_id', userId).eq('is_pair_default', true)
+    .eq('user_id', userId).eq('is_pair_default', true).is('shared_group_id', null)
   for (const m of mine ?? []) {
     if (((m as any).finance_moment_members ?? []).some((mm: any) => mm.user_id === friendUserId && mm.status === 'active')) return m.id
   }
   const { data: theirs } = await supabaseAdmin
     .from('finance_moments')
     .select('id, finance_moment_members(user_id, status)')
-    .eq('user_id', friendUserId).eq('is_pair_default', true)
+    .eq('user_id', friendUserId).eq('is_pair_default', true).is('shared_group_id', null)
   for (const m of theirs ?? []) {
     if (((m as any).finance_moment_members ?? []).some((mm: any) => mm.user_id === userId && mm.status === 'active')) return m.id
   }

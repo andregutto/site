@@ -304,13 +304,21 @@ router.get('/', async (req: any, res: any) => {
     // ── 4.5 Momentos financeiros que o usuário CRIOU (outbound) ────────────────
     const { data: ownedMoments, error: momentErr } = await supabaseAdmin
       .from('finance_moments')
-      .select('id, name, is_pair_default')
+      .select('id, name, is_pair_default, shared_group_id')
       .eq('user_id', userId)
     if (momentErr) throw momentErr
 
     const ownedMomentIds = (ownedMoments ?? []).map((m: any) => m.id)
     const ownedMomentMap: Record<number, string> = Object.fromEntries(
       (ownedMoments ?? []).map((m: any) => [m.id, m.name])
+    )
+    // is_pair_default também é usado pro Momento padrão de um GRUPO compartilhado
+    // (getOrCreateDefaultGroupMoment também seta is_pair_default=true) — só
+    // shared_group_id distingue "1:1 puro" de "padrão de grupo". Precisamos dos dois
+    // pra a Hoje/PeoplePage saberem quando mostrar um Momento como opção de grupo em
+    // vez de assumir que já está coberto pelo 1:1 oculto.
+    const momentGroupIdMap: Record<number, number | null> = Object.fromEntries(
+      (ownedMoments ?? []).map((m: any) => [m.id, m.shared_group_id ?? null])
     )
     // Momentos 1:1 ocultos nunca viram um "contexto" visível de relacionamento —
     // só entram no cálculo de saldo (balanceByUserMoment), abaixo.
@@ -360,7 +368,7 @@ router.get('/', async (req: any, res: any) => {
       for (const l of inboundLinkedTrips ?? []) tripLinkedMomentIds.add((l as any).moment_id)
       const { data: inboundMoments } = await supabaseAdmin
         .from('finance_moments')
-        .select('id, name, user_id, is_pair_default')
+        .select('id, name, user_id, is_pair_default, shared_group_id')
         .in('id', inboundMomentIds)
         .neq('user_id', userId)
 
@@ -369,6 +377,7 @@ router.get('/', async (req: any, res: any) => {
       )
       for (const m of inboundMoments ?? []) {
         if ((m as any).is_pair_default) pairDefaultIds.add((m as any).id)
+        momentGroupIdMap[(m as any).id] = (m as any).shared_group_id ?? null
       }
       const momentOwnerIds = [...new Set((inboundMoments ?? []).map((m: any) => m.user_id as string))]
       const momentOwnerDisplays = await Promise.all(momentOwnerIds.map(id => userDisplay(id).then(d => ({ id, ...d }))))
@@ -464,8 +473,11 @@ router.get('/', async (req: any, res: any) => {
 
       const missingNameIds = allMomentIds.filter(id => !(id in momentNameMap))
       if (missingNameIds.length > 0) {
-        const { data: names } = await supabaseAdmin.from('finance_moments').select('id, name').in('id', missingNameIds)
-        for (const m of names ?? []) momentNameMap[m.id] = m.name
+        const { data: names } = await supabaseAdmin.from('finance_moments').select('id, name, shared_group_id').in('id', missingNameIds)
+        for (const m of names ?? []) {
+          momentNameMap[m.id] = m.name
+          momentGroupIdMap[m.id] = (m as any).shared_group_id ?? null
+        }
       }
 
       for (const e of expenseRows ?? []) {
@@ -517,6 +529,7 @@ router.get('/', async (req: any, res: any) => {
               moment_id: Number(momentId),
               moment_name: momentNameMap[Number(momentId)] ?? '',
               is_pair_default: pairDefaultIds.has(Number(momentId)),
+              shared_group_id: momentGroupIdMap[Number(momentId)] ?? null,
               balances: Object.entries(perCurrency)
                 .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
                 .filter(b => Math.abs(b.amount) >= 0.01),

@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { PairMomentModal, type MomentBalance } from './PeoplePage'
+import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
@@ -95,6 +95,8 @@ export default function HomePage() {
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
+  const [splitGroup, setSplitGroup] = useState<{ id: number; name: string } | null>(null)
+  const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
 
   // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
@@ -141,6 +143,9 @@ export default function HomePage() {
       .catch(() => setPlan(null))
     apiFetch<{ months: ProjectionMonth[] }>('/finances/spending-summary?months=60')
       .then(setSpending)
+      .catch(() => {})
+    apiFetch<{ id: number; name: string }[]>('/shared/groups')
+      .then(setSplitGroups)
       .catch(() => {})
   }, [])
 
@@ -443,8 +448,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Seletor de amigo pra dividir despesa → abre o painel do momento oculto */}
-      {splitPicker && !splitFriend && (
+      {/* Seletor de amigo OU grupo pra dividir despesa */}
+      {splitPicker && !splitFriend && !splitGroup && (
         <div onClick={() => setSplitPicker(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.45)' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, maxHeight: '80vh', overflowY: 'auto', background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -453,7 +458,7 @@ export default function HomePage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
               </button>
             </div>
-            {activeFriends.length === 0 ? (
+            {activeFriends.length === 0 && splitGroups.length === 0 ? (
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
                 {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
                 <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
@@ -461,7 +466,7 @@ export default function HomePage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {activeFriends.map(f => (
-                  <button key={f.user_id} type="button" onClick={() => setSplitFriend(f)} className="w-full text-left flex items-center gap-3"
+                  <button key={`f-${f.user_id}`} type="button" onClick={() => setSplitFriend(f)} className="w-full text-left flex items-center gap-3"
                     style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
@@ -472,10 +477,34 @@ export default function HomePage() {
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
                   </button>
                 ))}
+                {splitGroups.length > 0 && (
+                  <div style={{ marginTop: activeFriends.length > 0 ? 6 : 0, paddingTop: activeFriends.length > 0 ? 10 : 0, borderTop: activeFriends.length > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
+                    {splitGroups.map(g => (
+                      <button key={`g-${g.id}`} type="button" onClick={() => setSplitGroup(g)} className="w-full text-left flex items-center gap-3"
+                        style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '')}
+                      >
+                        <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                        </span>
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
+      )}
+      {splitGroup && (
+        <GroupExpensesModal
+          groupId={splitGroup.id}
+          groupName={splitGroup.name}
+          initialMomentId={null}
+          onClose={() => { setSplitGroup(null); setSplitPicker(false) }}
+        />
       )}
       {splitFriend?.user_id && (
         <PairMomentModal

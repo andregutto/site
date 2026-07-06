@@ -59,7 +59,7 @@ interface FriendContext {
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
 export interface Balance { currency: string; amount: number }
-export interface MomentBalance { moment_id: number; moment_name: string; is_pair_default?: boolean; balances: Balance[] }
+export interface MomentBalance { moment_id: number; moment_name: string; is_pair_default?: boolean; shared_group_id?: number | null; balances: Balance[] }
 
 interface Contact {
   email: string
@@ -147,7 +147,10 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   const { t } = useI18n()
   const { currency, hideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
-  const groupOptions = (balancesByMoment ?? []).filter(m => !m.is_pair_default && m.balances.some(b => Math.abs(b.amount) >= 0.01))
+  // shared_group_id != null é o único sinal confiável de "Momento de grupo" — is_pair_default
+  // sozinho não serve, pois também marca o Momento padrão de grupos compartilhados (não só
+  // o 1:1 puro), o que fazia esse card nunca aparecer mesmo com saldo real pendente no grupo.
+  const groupOptions = (balancesByMoment ?? []).filter(m => m.shared_group_id != null && m.balances.some(b => Math.abs(b.amount) >= 0.01))
   const needsChoice = initialMomentId == null && groupOptions.length > 0
   const [momentId, setMomentId] = useState<number | null>(initialMomentId)
   const [choiceMade, setChoiceMade] = useState(!needsChoice)
@@ -565,18 +568,23 @@ function ContactCard({
           ))}
           {(contact.balancesByMoment ?? []).length > 0 && (
             <div style={{ marginTop: 4, paddingLeft: 2 }}>
-              {(contact.balancesByMoment ?? []).map(m => (
+              {(contact.balancesByMoment ?? []).map(m => {
+                // 1:1 puro = is_pair_default sem grupo. Momento padrão de grupo também é
+                // is_pair_default=true (mesma flag), mas tem shared_group_id e nome próprio
+                // — deve navegar como um Momento normal, não abrir o modal do 1:1 oculto.
+                const isPureOneOnOne = !!m.is_pair_default && m.shared_group_id == null
+                return (
                 <button
                   key={m.moment_id}
                   type="button"
-                  onClick={() => m.is_pair_default ? setPairModal({ momentId: m.moment_id }) : navigate(`/finances/moments/${m.moment_id}`)}
+                  onClick={() => isPureOneOnOne ? setPairModal({ momentId: m.moment_id }) : navigate(`/finances/moments/${m.moment_id}`)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', width: '100%',
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {m.is_pair_default ? t.people.expensesWithPrefix : m.moment_name}
+                    {isPureOneOnOne ? t.people.expensesWithPrefix : m.moment_name}
                   </span>
                   {m.balances.map(b => (
                     <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
@@ -584,7 +592,8 @@ function ContactCard({
                     </span>
                   ))}
                 </button>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -787,7 +796,7 @@ function ContactCard({
 // (1:1), só que cria/reaproveita o momento via POST /shared/groups/:id/default-moment
 // e serve pra despesas avulsas com a galera do grupo, sem virar categoria de
 // orçamento (ver docs/SHARED_EXPENSES_MODEL.md).
-function GroupExpensesModal({ groupId, groupName, initialMomentId, onClose }: {
+export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClose }: {
   groupId: number
   groupName: string
   initialMomentId: number | null
