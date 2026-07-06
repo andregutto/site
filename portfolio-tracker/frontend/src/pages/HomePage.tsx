@@ -181,7 +181,6 @@ export default function HomePage() {
               background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
               boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
             }}>
-              <img src="/brand/logo/arvo-symbol-gold.svg" alt="" aria-hidden style={{ position: 'absolute', right: -20, bottom: -26, width: 185, opacity: 0.07, pointerEvents: 'none' }} />
               <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, rowGap: 12, flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
