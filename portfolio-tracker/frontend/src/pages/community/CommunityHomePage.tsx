@@ -131,26 +131,13 @@ export default function CommunityHomePage() {
   return (
     <PullToRefresh onRefresh={loadCategoriesAndRecent}>
     <div className="space-y-7">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
-            {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
-          </div>
-          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
-            {tc?.subtitle}
-          </p>
+      <div>
+        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
+          {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
         </div>
-
-        {showSearch ? (
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            onBlurEmpty={() => setShowSearch(false)}
-            className="relative flex-1 min-w-[200px] max-w-xs"
-          />
-        ) : (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
+          {!showSearch && (
             <button
               type="button"
               onClick={() => setShowNewTopic(true)}
@@ -164,6 +151,23 @@ export default function CommunityHomePage() {
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >+</button>
+          )}
+        </div>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
+          {tc?.subtitle}
+        </p>
+      </div>
+
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        {showSearch ? (
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            onBlurEmpty={() => setShowSearch(false)}
+            className="relative flex-1 min-w-[200px] max-w-xs"
+          />
+        ) : (
+          <div className="flex items-center gap-2 ml-auto">
             <button
               type="button"
               onClick={toggleMine}

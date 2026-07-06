@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
@@ -22,6 +22,8 @@ export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [allowed, setAllowed] = useState(false)
+  const [resourcesEditing, setResourcesEditing] = useState(false)
+  const newResourceRef = useRef<() => void>(() => {})
 
   const tab: Tab = searchParams.get('tab') === 'resources' ? 'resources' : 'community'
 
@@ -47,24 +49,42 @@ export default function AdminPage() {
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 26, color: 'var(--arvo-fg)' }}>{(t as any).admin?.title ?? 'Painel de administração'}</h1>
       </div>
 
-      <div className="flex items-center gap-1 rounded-full p-1" style={{ background: 'var(--arvo-chip-bg)', width: 'fit-content' }}>
-        {(['community', 'resources'] as Tab[]).map(k => (
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1 rounded-full p-1" style={{ background: 'var(--arvo-chip-bg)', width: 'fit-content' }}>
+          {(['community', 'resources'] as Tab[]).map(k => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className="px-4 py-1.5 rounded-full text-xs transition-all"
+              style={{
+                fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em',
+                background: tab === k ? 'var(--arvo-pill-active-bg)' : 'transparent',
+                color: tab === k ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
+              }}
+            >
+              {k === 'community' ? ((t as any).admin?.tabCommunity ?? 'Comunidade') : ((t as any).admin?.tabResources ?? 'Recursos')}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'resources' && !resourcesEditing && (
           <button
-            key={k}
-            onClick={() => setTab(k)}
-            className="px-4 py-1.5 rounded-full text-xs transition-all"
-            style={{
-              fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em',
-              background: tab === k ? 'var(--arvo-pill-active-bg)' : 'transparent',
-              color: tab === k ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
-            }}
+            onClick={() => newResourceRef.current()}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
-            {k === 'community' ? ((t as any).admin?.tabCommunity ?? 'Comunidade') : ((t as any).admin?.tabResources ?? 'Recursos')}
+            {(t as any).resources?.admin?.newResource ?? '+ Novo recurso'}
           </button>
-        ))}
+        )}
       </div>
 
-      {tab === 'community' ? <CommunityAdminPage /> : <ResourcesAdminPage />}
+      {tab === 'community' ? (
+        <CommunityAdminPage />
+      ) : (
+        <ResourcesAdminPage
+          onRegisterNew={fn => { newResourceRef.current = fn }}
+          onEditingChange={setResourcesEditing}
+        />
+      )}
     </div>
   )
 }

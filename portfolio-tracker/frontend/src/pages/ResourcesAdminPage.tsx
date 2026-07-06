@@ -64,7 +64,12 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const label: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }
 const input: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: '100%', boxSizing: 'border-box' }
 
-export default function ResourcesAdminPage() {
+interface Props {
+  onRegisterNew?: (fn: () => void) => void
+  onEditingChange?: (editing: boolean) => void
+}
+
+export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: Props) {
   const { t } = useI18n()
   const ra = (t as any).resources?.admin ?? {}
   const navigate = useNavigate()
@@ -105,6 +110,10 @@ export default function ResourcesAdminPage() {
     setEditingId('new')
     setError('')
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onRegisterNew?.(startCreate) }, [])
+  useEffect(() => { onEditingChange?.(editingId !== null) }, [editingId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function startEdit(item: ResourceRow) {
     setForm({
@@ -273,17 +282,6 @@ export default function ResourcesAdminPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-end gap-3">
-        {editingId === null && (
-          <button
-            onClick={startCreate}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            {ra.newResource ?? '+ Novo recurso'}
-          </button>
-        )}
-      </div>
-
       {editingId !== null ? (
         <section style={{ ...card, padding: 20 }} className="space-y-4">
           <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
