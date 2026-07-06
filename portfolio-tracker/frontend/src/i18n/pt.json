@@ -29,7 +29,14 @@
     "assets": "Ativos",
     "passiveIncome": "Rendimentos",
     "voyage": "Viagens",
-    "community": "Comunidade"
+    "community": "Comunidade",
+    "admin": "Administração"
+  },
+  "admin": {
+    "eyebrow": "ADMINISTRAÇÃO",
+    "title": "Painel de administração",
+    "tabCommunity": "Comunidade",
+    "tabResources": "Recursos"
   },
   "currency": {
     "label": "Moeda"
@@ -2738,7 +2745,7 @@
       "empty": "Nenhum recurso criado ainda",
       "fieldTitle": "Título",
       "fieldSlug": "Slug (URL)",
-      "fieldSlugHint": "Só letras minúsculas, números e hífen. Vira /recursos/{slug}",
+      "fieldSlugHint": "Só letras minúsculas, números e hífen. Vira /resources/{slug}",
       "fieldDescription": "Descrição",
       "fieldType": "Tipo de conteúdo",
       "typeFile": "Arquivo (download)",
@@ -2758,7 +2765,7 @@
       "noFileYet": "Nenhum arquivo enviado ainda",
       "fieldKitTag": "Tag do Kit (sync futuro)",
       "fieldPublished": "Publicado",
-      "publishedYes": "Publicado (visível em /recursos)",
+      "publishedYes": "Publicado (visível em /resources)",
       "publishedNo": "Rascunho (só você vê o link direto)",
       "save": "Salvar",
       "saving": "Salvando...",

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { normalizeStorageUrl } from '../lib/storageUrl'
@@ -261,7 +261,7 @@ export default function ResourcesAdminPage() {
   }
 
   function copyLink(slug: string) {
-    const url = `${window.location.origin}/recursos/${slug}`
+    const url = `${window.location.origin}/resources/${slug}`
     navigator.clipboard.writeText(url).then(() => {
       setCopiedSlug(slug)
       setTimeout(() => setCopiedSlug(null), 1800)
@@ -269,30 +269,19 @@ export default function ResourcesAdminPage() {
   }
 
   if (loading) return <PageLoader />
-  if (forbidden) { navigate('/recursos'); return null }
+  if (forbidden) { navigate('/resources'); return null }
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
-          ← {ra.back ?? 'Voltar para Recursos'}
-        </Link>
-        <div className="flex items-center justify-between gap-3" style={{ marginTop: 14 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
-              {ra.eyebrow ?? 'ADMINISTRAÇÃO'}
-            </div>
-            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 26, color: 'var(--arvo-fg)' }}>{ra.title ?? 'Administrar Recursos'}</h1>
-          </div>
-          {editingId === null && (
-            <button
-              onClick={startCreate}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              {ra.newResource ?? '+ Novo recurso'}
-            </button>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-3">
+        {editingId === null && (
+          <button
+            onClick={startCreate}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {ra.newResource ?? '+ Novo recurso'}
+          </button>
+        )}
       </div>
 
       {editingId !== null ? (
@@ -476,7 +465,7 @@ export default function ResourcesAdminPage() {
                       {item.is_published ? (ra.publishedYes ?? 'Publicado').split(' ')[0] : (ra.publishedNo ?? 'Rascunho').split(' ')[0]}
                     </span>
                   </div>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>/recursos/{item.slug}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>/resources/{item.slug}</span>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}

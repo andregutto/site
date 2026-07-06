@@ -5,7 +5,7 @@ import { useI18n } from '../contexts/I18nContext'
 import ArvoLoader from '../components/ArvoLoader'
 import GoogleLogo from '../components/GoogleLogo'
 
-// Página pública de um Recurso (/recursos/:slug) — SÓ pro visitante deslogado
+// Página pública de um Recurso (/resources/:slug) — SÓ pro visitante deslogado
 // (App.tsx só monta esta rota quando !user; assim que a sessão existe, a
 // mesma URL passa a renderizar ResourceDetailPage dentro do AppLayout — ver
 // o roteamento condicional em App.tsx). É o destino dos lead magnets dos
@@ -92,7 +92,7 @@ export default function ResourcePublicPage() {
     try {
       // Passa o próprio path do recurso: o retorno do Google cai direto na
       // mesma URL (que aí já renderiza ResourceDetailPage, sessão pronta).
-      await signInWithGoogle(`/recursos/${slug}`)
+      await signInWithGoogle(`/resources/${slug}`)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Erro desconhecido')
       setGoogleLoading(false)

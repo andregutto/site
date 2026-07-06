@@ -5,12 +5,12 @@ import { apiFetch } from '../lib/api'
 import ArvoLoader from '../components/ArvoLoader'
 
 // Listagem interna dos Recursos (lead magnets do canal). Cada card só navega
-// pra /recursos/:slug — o desbloqueio de verdade acontece lá (ResourceDetailPage,
+// pra /resources/:slug — o desbloqueio de verdade acontece lá (ResourceDetailPage,
 // dentro do AppLayout), nunca aqui. Chamar unlock direto no card e depois
 // window.open() o link resultante cai no bloqueio de popup do navegador (o
 // gap assíncrono entre o clique e o window.open faz o browser não reconhecer
 // como ação direta do usuário); a versão pública com gate de cadastro fica em
-// /recursos/:slug pra quem não está logado (ResourcePublicPage).
+// /resources/:slug pra quem não está logado (ResourcePublicPage).
 
 export interface ResourceItem {
   slug: string
@@ -72,7 +72,7 @@ export default function ResourcesPage() {
         </div>
         {isAdmin && (
           <Link
-            to="/recursos/admin"
+            to="/admin?tab=resources"
             title="Admin"
             className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
           >
@@ -93,7 +93,7 @@ export default function ResourcesPage() {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {items.map(item => (
-            <Link key={item.slug} to={`/recursos/${item.slug}`} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}>
+            <Link key={item.slug} to={`/resources/${item.slug}`} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}>
               {item.preview_image_url ? (
                 <img src={item.preview_image_url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', objectPosition: item.cover_image_position ?? '50% 50%', display: 'block' }} />
               ) : (

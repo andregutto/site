@@ -212,6 +212,14 @@ export default function AppLayout() {
     apiFetch<{ username?: string }>('/profile').then(d => setUsername(d.username ?? '')).catch(() => {})
   }, [user?.id])
 
+  // Um flag só (community_admins) libera as duas abas do painel consolidado
+  // em /admin (Comunidade e Recursos) — ver GET /community/is-admin.
+  const [isAdmin, setIsAdmin] = useState(false)
+  useEffect(() => {
+    if (!user?.id) { setIsAdmin(false); return }
+    apiFetch<{ is_admin: boolean }>('/community/is-admin').then(d => setIsAdmin(d.is_admin)).catch(() => {})
+  }, [user?.id])
+
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/assets') ||
     location.pathname.startsWith('/performance') ||
@@ -220,10 +228,16 @@ export default function AppLayout() {
     location.pathname.startsWith('/diversification') ||
     location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
+  // Patrimônio agrupa Investimentos + Finanças num item de nav só (eram duas
+  // abas separadas) — libera espaço na nav principal (mobile inclusive) pro
+  // item de Recursos, que antes ficava escondido no menu do avatar sem
+  // sentido lá (não é função administrativa).
+  const inPatrimonio = inInvestimentos || inFinances
   const inVoyage = location.pathname.startsWith('/voyage')
   const inCommunity = location.pathname.startsWith('/community')
+  const inResources = location.pathname.startsWith('/resources')
 
-  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : '#1F8A5B'
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : inResources ? '#E8A020' : '#1F8A5B'
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -337,18 +351,12 @@ export default function AppLayout() {
 
   // Categorias fixas da V1 (mesmo seed da migration 053_community.sql) — sem
   // busca assíncrona no header, é uma lista pequena e estável.
-  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : []
+  const activeSubItems = inPatrimonio ? [...investimentosItems, ...financesItems] : inVoyage ? voyageItems : []
 
   const navItems = [
-    { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
+    { to: '/dashboard', label: t.nav.investments, match: inPatrimonio, icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
-      </svg>
-    )},
-    { to: '/finances', label: t.nav.finances, match: inFinances, icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <circle cx="12" cy="12" r="9.75" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5M15 9.3c-.6-1.05-1.65-1.65-3-1.65-1.8 0-3.15 1.05-3.15 2.55S10.2 12.3 12 12.6s3.3 1.05 3.3 2.55-1.35 2.55-3.3 2.55c-1.35 0-2.55-.6-3.15-1.65" />
       </svg>
     )},
     { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', match: inVoyage, icon: (
@@ -363,6 +371,12 @@ export default function AppLayout() {
         <circle cx="17" cy="9" r="2.4"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1"/>
+      </svg>
+    )},
+    { to: '/resources', label: (t as any).nav?.resources ?? 'Recursos', match: inResources, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 2.25h9.75L19.5 7.5v14.25H4.5z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 2.25V7.5h5.25M9 12.75h6M9 16.5h4.5"/>
       </svg>
     )},
   ]
@@ -384,18 +398,18 @@ export default function AppLayout() {
             <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
-              {inVoyage ? 'Voyage' : inCommunity ? 'Comunidade' : 'Capital'}
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inCommunity || inResources ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
+              {inVoyage ? 'Voyage' : inCommunity ? 'Comunidade' : inResources ? 'Recursos' : 'Patrimônio'}
             </span>
           </div>
 
-          {/* Desktop — three section tabs (pill style) */}
+          {/* Desktop — section tabs (pill style) */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
             {([
-              { to: '/dashboard',    label: t.nav.investments,                         active: inInvestimentos },
-              { to: '/finances',     label: t.nav.finances,                            active: inFinances },
+              { to: '/dashboard',    label: t.nav.investments, active: inPatrimonio },
               { to: '/voyage',       label: (t as any).nav?.voyage ?? 'Viagens',       active: inVoyage },
               { to: '/community',    label: (t as any).nav?.community ?? 'Comunidade', active: inCommunity },
+              { to: '/resources',    label: (t as any).nav?.resources ?? 'Recursos',   active: inResources },
             ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
               <NavLink
                 key={to} to={to}
@@ -414,7 +428,7 @@ export default function AppLayout() {
                 há valores monetários na tela. Em qualquer outra seção (Voyage,
                 Comunidade, Mensagens, Pessoas, Perfil, Notificações...) é um ícone
                 a mais sem função, então mostra só onde realmente serve. */}
-            {(inInvestimentos || inFinances || location.pathname.startsWith('/home')) && (
+            {(inPatrimonio || location.pathname.startsWith('/home')) && (
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}
@@ -607,13 +621,15 @@ export default function AppLayout() {
                     </svg>
                     {t.nav.people}
                   </Link>
-                  <Link to="/recursos" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4"/>
-                      <path strokeLinecap="round" d="M8 7.5v4M6 9.7l2 1.8 2-1.8"/>
-                    </svg>
-                    {t.nav.resources}
-                  </Link>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.43.992a6.759 6.759 0 010 .255c-.008.378.137.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 8.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                      </svg>
+                      {(t as any).nav?.admin ?? 'Administração'}
+                    </Link>
+                  )}
 
                   <div style={{ borderTop: '1px solid var(--arvo-border-soft)', margin: '4px 0' }} />
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>

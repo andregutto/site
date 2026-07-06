@@ -29,7 +29,14 @@
     "assets": "Assets",
     "passiveIncome": "Income",
     "voyage": "Trips",
-    "community": "Community"
+    "community": "Community",
+    "admin": "Admin"
+  },
+  "admin": {
+    "eyebrow": "ADMIN",
+    "title": "Admin panel",
+    "tabCommunity": "Community",
+    "tabResources": "Resources"
   },
   "currency": {
     "label": "Currency"
@@ -2738,7 +2745,7 @@
       "empty": "No resources created yet",
       "fieldTitle": "Title",
       "fieldSlug": "Slug (URL)",
-      "fieldSlugHint": "Lowercase letters, numbers and hyphens only. Becomes /recursos/{slug}",
+      "fieldSlugHint": "Lowercase letters, numbers and hyphens only. Becomes /resources/{slug}",
       "fieldDescription": "Description",
       "fieldType": "Content type",
       "typeFile": "File (download)",
@@ -2758,7 +2765,7 @@
       "noFileYet": "No file uploaded yet",
       "fieldKitTag": "Kit tag (future sync)",
       "fieldPublished": "Published",
-      "publishedYes": "Published (visible on /recursos)",
+      "publishedYes": "Published (visible on /resources)",
       "publishedNo": "Draft (only you can see the direct link)",
       "save": "Save",
       "saving": "Saving...",

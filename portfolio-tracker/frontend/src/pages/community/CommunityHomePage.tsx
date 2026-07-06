@@ -180,7 +180,7 @@ export default function CommunityHomePage() {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => navigate('/community/admin')}
+                onClick={() => navigate('/admin')}
                 title="Admin"
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
               >
