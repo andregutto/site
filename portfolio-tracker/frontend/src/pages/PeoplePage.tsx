@@ -5,6 +5,7 @@ import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
 import ExpensesPanel from './finances/ExpensesPanel'
@@ -57,8 +58,8 @@ interface FriendContext {
 
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
-interface Balance { currency: string; amount: number }
-interface MomentBalance { moment_id: number; moment_name: string; is_pair_default?: boolean; balances: Balance[] }
+export interface Balance { currency: string; amount: number }
+export interface MomentBalance { moment_id: number; moment_name: string; is_pair_default?: boolean; balances: Balance[] }
 
 interface Contact {
   email: string
@@ -132,29 +133,42 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
 // amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
 // despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
 // já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
-export function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }: {
+export function PairMomentModal({ friendUserId, friendName, initialMomentId, balancesByMoment, onClose }: {
   friendUserId: string
   friendName: string
   initialMomentId: number | null
+  // Saldos por Momento com esse amigo (inclui Momentos de grupo compartilhado). Quando
+  // existe saldo pendente num Momento que NÃO é o 1:1 oculto, a despesa provavelmente
+  // pertence a esse grupo — perguntamos antes de abrir direto o 1:1, senão a despesa some
+  // dentro do saldo do grupo sem o usuário entender de onde veio (bug real relatado).
+  balancesByMoment?: MomentBalance[]
   onClose: () => void
 }) {
   const { t } = useI18n()
   const { currency, hideValues } = useCurrency()
+  const { resolvedTheme } = useTheme()
+  const groupOptions = (balancesByMoment ?? []).filter(m => !m.is_pair_default && m.balances.some(b => Math.abs(b.amount) >= 0.01))
+  const needsChoice = initialMomentId == null && groupOptions.length > 0
   const [momentId, setMomentId] = useState<number | null>(initialMomentId)
-  const [loading, setLoading] = useState(!initialMomentId)
+  const [choiceMade, setChoiceMade] = useState(!needsChoice)
+  const [loading, setLoading] = useState(!initialMomentId && !needsChoice)
   const [error, setError] = useState('')
   const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
 
   useEffect(() => {
-    if (initialMomentId) return
+    if (momentId != null) return // já resolvido (grupo escolhido, ou passado de fora)
+    if (!choiceMade) return // esperando o usuário escolher pessoa vs grupo
+    setLoading(true)
     apiFetch<{ moment_id: number }>(`/finances/moments/default-with/${friendUserId}`, { method: 'POST' })
       .then(r => setMomentId(r.moment_id))
       .catch((ex: unknown) => setError((ex as Error).message ?? t.people.loadErrorDefault))
       .finally(() => setLoading(false))
-  }, [friendUserId, initialMomentId])
+  }, [friendUserId, momentId, choiceMade])
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    // O portal renderiza direto em document.body, fora do wrapper com a classe
+    // .dark do AppLayout — sem isso, o modal caía sempre no tema claro (fundo branco).
+    <div className={resolvedTheme === 'dark' ? 'dark' : undefined} style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
       <div style={{
         position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
@@ -170,7 +184,43 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, onC
             </svg>
           </button>
         </div>
-        {loading ? (
+        {momentId == null && needsChoice && !choiceMade ? (
+          <div>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+              {t.people.splitWhereTitle}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {groupOptions.map(m => (
+                <button
+                  key={m.moment_id}
+                  type="button"
+                  onClick={() => setMomentId(m.moment_id)}
+                  className="w-full text-left flex items-center gap-3"
+                  style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+                >
+                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{m.moment_name}</span>
+                  {m.balances.map(b => (
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
+                      {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
+                    </span>
+                  ))}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setChoiceMade(true)}
+                className="w-full text-left flex items-center gap-3"
+                style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--arvo-border-soft)', marginTop: 4, paddingTop: 14 }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                onMouseLeave={e => (e.currentTarget.style.background = '')}
+              >
+                <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
+              </button>
+            </div>
+          </div>
+        ) : loading ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>…</p>
         ) : error ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED }}>{error}</p>
@@ -459,6 +509,7 @@ function ContactCard({
           friendUserId={contact.user_id}
           friendName={displayName}
           initialMomentId={pairModal.momentId}
+          balancesByMoment={contact.balancesByMoment}
           onClose={() => { setPairModal(null); onFriendChanged() }}
         />
       )}

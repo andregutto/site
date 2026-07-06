@@ -2678,7 +2678,9 @@
     "removeCategoryConfirm": "Remove {email}'s access to the category \"{name}\"?",
     "shareButton": "+ Share",
     "splitExpenseButton": "Split expense",
-    "expensesWithPrefix": "Expenses with"
+    "expensesWithPrefix": "Expenses with",
+    "splitWhereTitle": "Where do you want to log this expense? There's a pending balance in a shared group.",
+    "splitOnlyBetween": "Just between the two of you"
   },
   "invite": {
     "invalidTitle": "Invalid invite",

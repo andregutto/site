@@ -2678,7 +2678,9 @@
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
     "shareButton": "+ Partager",
     "splitExpenseButton": "Diviser une dépense",
-    "expensesWithPrefix": "Dépenses avec"
+    "expensesWithPrefix": "Dépenses avec",
+    "splitWhereTitle": "Où voulez-vous enregistrer cette dépense ? Il y a un solde en attente dans un groupe commun.",
+    "splitOnlyBetween": "Seulement entre vous deux"
   },
   "invite": {
     "invalidTitle": "Invitation invalide",

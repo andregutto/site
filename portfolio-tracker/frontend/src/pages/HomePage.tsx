@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { PairMomentModal } from './PeoplePage'
+import { PairMomentModal, type MomentBalance } from './PeoplePage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
@@ -90,6 +90,7 @@ export default function HomePage() {
   const [wealth, setWealth] = useState<number | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: NamedBalance[]; toPay: NamedBalance[] } | null>(null)
+  const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -115,12 +116,14 @@ export default function HomePage() {
     apiFetch<PortfolioValue>('/portfolio/value')
       .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
       .catch(() => setHasAssets(false))
-    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[] }> }>('/people')
+    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[]; balancesByMoment?: MomentBalance[] }> }>('/people')
       .then(({ contacts }) => {
         const toReceive: NamedBalance[] = []
         const toPay: NamedBalance[] = []
+        const bbmMap: Record<string, MomentBalance[]> = {}
         for (const c of contacts ?? []) {
           if (!c.user_id) continue
+          if (c.balancesByMoment) bbmMap[c.user_id] = c.balancesByMoment
           const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
           for (const b of c.balances ?? []) {
             if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url, user_id: c.user_id })
@@ -130,6 +133,7 @@ export default function HomePage() {
         toReceive.sort((a, b) => b.amount - a.amount)
         toPay.sort((a, b) => b.amount - a.amount)
         setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
+        setBalancesByMomentMap(bbmMap)
       })
       .catch(() => {})
     apiFetch<FreedomPlan[]>('/finances/freedom-plans')
@@ -413,6 +417,9 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Configuração da conta — pequeno, no fim da página, colapsado por padrão */}
+      {setup.visible && <SetupCard setup={setup} onNavigate={navigate} />}
+
       {/* Atalhos — pills pra ações e destinos que não estão no header */}
       <div>
         <p style={{ ...cardLabel, marginBottom: 11 }}>{th.shortcuts ?? 'Atalhos'}</p>
@@ -425,9 +432,6 @@ export default function HomePage() {
           ))}
         </div>
       </div>
-
-      {/* Configuração da conta — pequeno, no fim da página, colapsado por padrão */}
-      {setup.visible && <SetupCard setup={setup} onNavigate={navigate} />}
 
       {/* Seletor de amigo pra dividir despesa → abre o painel do momento oculto */}
       {splitPicker && !splitFriend && (
@@ -468,6 +472,7 @@ export default function HomePage() {
           friendUserId={splitFriend.user_id}
           friendName={splitFriend.name ?? splitFriend.email}
           initialMomentId={null}
+          balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
           onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
         />
       )}
