@@ -495,7 +495,6 @@ export default function LandingPage() {
   const [liveStep, setLiveStep] = useState(0)
 
   const loginRef = useRef<HTMLDivElement>(null)
-  const heroEndRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -508,14 +507,10 @@ export default function LandingPage() {
   }, [loginOpen])
 
   useEffect(() => {
-    const el = heroEndRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setScrolled(!entry.isIntersecting),
-      { threshold: 0, rootMargin: '-64px 0px 0px 0px' }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+    function onScroll() { setScrolled(window.scrollY > 64) }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   // section reveals
@@ -758,7 +753,6 @@ export default function LandingPage() {
         <div className="hero-fade" />
         <div className="hero-fade2" />
         <div className="arvo-grain" />
-        <div ref={heroEndRef} style={{ position: 'absolute', top: '78%', left: 0, width: 1, height: 1 }} />
 
         <div className="hero-mocks">
           <LaptopMock l={l} />
