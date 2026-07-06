@@ -2781,7 +2781,8 @@
       "dragHint": "Drag to reposition"
     },
     "gateEyebrow": "Resource access",
-    "unlockHint": "Log in or create your account on the side to unlock."
+    "unlockHint": "Log in or create your account on the side to unlock.",
+    "aboutTitle": "About this resource"
   },
   "community": {
     "eyebrow": "ARVO COMMUNITY",

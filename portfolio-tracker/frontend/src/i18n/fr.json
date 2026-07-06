@@ -2781,7 +2781,8 @@
       "dragHint": "Faites glisser pour repositionner"
     },
     "gateEyebrow": "Accès à la ressource",
-    "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer."
+    "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer.",
+    "aboutTitle": "À propos de cette ressource"
   },
   "community": {
     "eyebrow": "ARVO COMMUNAUTÉ",

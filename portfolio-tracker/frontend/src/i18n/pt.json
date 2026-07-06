@@ -2781,7 +2781,8 @@
       "dragHint": "Arraste pra reposicionar"
     },
     "gateEyebrow": "Acesso ao recurso",
-    "unlockHint": "Faça login ou crie sua conta ao lado para liberar."
+    "unlockHint": "Faça login ou crie sua conta ao lado para liberar.",
+    "aboutTitle": "Sobre este recurso"
   },
   "community": {
     "eyebrow": "ARVO COMUNIDADE",
