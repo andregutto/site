@@ -9,6 +9,7 @@ import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { PairMomentModal } from './PeoplePage'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
+import Avatar from './voyage/_shared/Avatar'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
 
@@ -27,7 +28,7 @@ interface TodayData {
 }
 
 interface ContactBalance { currency: string; amount: number }
-interface NamedBalance { name: string; currency: string; amount: number }
+interface NamedBalance { name: string; currency: string; amount: number; avatar_url?: string }
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
 
 const GOLD_RGB = '200,184,154'
@@ -100,15 +101,15 @@ export default function HomePage() {
     apiFetch<PortfolioValue>('/portfolio/value')
       .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
       .catch(() => setHasAssets(false))
-    apiFetch<{ contacts: Array<{ name?: string; email?: string; balances?: ContactBalance[] }> }>('/people')
+    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; balances?: ContactBalance[] }> }>('/people')
       .then(({ contacts }) => {
         const toReceive: NamedBalance[] = []
         const toPay: NamedBalance[] = []
         for (const c of contacts ?? []) {
           const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
           for (const b of c.balances ?? []) {
-            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount })
-            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount) })
+            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url })
+            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url })
           }
         }
         toReceive.sort((a, b) => b.amount - a.amount)
@@ -350,25 +351,26 @@ export default function HomePage() {
           {balances && (
             <Link to="/people" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
               <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
-              {(['toReceive', 'toPay'] as const).map(dir => {
-                const items = balances[dir]
-                if (!items.length) return null
-                const cls = dir === 'toReceive' ? 'arvo-delta-pos' : 'arvo-delta-neg'
+              {(() => {
+                const rows = [
+                  ...balances.toReceive.map(b => ({ ...b, receive: true })),
+                  ...balances.toPay.map(b => ({ ...b, receive: false })),
+                ].sort((a, b) => b.amount - a.amount)
                 return (
-                  <div key={dir} style={{ marginTop: 9 }}>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{dir === 'toReceive' ? (th.toReceive ?? 'a receber') : (th.toPay ?? 'a pagar')}</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
-                      {items.slice(0, 3).map((b, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}>
-                          <span style={{ color: 'var(--arvo-fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
-                          <span className={hideValues ? undefined : cls} style={{ fontWeight: 600, flexShrink: 0 }}>{fmtCur(b.amount, b.currency)}</span>
-                        </div>
-                      ))}
-                      {items.length > 3 && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>+{items.length - 3} {th.more ?? 'mais'}</p>}
-                    </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 11 }}>
+                    {rows.slice(0, 4).map((b, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
+                        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
+                        <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
+                          {fmtCur(b.amount, b.currency)}
+                        </span>
+                      </div>
+                    ))}
+                    {rows.length > 4 && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>+{rows.length - 4} {th.more ?? 'mais'}</p>}
                   </div>
                 )
-              })}
+              })()}
             </Link>
           )}
         </div>
