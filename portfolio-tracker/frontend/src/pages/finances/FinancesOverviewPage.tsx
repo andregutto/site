@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { breakdownColor } from '../../components/charts'
 import { apiFetch } from '../../lib/api'
+import { projectMonthExpenses } from '../../lib/monthProjection'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -441,94 +442,10 @@ export default function FinancesOverviewPage() {
 
   const hasHistory = data.months.some(m => m.expenses > 0)
 
-  // Month projection — historical daily average approach
+  // Projeção do mês — algoritmo compartilhado (lib/monthProjection), o MESMO usado na Hoje
   const isCurrentMonth = month === defaultMonth
-  const MS_DAY = 86400000
-
-  function fmDateRange(ym: string, cd: number) {
-    const [y, mo] = ym.split('-').map(Number)
-    if (cd <= 1) return { start: new Date(y, mo - 1, 1), end: new Date(y, mo, 0) }
-    return { start: new Date(y, mo - 2, cd), end: new Date(y, mo - 1, cd - 1) }
-  }
-
-  const fmDates = fmDateRange(month, cycleDay)
-  const todayMs   = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
-  const startMs   = new Date(fmDates.start.getFullYear(), fmDates.start.getMonth(), fmDates.start.getDate()).getTime()
-  const endMs     = new Date(fmDates.end.getFullYear(), fmDates.end.getMonth(), fmDates.end.getDate()).getTime()
-  const daysTotal    = Math.round((endMs - startMs) / MS_DAY) + 1
-  const daysElapsed  = isCurrentMonth ? Math.max(1, Math.round((todayMs - startMs) / MS_DAY) + 1) : daysTotal
-  const daysRemaining = isCurrentMonth ? Math.max(0, daysTotal - daysElapsed) : 0
-
-  // #1 Outlier-resistant projection: median of per-month daily averages
-  const pastMonthsData = data.months.filter(m => m.month < month && m.expenses > 0).slice(-3)
-  const perMonthStats = pastMonthsData.map(m => {
-    const r = fmDateRange(m.month, cycleDay)
-    const days = Math.round((r.end.getTime() - r.start.getTime()) / MS_DAY) + 1
-    return { expenses: m.expenses, days, dailyAvg: m.expenses / days }
-  })
-  const sortedAvgs = [...perMonthStats].sort((a, b) => a.dailyAvg - b.dailyAvg)
-  const histDailyAvg = sortedAvgs.length > 0
-    ? sortedAvgs[Math.floor(sortedAvgs.length / 2)].dailyAvg
-    : 0
-  const avgMonthDays = perMonthStats.length > 0
-    ? perMonthStats.reduce((s, m) => s + m.days, 0) / perMonthStats.length
-    : 30
-
-  // #2 Recurring detection: categories present in ALL past months, stable and large, missing this month
-  const catHistMap = new Map<number, { amounts: number[]; name: string; icon: string }>()
-  for (const pm of pastMonthsData) {
-    for (const env of pm.by_envelope) {
-      if (env.type === 'income') continue
-      for (const cat of env.categories ?? []) {
-        const prev = catHistMap.get(cat.id) ?? { amounts: [], name: cat.name, icon: cat.icon }
-        catHistMap.set(cat.id, { ...prev, amounts: [...prev.amounts, cat.actual] })
-      }
-    }
-  }
-  const currentCatActuals = new Map<number, number>()
-  for (const env of currentMonthData.by_envelope) {
-    for (const cat of env.categories ?? []) currentCatActuals.set(cat.id, cat.actual)
-  }
-  const missingRecurrents: { id: number; name: string; icon: string; amount: number }[] = []
-  let missingTotal = 0
-  // Total historical median of EVERY qualifying recurring category (rent, etc.), regardless of
-  // whether it's already been recorded this cycle. This must come out of the daily rate
-  // unconditionally: a lump-sum paid once per cycle isn't a "per day" cost, so leaving it in
-  // histDailyAvg and then multiplying by daysRemaining re-projects it a second time for the
-  // rest of the month even when it was already paid in full at the start of the cycle (the old
-  // code only subtracted the ones still "missing", so already-paid rent kept inflating the
-  // projection for every day left in the month).
-  let recurringHistTotal = 0
-  if (pastMonthsData.length > 0 && totalBudgeted > 0) {
-    for (const [catId, hist] of catHistMap.entries()) {
-      if (hist.amounts.length < pastMonthsData.length) continue // must appear in every past month
-      const sorted = [...hist.amounts].sort((a, b) => a - b)
-      const minAmt = sorted[0]
-      const maxAmt = sorted[sorted.length - 1]
-      const medianAmt = sorted[Math.floor(sorted.length / 2)]
-      // Skip if amounts are inconsistent (one big month ≠ true recurring)
-      if (maxAmt > minAmt * 3) continue
-      // Only significant fixed items: median ≥ 20% of budget
-      if (medianAmt < totalBudgeted * 0.20) continue
-      recurringHistTotal += medianAmt
-      if (isCurrentMonth) {
-        const current = currentCatActuals.get(catId) ?? 0
-        if (current < minAmt * 0.25) { // less than 25% of lowest historical month → not yet recorded
-          missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(medianAmt) })
-          missingTotal += medianAmt
-        }
-      }
-    }
-  }
-  // Strip the full recurring lump sum out of the daily rate (not just the still-missing part),
-  // then missingTotal alone adds back only what hasn't actually been recorded this cycle.
-  const adjustedDailyAvg = Math.max(0, histDailyAvg - (avgMonthDays > 0 ? recurringHistTotal / avgMonthDays : 0))
-
-  // For current month: project using actual + missing recurrents + adjusted daily avg × remaining
-  // For past months: display value = actual expenses (the real result)
-  const projected = isCurrentMonth && (histDailyAvg > 0 || missingTotal > 0)
-    ? Math.round(totalExpenses + missingTotal + adjustedDailyAvg * daysRemaining)
-    : null
+  const { projected, missingRecurrents, missingTotal, adjustedDailyAvg, histDailyAvg, daysElapsed, daysTotal, daysRemaining, pastMonthsCount } =
+    projectMonthExpenses({ months: data.months, month, cycleDay, today, totalBudgeted, isCurrentMonth })
   const displayValue = projected ?? (!isCurrentMonth && totalExpenses > 0 ? totalExpenses : null)
   const displayPct  = displayValue != null && totalBudgeted > 0 ? Math.min(Math.round((displayValue / totalBudgeted) * 100), 100) : null
   const displayOver = displayValue != null && totalBudgeted > 0 && displayValue > totalBudgeted
@@ -774,7 +691,7 @@ export default function FinancesOverviewPage() {
               <CollapsibleInfoCard
                 title={
                   isCurrentMonth && histDailyAvg > 0
-                    ? `${t.finances.overviewHistAvg} ${fmt(cx(histDailyAvg), currency, false)}${t.finances.overviewPerDay} · ${pastMonthsData.length} ${t.finances.overviewNMonths}`
+                    ? `${t.finances.overviewHistAvg} ${fmt(cx(histDailyAvg), currency, false)}${t.finances.overviewPerDay} · ${pastMonthsCount} ${t.finances.overviewNMonths}`
                     : t.finances.overviewDetailsLabel
                 }
               >

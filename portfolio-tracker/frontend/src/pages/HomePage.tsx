@@ -7,8 +7,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { usePerformanceMonthly, usePerformanceSummary, usePerformanceInception } from '../hooks/usePortfolio'
+import { usePerformanceSummary, usePerformanceInception } from '../hooks/usePortfolio'
 import { PairMomentModal } from './PeoplePage'
+import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
 
@@ -44,52 +45,6 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
-// Mini gráfico da evolução do patrimônio no hero: legenda + meses nas pontas +
-// pontos interativos (hover no desktop, toque no mobile) mostrando mês e valor.
-function Sparkline({ data, caption, startLabel, endLabel }: { data: { v: number; monthLabel: string; valueLabel: string }[]; caption: string; startLabel: string; endLabel: string }) {
-  const [active, setActive] = useState<number | null>(null)
-  const w = 320, h = 44, pad = 3
-  const vals = data.map(d => d.v)
-  const min = Math.min(...vals), max = Math.max(...vals)
-  const range = max - min || 1
-  const coords = data.map((d, i) => ({
-    x: pad + (i / (data.length - 1)) * (w - 2 * pad),
-    y: h - pad - ((d.v - min) / range) * (h - 2 * pad),
-  }))
-  const pts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`)
-  const area = `M${pad},${h} L${pts.join(' L')} L${w - pad},${h} Z`
-  const shownIdx = active ?? data.length - 1
-  const dot = coords[shownIdx]
-  const tipXpct = active != null ? (coords[active].x / w) * 100 : 0
-  const tipShift = tipXpct <= 20 ? '0' : tipXpct >= 80 ? '-100%' : '-50%'
-  return (
-    <div style={{ marginTop: 18 }}>
-      <p style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28', marginBottom: 7 }}>{caption}</p>
-      <div style={{ position: 'relative', width: '100%', height: h }} onMouseLeave={() => setActive(null)}>
-        <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-          <path d={area} fill="rgba(200,184,154,0.16)" stroke="none" />
-          <polyline points={pts.join(' ')} fill="none" stroke="#8C6A28" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        </svg>
-        <span style={{ position: 'absolute', left: `${(dot.x / w) * 100}%`, top: `${(dot.y / h) * 100}%`, transform: 'translate(-50%,-50%)', width: active != null ? 9 : 7, height: active != null ? 9 : 7, borderRadius: '50%', background: '#8C6A28', boxShadow: '0 0 0 2px var(--arvo-surface)', pointerEvents: 'none', transition: 'width .1s, height .1s' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-          {data.map((_, i) => (
-            <div key={i} onMouseEnter={() => setActive(i)} onClick={e => { e.preventDefault(); e.stopPropagation(); setActive(a => a === i ? null : i) }} style={{ flex: 1, cursor: 'pointer' }} />
-          ))}
-        </div>
-        {active != null && (
-          <div style={{ position: 'absolute', left: `${tipXpct}%`, top: `${(coords[active].y / h) * 100}%`, transform: `translate(${tipShift}, calc(-100% - 9px))`, pointerEvents: 'none', background: 'var(--arvo-fg)', color: 'var(--arvo-surface)', borderRadius: 8, padding: '5px 9px', whiteSpace: 'nowrap', fontFamily: 'var(--arvo-font-body)', fontSize: 11, boxShadow: '0 4px 14px rgba(0,0,0,0.2)', zIndex: 3 }}>
-            <span style={{ opacity: 0.7 }}>{data[active].monthLabel}</span> <span style={{ fontWeight: 600 }}>{data[active].valueLabel}</span>
-          </div>
-        )}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{startLabel}</span>
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{endLabel}</span>
-      </div>
-    </div>
-  )
-}
-
 export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
@@ -104,31 +59,17 @@ export default function HomePage() {
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: ContactBalance[]; toPay: ContactBalance[] } | null>(null)
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
+  const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const activeFriends = useActiveFriends().filter(f => f.user_id)
 
-  // Série mensal do patrimônio (cacheada) pro mini gráfico e a variação do mês
+  // Indicadores desde o início (rentabilidade, ganho, aportes) — reusa /performance/summary
   const _now = new Date()
   const _pad = (n: number) => String(n).padStart(2, '0')
   const perfTo = `${_now.getFullYear()}-${_pad(_now.getMonth() + 1)}`
   const _fromD = new Date(_now.getFullYear(), _now.getMonth() - 11, 1)
   const perfFrom = `${_fromD.getFullYear()}-${_pad(_fromD.getMonth() + 1)}`
-  const { data: perfMonthly } = usePerformanceMonthly(perfFrom, perfTo)
-  const wealthSeries = (perfMonthly?.monthly ?? []).filter(m => m.total > 0)
-  const monthChangePct = (() => {
-    const last = wealthSeries[wealthSeries.length - 1]
-    if (!last) return null
-    const denom = last.prev_total + 0.5 * last.contributions
-    if (denom <= 0) return null
-    return ((last.total - last.prev_total - last.contributions) / denom) * 100
-  })()
-  const fmtMon = (ym: string) => {
-    const [y, m] = ym.split('-').map(Number)
-    return new Date(y, m - 1, 1).toLocaleDateString(intlLocale, { month: 'short' }).replace('.', '') + '/' + String(y).slice(2)
-  }
-
-  // Três indicadores principais desde o início (rentabilidade, ganho, aportes)
   const inception = usePerformanceInception()
   const inceptionMonth = inception ? inception.slice(0, 7) : perfFrom
   const { data: perfSummary } = usePerformanceSummary(inceptionMonth, perfTo)
@@ -154,7 +95,20 @@ export default function HomePage() {
     apiFetch<FreedomPlan[]>('/finances/freedom-plans')
       .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
       .catch(() => setPlan(null))
+    apiFetch<{ months: ProjectionMonth[] }>('/finances/spending-summary?months=60')
+      .then(setSpending)
+      .catch(() => {})
   }, [])
+
+  // Previsão do mês pela MESMA função da Visão Geral (lib/monthProjection), sem duplicar
+  const forecast = (() => {
+    if (!spending || !data?.month_summary) return null
+    const cycleDay = (user?.user_metadata?.month_cycle_day as number) || 1
+    const now = new Date()
+    const anchor = cycleDay > 1 && now.getDate() >= cycleDay ? new Date(now.getFullYear(), now.getMonth() + 1, 1) : now
+    const monthKey = `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}`
+    return projectMonthExpenses({ months: spending.months, month: monthKey, cycleDay, today: now, totalBudgeted: data.month_summary.budget, isCurrentMonth: true }).projected
+  })()
 
   function fmtCur(amount: number, cur: string) {
     if (hideValues) return '•••'
@@ -196,9 +150,9 @@ export default function HomePage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Patrimônio — hero com brilho dourado, valor obedece o olho global */}
           {showWealth && (
-            <div className="p-6 sm:p-8" style={{
+            <Link to="/dashboard" className="p-6 sm:p-8" style={{
               ...card,
-              position: 'relative', overflow: 'hidden',
+              position: 'relative', overflow: 'hidden', display: 'block', textDecoration: 'none',
               border: `1px solid rgba(${GOLD_RGB},0.55)`,
               background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
               boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
@@ -207,30 +161,15 @@ export default function HomePage() {
               <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, rowGap: 12, flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginTop: 10 }}>
-                    <p className="arvo-num text-[34px] sm:text-[46px]" style={{ fontFamily: 'var(--arvo-font-display)', lineHeight: 1.05, color: 'var(--arvo-fg)' }}>
-                      {wealth != null ? fmt(wealth, 0) : '…'}
-                    </p>
-                    {!hideValues && monthChangePct != null && (
-                      <span className={monthChangePct >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600 }}>
-                        {monthChangePct >= 0 ? '+' : ''}{monthChangePct.toFixed(1)}% <span style={{ color: 'var(--arvo-fg-soft)', fontWeight: 400 }}>{th.inMonth ?? 'no mês'}</span>
-                      </span>
-                    )}
-                  </div>
+                  <p className="arvo-num text-[34px] sm:text-[46px]" style={{ fontFamily: 'var(--arvo-font-display)', lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 10 }}>
+                    {wealth != null ? fmt(wealth, 0) : '…'}
+                  </p>
                 </div>
-                <Link to="/dashboard" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {th.openDashboard ?? 'Ver dashboard'}
-                </Link>
+                </span>
               </div>
-              {!hideValues && wealthSeries.length >= 2 && (
-                <Sparkline
-                  data={wealthSeries.map(m => ({ v: m.total, monthLabel: fmtMon(m.month), valueLabel: fmt(m.total, 0) }))}
-                  caption={th.wealthTrend ?? 'Evolução · 12 meses'}
-                  startLabel={fmtMon(wealthSeries[0].month)}
-                  endLabel={fmtMon(wealthSeries[wealthSeries.length - 1].month)}
-                />
-              )}
-            </div>
+            </Link>
           )}
 
           {/* Finanças do mês — gasto x orçado, renda e saldo (tudo de transações reais) */}
@@ -256,6 +195,14 @@ export default function HomePage() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: 32, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+                {forecast != null && (
+                  <div>
+                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
+                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
+                      {fmtCur(forecast, data.month_summary.currency)}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.incomeLabel ?? 'Renda'}</p>
                   <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: 'var(--arvo-fg)', marginTop: 3 }}>
