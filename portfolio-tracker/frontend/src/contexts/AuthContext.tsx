@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>
   signOut: () => Promise<void>
 }
@@ -34,6 +35,37 @@ function purgeStaleAuthTokens() {
   } catch {}
 }
 purgeStaleAuthTokens()
+
+// First sign-in via OAuth: mirror the metadata the email/password register flow
+// writes (first_name, last_name, default_currency, preferred_locale) so the rest
+// of the app — /profile, people search, achievements — sees OAuth users the same
+// way. The profiles row + default classes/envelopes come from the DB trigger
+// (handle_new_user), which runs for OAuth inserts too.
+async function bootstrapOAuthProfile(u: User) {
+  if (u.app_metadata?.provider === 'google' && !u.user_metadata?.oauth_profile_synced) {
+    const meta = u.user_metadata ?? {}
+    const fullName: string = meta.full_name ?? meta.name ?? ''
+    const firstName: string = meta.given_name ?? fullName.split(' ')[0] ?? ''
+    const lastName: string  = meta.family_name ?? fullName.split(' ').slice(1).join(' ')
+    const storedLocale = localStorage.getItem('portfolio-locale')
+    const data: Record<string, unknown> = { oauth_profile_synced: true }
+    if (!meta.first_name && firstName)        data.first_name = firstName
+    if (!meta.last_name && lastName)          data.last_name = lastName
+    if (!meta.default_currency)               data.default_currency = 'BRL'
+    if (!meta.preferred_locale && storedLocale) data.preferred_locale = storedLocale
+    await supabase.auth.updateUser({ data })
+    // Same newsletter opt-in the register form does
+    fetch('/api/newsletter/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: u.email,
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
+      }),
+    }).catch(() => {})
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<User | null>(null)
@@ -70,6 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setSession(sess)
       setUser(sess?.user ?? null)
+      if (event === 'SIGNED_IN' && sess?.user) {
+        bootstrapOAuthProfile(sess.user).catch(err => {
+          console.warn('[auth] OAuth profile bootstrap failed:', err)
+        })
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -77,6 +114,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }
+
+  async function signInWithGoogle() {
+    // Redirects to Google via the Supabase authorize endpoint (through the /sb
+    // proxy in prod). On return, detectSessionInUrl picks up the tokens on
+    // /login and the router redirects to the app (incl. pending_invite_token).
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+        queryParams: { prompt: 'select_account' },
+      },
+    })
     if (error) throw error
   }
 
@@ -110,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signInWithGoogle, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

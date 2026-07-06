@@ -244,7 +244,9 @@
     "registrationDoneBody": "Enviamos um link de confirmação para {email}. Acesse sua caixa de entrada e clique no link para ativar sua conta.",
     "goToLogin": "Ir para o login",
     "resendEmail": "Reenviar e-mail",
-    "emailResent": "E-mail reenviado. Verifique sua caixa de entrada."
+    "emailResent": "E-mail reenviado. Verifique sua caixa de entrada.",
+    "continueWithGoogle": "Continuar com Google",
+    "orDivider": "ou"
   },
   "dashboard": {
     "eyebrow": "Capital · Investimentos",

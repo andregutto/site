@@ -51,8 +51,19 @@ const inputBase: React.CSSProperties = {
   boxSizing: 'border-box' as const,
 }
 
+function GoogleLogo() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.66-.22-2.45H12v4.63h6.46a5.52 5.52 0 01-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.8z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3c-1.07.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1A12 12 0 0012 24z" />
+      <path fill="#FBBC05" d="M5.28 14.29a7.21 7.21 0 010-4.58v-3.1H1.27a12 12 0 000 10.78l4.01-3.1z" />
+      <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44A11.97 11.97 0 0012 0 12 12 0 001.27 6.61l4.01 3.1C6.22 6.87 8.87 4.77 12 4.77z" />
+    </svg>
+  )
+}
+
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signInWithGoogle, signUp } = useAuth()
   const { t, locale } = useI18n()
   const l = t.login
   const [searchParams] = useSearchParams()
@@ -69,6 +80,7 @@ export default function LoginPage() {
   const [loading, setLoading]     = useState(false)
   const [resending, setResending] = useState(false)
   const [resent,    setResent]    = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const [firstName,  setFirstName]  = useState('')
   const [lastName,   setLastName]   = useState('')
@@ -86,6 +98,19 @@ export default function LoginPage() {
   function switchMode(m: Mode) {
     setMode(m); setError(''); setInfo(''); setResent(false)
     if (m !== 'register') resetExtras()
+  }
+
+  async function handleGoogle() {
+    if (googleLoading) return
+    setError(''); setInfo('')
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle()
+      // No reset on success: the browser is being redirected to Google.
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      setGoogleLoading(false)
+    }
   }
 
   async function handleResend() {
@@ -284,6 +309,45 @@ export default function LoginPage() {
               >
                 ← {l.backToLogin}
               </button>
+            )}
+
+            {mode !== 'forgot' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  disabled={googleLoading}
+                  style={{
+                    width: '100%', padding: '13px 24px', background: '#FFFFFF',
+                    border: '1px solid var(--arvo-border)', borderRadius: 3,
+                    fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
+                    color: 'var(--arvo-fg)', cursor: googleLoading ? 'not-allowed' : 'pointer',
+                    opacity: googleLoading ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                >
+                  {googleLoading ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="animate-spin">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" opacity="0.75" />
+                    </svg>
+                  ) : (
+                    <GoogleLogo />
+                  )}
+                  {l.continueWithGoogle}
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--arvo-border)' }} />
+                  <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+                    {l.orDivider}
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--arvo-border)' }} />
+                </div>
+              </>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

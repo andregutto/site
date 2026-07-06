@@ -244,7 +244,9 @@
     "registrationDoneBody": "Nous avons envoyé un lien de confirmation à {email}. Consultez votre boîte de réception et cliquez sur le lien pour activer votre compte.",
     "goToLogin": "Aller à la connexion",
     "resendEmail": "Renvoyer l'e-mail",
-    "emailResent": "E-mail renvoyé. Vérifiez votre boîte de réception."
+    "emailResent": "E-mail renvoyé. Vérifiez votre boîte de réception.",
+    "continueWithGoogle": "Continuer avec Google",
+    "orDivider": "ou"
   },
   "dashboard": {
     "eyebrow": "Capital · Investissements",
