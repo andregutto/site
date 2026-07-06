@@ -439,14 +439,14 @@ export default function HomePage() {
           )}
 
           {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
-              endpoint/tipo da página /recursos. Mesmo formato de capa da Viagem/Momento,
+              endpoint/tipo da página /resources. Mesmo formato de capa da Viagem/Momento,
               pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta. */}
           {resources[0] && (() => {
             const res = resources[0]
             const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
             return (
               <CoverCard
-                to={`/recursos/${res.slug}`}
+                to={`/resources/${res.slug}`}
                 coverUrl={res.preview_image_url}
                 accent={GOLD_RGB}
                 label={t.resources.title}
