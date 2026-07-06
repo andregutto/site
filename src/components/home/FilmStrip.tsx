@@ -1,18 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
 
 const FOTOS: { src: string; local: string }[] = [
+  { src: '/img/lencois-dunas.jpg', local: 'Lençóis Maranhenses, Brasil' },
   { src: '/img/paris-arco-triunfo.jpg', local: 'Paris' },
-  { src: '/img/islandia-cachoeira.jpg', local: 'Skógafoss, Islândia' },
-  { src: '/img/nyc-dumbo.jpg', local: 'Brooklyn, Nova York' },
-  { src: '/img/holanda-moinhos.jpg', local: 'Zaanse Schans, Holanda' },
+  { src: '/img/mont-saint-michel.jpg', local: 'Mont Saint-Michel, França' },
   { src: '/img/islandia-vik.jpg', local: 'Vík, Islândia' },
-  { src: '/img/paris-sacre-coeur.jpg', local: 'Montmartre, Paris' },
-  { src: '/img/nyc-times-square.jpg', local: 'Nova York' },
+  { src: '/img/nyc-dumbo.jpg', local: 'Brooklyn, Nova York' },
+  { src: '/img/chambord.jpg', local: 'Chambord, França' },
+  { src: '/img/saint-malo-arco-iris.jpg', local: 'Saint-Malo, França' },
+  { src: '/img/londres-big-ben.jpg', local: 'Londres' },
   { src: '/img/islandia-praia-negra.jpg', local: 'Reynisfjara, Islândia' },
-  { src: '/img/paris-orsay.jpg', local: 'Musée d’Orsay, Paris' },
-  { src: '/img/nyc-entardecer.jpg', local: 'Nova York' },
-  { src: '/img/paris-jambon-beurre.jpg', local: 'Paris' },
-  { src: '/img/islandia-igreja.jpg', local: 'Islândia' },
+  { src: '/img/paris-sacre-coeur.jpg', local: 'Montmartre, Paris' },
+  { src: '/img/rennes.jpg', local: 'Rennes, França' },
+  { src: '/img/nyc-times-square.jpg', local: 'Nova York' },
+  { src: '/img/vinhedo-uvas.jpg', local: 'Vale do Loire, França' },
+  { src: '/img/holanda-moinhos.jpg', local: 'Zaanse Schans, Holanda' },
 ];
 
 export default function FilmStrip() {

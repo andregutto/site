@@ -7,7 +7,7 @@ export default function Night() {
     <section className="ag-night" id="newsletter">
       <Image
         className="ag-night-bg"
-        src="/img/islandia-aurora.jpg"
+        src="/img/lencois-dunas-sol.jpg"
         alt=""
         fill
         sizes="100vw"
@@ -15,27 +15,26 @@ export default function Night() {
       />
       <div className="ag-night-inner">
         <p className="ag-kicker">A newsletter</p>
-        <h2>
-          O YouTube é alugado. <em>Este espaço é nosso.</em>
-        </h2>
+        <h2>Algumas histórias eu conto primeiro por email.</h2>
         <p className="ag-night-sub">
-          Uma carta de Paris na sua caixa de entrada: bastidores, números e as
-          decisões que não cabem em vídeo. Direto, sem enrolação.
+          De vez em quando escrevo uma carta de Paris: o que aprendi, o que
+          gastei, o que quase deu errado. Curta, honesta e só quando existe
+          algo que vale o seu tempo.
         </p>
         <KitForm
           formId="9345097"
           noHeader
-          buttonText="Assinar grátis"
-          successMessage="Pronto. Agora confira seu email para confirmar a assinatura."
+          buttonText="Quero receber"
+          successMessage="Chegou! Bom, quase: confirma no seu email e a primeira carta é sua."
         />
       </div>
       <div className="ag-night-lead">
         <Link href="/planilha-custo-de-vida">
           <span>
-            Quer começar com algo concreto? A planilha com meu custo de vida
-            real em Paris é grátis.
+            Pra começar com o pé direito: a planilha com meu custo de vida
+            real em Paris.
           </span>
-          <span className="ag-mono">Baixar ↗</span>
+          <span className="ag-mono">Baixar grátis ↗</span>
         </Link>
       </div>
     </section>

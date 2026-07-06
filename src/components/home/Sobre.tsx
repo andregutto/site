@@ -7,27 +7,26 @@ export default function Sobre() {
       <div className="ag-wrap ag-sobre-grid">
         <div>
           <Reveal>
-            <p className="ag-kicker">Quem escreve</p>
+            <p className="ag-kicker">Prazer, André</p>
             <p className="ag-lede">
-              Sou o André. Brasileiro, vivo em Paris e trabalho no setor de
-              energia. No resto do tempo, documento o que ninguém mostra:
-              <em> o custo real das coisas</em>, as decisões difíceis e a vida
-              que dá pra construir do outro lado do oceano.
+              Cresci no Brasil, moro em Paris e resolvi contar essa história
+              enquanto ela acontece. Não depois, quando tudo já deu certo e
+              vira palestra. Agora, com a mudança ainda na caixa.
             </p>
           </Reveal>
           <Reveal delay={100}>
             <div className="ag-sobre-body">
               <p>
-                Este não é um canal de turismo, nem um curso de como imigrar.
-                É o diário aberto de quem saiu do Brasil com um plano e foi
-                obrigado a refazê-lo na prática, entre dois países, três
-                moedas e um monte de boletos em francês.
+                Aqui você não vai encontrar fórmula de enriquecimento nem
+                manual de imigração. Vai encontrar um cara comum decidindo,
+                errando e ajustando a rota em tempo real, com os números e
+                as razões na mesa.
               </p>
               <p>
-                Cada vídeo tem começo, meio e fim. Cada número é real, dos
-                gastos do mês ao imposto pago. Se você mora fora ou pensa
-                seriamente em sair, a ideia é que você termine cada história
-                com algo que não tinha antes.
+                Num dia o assunto é o aluguel em Paris. No outro, um trem
+                barato pra um castelo no meio do nada, ou a saudade que
+                aperta quando o resto da família está a nove horas de voo.
+                O tema muda com a vida. A honestidade fica.
               </p>
             </div>
           </Reveal>
@@ -35,15 +34,15 @@ export default function Sobre() {
             <div className="ag-sobre-stats">
               <div>
                 <strong>2</strong>
-                <span>países, uma vida</span>
+                <span>países chamados de casa</span>
               </div>
               <div>
-                <strong>3</strong>
-                <span>moedas na planilha</span>
+                <strong>1</strong>
+                <span>história sem roteiro</span>
               </div>
               <div>
-                <strong>100%</strong>
-                <span>números reais</span>
+                <strong>0</strong>
+                <span>personagens</span>
               </div>
             </div>
           </Reveal>
@@ -53,26 +52,27 @@ export default function Sobre() {
           <div className="ag-sobre-photos">
             <div className="ag-sobre-photo-main">
               <Image
-                src="/img/andre-islandia.jpg"
-                alt="André na costa sul da Islândia, no inverno"
-                width={724}
-                height={1086}
+                src="/img/andre-luxembourg.jpg"
+                alt="André no Jardin du Luxembourg, em Paris"
+                width={1519}
+                height={2000}
                 sizes="(max-width: 900px) 90vw, 400px"
               />
               <p className="ag-photo-caption">
-                <span>Islândia, inverno</span>
+                <span>Paris, o lado de cá</span>
+                <span className="ag-num">fig. 02</span>
               </p>
             </div>
             <div className="ag-sobre-photo-small">
               <Image
-                src="/img/andre-amsterdam-canal.jpg"
-                alt="André em um canal de Amsterdã"
-                width={360}
-                height={540}
-                sizes="190px"
+                src="/img/andre-lencois-2.jpg"
+                alt="André nos Lençóis Maranhenses, no Brasil"
+                width={540}
+                height={360}
+                sizes="230px"
               />
               <p className="ag-photo-caption">
-                <span>Amsterdã</span>
+                <span>Brasil, o lado de lá</span>
               </p>
             </div>
           </div>

@@ -1,30 +1,30 @@
 /* eslint-disable @next/next/no-img-element */
 import Reveal from './Reveal';
 
-const EIXOS = [
+const TEMAS = [
   {
     num: '01',
-    titulo: 'Lucidez financeira entre dois países',
+    titulo: 'O preço real das coisas',
     texto:
-      'Investimentos, câmbio, impostos e custo de vida sem achismo. Decidir no escuro é caro, aqui a luz fica acesa.',
-    foto: '/img/nyc-skyline.jpg',
-    alt: 'Skyline de Nova York ao entardecer',
+      'Morar, mudar, recomeçar: quanto custa de verdade, com recibo na mão e sem vergonha do boleto.',
+    foto: '/img/paris-haussmann.jpg',
+    alt: 'Prédio haussmanniano em Paris',
   },
   {
     num: '02',
-    titulo: 'Vida construída com intenção',
+    titulo: 'A vida fora do cartão-postal',
     texto:
-      'Morar fora é logística. Construir uma vida fora é projeto: casa, rotina, relações e as escolhas que ninguém filma.',
+      'A rotina, a burocracia, as pequenas vitórias de quem vive onde os outros passam férias.',
     foto: '/img/paris-cafe.jpg',
     alt: 'Café em uma mesa de bistrô em Paris',
   },
   {
     num: '03',
-    titulo: 'Identidade preservada na travessia',
+    titulo: 'As estradas no meio do caminho',
     texto:
-      'Dá pra atravessar o oceano sem virar caricatura. Continuar brasileiro é parte do plano, não um obstáculo.',
-    foto: '/img/andre-blue-lagoon.jpg',
-    alt: 'André sorrindo em uma lagoa termal na Islândia',
+      'Da duna no Maranhão ao gelo da Islândia: as viagens que atravessam essa história.',
+    foto: '/img/lencois-dunas.jpg',
+    alt: 'Dunas dos Lençóis Maranhenses',
   },
 ];
 
@@ -33,21 +33,19 @@ export default function Eixos() {
     <section className="ag-section" style={{ paddingTop: 0 }}>
       <div className="ag-wrap">
         <Reveal>
-          <p className="ag-kicker">O que você leva daqui</p>
-          <h2 className="ag-h2">
-            Três coisas que eu persigo <em>em cada vídeo</em>
-          </h2>
+          <p className="ag-kicker">Os assuntos</p>
+          <h2 className="ag-h2">O que você encontra por aqui</h2>
         </Reveal>
         <div className="ag-eixos-list">
-          {EIXOS.map((e, i) => (
-            <Reveal key={e.num} delay={i * 90}>
+          {TEMAS.map((t, i) => (
+            <Reveal key={t.num} delay={i * 90}>
               <article className="ag-eixo">
-                <span className="ag-eixo-num">{e.num}.</span>
+                <span className="ag-eixo-num">{t.num}</span>
                 <div>
-                  <h3>{e.titulo}</h3>
-                  <p>{e.texto}</p>
+                  <h3>{t.titulo}</h3>
+                  <p>{t.texto}</p>
                 </div>
-                <img className="ag-eixo-thumb" src={e.foto} alt={e.alt} loading="lazy" />
+                <img className="ag-eixo-thumb" src={t.foto} alt={t.alt} loading="lazy" />
               </article>
             </Reveal>
           ))}

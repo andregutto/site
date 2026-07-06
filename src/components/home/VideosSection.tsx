@@ -11,11 +11,9 @@ export default async function VideosSection() {
         <Reveal>
           <div className="ag-videos-head">
             <div>
-              <p className="ag-kicker">O canal</p>
+              <p className="ag-kicker">No YouTube</p>
               <h2 className="ag-h2">Últimos vídeos</h2>
-              <p className="ag-videos-note">
-                Episódios novos às quintas e aos domingos
-              </p>
+              <p className="ag-videos-note">Vídeos novos toda semana</p>
             </div>
             <a
               className="ag-link"
@@ -31,10 +29,11 @@ export default async function VideosSection() {
         {videos.length === 0 ? (
           <Reveal delay={80}>
             <div className="ag-videos-empty">
-              <h3>Em produção.</h3>
+              <h3>O primeiro vídeo está a caminho.</h3>
               <p>
-                O canal está sendo montado agora, câmera na mesa e roteiros na
-                parede. Inscreva-se para chegar antes de todo mundo.
+                Estou gravando os primeiros episódios agora. Inscreva-se e
+                acompanhe essa história desde o comecinho, que é a melhor
+                parte.
               </p>
               <a
                 className="ag-btn"

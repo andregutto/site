@@ -5,11 +5,11 @@ export default function Footer() {
         <div className="ag-footer-grid">
           <div className="ag-footer-brand">
             <a href="#" className="ag-logo">
-              André Gutto
+              André <span>Gutto</span>
             </a>
             <p>
-              Documentando uma vida sendo construída fora do Brasil, um número
-              e uma história de cada vez.
+              Histórias e números de uma vida em construção entre o Brasil e
+              a França.
             </p>
           </div>
           <div>
@@ -27,7 +27,7 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h4>Encontrar</h4>
+            <h4>Falar comigo</h4>
             <ul>
               <li>
                 <a
@@ -46,7 +46,7 @@ export default function Footer() {
         </div>
         <div className="ag-footer-bottom">
           <span className="ag-mono">
-            © 2026 André Gutto · Feito à mão em Paris · Fotos próprias
+            © 2026 André Gutto · Paris · Fotos do acervo pessoal
           </span>
           <span className="ag-arvo-teaser">
             Em cultivo: um lugar só nosso. Em breve.

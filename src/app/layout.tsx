@@ -4,24 +4,15 @@ import {
   Playfair_Display,
   DM_Sans,
   DM_Mono,
-  Instrument_Serif,
-  Schibsted_Grotesk,
+  Archivo,
   Fragment_Mono,
 } from "next/font/google";
 import "./globals.css";
 
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  style: ["normal", "italic"],
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--f-serif",
-  display: "swap",
-});
-
-const schibstedGrotesk = Schibsted_Grotesk({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
-  variable: "--f-sans",
+  variable: "--f-archivo",
+  axes: ["wdth"],
   display: "swap",
 });
 
@@ -84,7 +75,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${instrumentSerif.variable} ${schibstedGrotesk.variable} ${fragmentMono.variable}`}
+      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${archivo.variable} ${fragmentMono.variable}`}
     >
       <head>
         <meta name="color-scheme" content="light only" />
