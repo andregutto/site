@@ -2778,7 +2778,9 @@
       "uploadCover": "Choose cover",
       "changeCover": "Change cover",
       "uploadCoverError": "Failed to upload cover photo"
-    }
+    },
+    "gateEyebrow": "Resource access",
+    "unlockHint": "Log in or create your account on the side to unlock."
   },
   "community": {
     "eyebrow": "ARVO COMMUNITY",
