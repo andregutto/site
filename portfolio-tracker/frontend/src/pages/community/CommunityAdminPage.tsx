@@ -60,6 +60,19 @@ export default function CommunityAdminPage() {
   }
   useEffect(() => { loadAll() }, [])
 
+  async function changeTier(m: CommunityMemberRow, tier: CommunityMemberRow['tier']) {
+    if (busy || tier === m.tier) return
+    setBusy(m.id)
+    try {
+      await apiFetch(`/community/admin/members/${m.id}/tier`, { method: 'POST', body: JSON.stringify({ tier }) })
+      setMembers(ms => ms.map(x => x.id === m.id ? { ...x, tier } : x))
+    } catch (err: any) {
+      alert(err?.message ?? 'Erro')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function toggleAdmin(m: CommunityMemberRow) {
     if (busy) return
     if (m.is_admin && !confirm((ta.demoteConfirm ?? 'Remover {name} como admin?').replace('{name}', m.name))) return
@@ -213,6 +226,20 @@ export default function CommunityAdminPage() {
                   {m.username ? `@${m.username}` : ''}{m.username ? ' · ' : ''}{ta.since ?? 'desde'} {new Date(m.joined_at).toLocaleDateString()}
                 </span>
               </div>
+              <select
+                value={m.tier}
+                onChange={e => changeTier(m, e.target.value as CommunityMemberRow['tier'])}
+                disabled={busy === m.id}
+                style={{
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 8px', borderRadius: 999, cursor: 'pointer',
+                  border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)',
+                  opacity: busy === m.id ? 0.5 : 1,
+                }}
+              >
+                <option value="free">{ta.tierFree ?? 'Free'}</option>
+                <option value="plus">{ta.tierPlus ?? 'Plus'}</option>
+                <option value="beta">{ta.tierBeta ?? 'Beta'}</option>
+              </select>
               <button
                 onClick={() => toggleAdmin(m)}
                 disabled={busy === m.id}

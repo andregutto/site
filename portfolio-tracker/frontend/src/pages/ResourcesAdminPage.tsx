@@ -28,7 +28,7 @@ interface ResourceRow {
   content_md: string | null
   preview_image_url: string | null
   cover_image_position: string | null
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
   kit_tag: string | null
   is_published: boolean
   stats: ResourceStats
@@ -44,7 +44,7 @@ type FormState = {
   content_md: string
   preview_image_url: string
   cover_image_position: string
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
   kit_tag: string
   is_published: boolean
 }
@@ -331,7 +331,8 @@ export default function ResourcesAdminPage() {
               <label style={label}>{ra.fieldVisibility ?? 'Visibilidade'}</label>
               <select style={input} value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value as FormState['visibility'] }))}>
                 <option value="free">{ra.visibilityFree ?? 'Grátis'}</option>
-                <option value="paid">{ra.visibilityPaid ?? 'Membros (em breve)'}</option>
+                <option value="plus">{ra.visibilityPlus ?? 'Plus (assinantes)'}</option>
+                <option value="beta">{ra.visibilityBeta ?? 'Beta (só testers)'}</option>
               </select>
             </div>
           </div>

@@ -20,7 +20,7 @@ interface ResourceDetail {
   resource_type: 'file' | 'link' | 'content'
   preview_image_url: string | null
   cover_image_position: string | null
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
   unlocked: boolean
 }
 
@@ -97,7 +97,7 @@ export default function ResourceDetailPage() {
   // Voltou logado do Google (veio direto pra esta URL, ver AuthContext.signInWithGoogle
   // e o handleGoogle da ResourcePublicPage) → libera sozinho.
   useEffect(() => {
-    if (!resource || resource.visibility !== 'free') return
+    if (!resource) return
     const pending = sessionStorage.getItem('pending_resource_slug')
     if (pending && pending === slug) {
       sessionStorage.removeItem('pending_resource_slug')
@@ -127,6 +127,7 @@ export default function ResourceDetailPage() {
   }
 
   const actionLabel = unlocking ? r.unlocking : resource.resource_type === 'file' ? r.download : resource.resource_type === 'link' ? r.open : r.view
+  const tierLabel = resource.visibility === 'free' ? r.free : resource.visibility === 'plus' ? r.plus : r.beta
 
   return (
     <div className="py-6 space-y-4" style={{ maxWidth: 640 }}>
@@ -160,7 +161,7 @@ export default function ResourceDetailPage() {
               display: 'inline-block', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.10em', textTransform: 'uppercase',
               color: 'var(--arvo-gold-text, #8C6A28)', background: 'var(--arvo-beige, #F1EDE5)', padding: '4px 12px', borderRadius: 999, marginBottom: 10,
             }}>
-              {resource.visibility === 'paid' ? r.members : r.free}
+              {tierLabel}
             </span>
             <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
               {resource.title}
@@ -194,7 +195,7 @@ export default function ResourceDetailPage() {
                 ) : (
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
                 )
-              ) : resource.visibility === 'paid' ? (
+              ) : resource.visibility !== 'free' ? (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
               ) : (
                 <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnSmall, opacity: unlocking ? 0.6 : 1 }}>{actionLabel}</button>

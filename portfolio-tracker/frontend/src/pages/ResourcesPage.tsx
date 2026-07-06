@@ -12,18 +12,22 @@ import ArvoLoader from '../components/ArvoLoader'
 // como ação direta do usuário); a versão pública com gate de cadastro fica em
 // /recursos/:slug pra quem não está logado (ResourcePublicPage).
 
-interface ResourceItem {
+export interface ResourceItem {
   slug: string
   title: string
   description: string | null
   resource_type: 'file' | 'link' | 'content'
   preview_image_url: string | null
   cover_image_position: string | null
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
   unlocked: boolean
 }
 
-function TypeIcon({ type }: { type: ResourceItem['resource_type'] }) {
+function tierLabel(r: any, visibility: ResourceItem['visibility']): string {
+  return visibility === 'free' ? r.free : visibility === 'plus' ? r.plus : r.beta
+}
+
+export function TypeIcon({ type }: { type: ResourceItem['resource_type'] }) {
   if (type === 'file') return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4"/>
@@ -101,7 +105,7 @@ export default function ResourcesPage() {
                 <div className="flex items-center gap-2" style={{ color: 'var(--arvo-fg-soft)' }}>
                   <TypeIcon type={item.resource_type} />
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    {item.visibility === 'paid' ? r.members : r.free}
+                    {tierLabel(r, item.visibility)}
                   </span>
                   {item.unlocked && (
                     <span style={{ marginLeft: 'auto', fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-green, #1F8A5B)' }}>
@@ -117,9 +121,9 @@ export default function ResourcesPage() {
                 )}
                 <div className="mt-auto pt-2">
                   <span className="inline-block w-full text-center py-2.5 rounded-lg text-xs"
-                    style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase', background: item.visibility === 'paid' ? 'transparent' : 'var(--arvo-black, #0D0D0D)', color: item.visibility === 'paid' ? 'var(--arvo-fg-soft)' : 'var(--arvo-offwhite, #F6F3EC)' }}
+                    style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase', background: item.visibility !== 'free' && !item.unlocked ? 'transparent' : 'var(--arvo-black, #0D0D0D)', color: item.visibility !== 'free' && !item.unlocked ? 'var(--arvo-fg-soft)' : 'var(--arvo-offwhite, #F6F3EC)' }}
                   >
-                    {item.visibility === 'paid' ? r.membersSoon : item.unlocked ? (item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view) : r.unlockCta}
+                    {item.unlocked ? (item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view) : item.visibility !== 'free' ? r.membersSoon : r.unlockCta}
                   </span>
                 </div>
               </div>

@@ -25,7 +25,7 @@ interface ResourcePreview {
   description: string | null
   resource_type: 'file' | 'link' | 'content'
   preview_image_url: string | null
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
 }
 
 const inputBase: React.CSSProperties = {
@@ -284,7 +284,7 @@ export default function ResourcePublicPage() {
           <div style={{ padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
             <div>
               <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--arvo-gold)' }}>
-                {preview.visibility === 'paid' ? r.members : r.free}
+                {preview.visibility === 'free' ? r.free : preview.visibility === 'plus' ? r.plus : r.beta}
               </span>
               <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(22px, 2.6vw, 28px)', color: 'var(--arvo-offwhite, #F6F3EC)', margin: '8px 0 0', lineHeight: 1.2 }}>
                 {preview.title}
@@ -297,7 +297,7 @@ export default function ResourcePublicPage() {
               </p>
             )}
 
-            {preview.visibility === 'paid' ? (
+            {preview.visibility !== 'free' ? (
               <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: '0 0 0 0', marginTop: 'auto' }}>{r.membersSoon}</p>
             ) : (
               <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0, marginTop: 'auto' }}>

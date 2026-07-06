@@ -2711,6 +2711,8 @@
     "unlocked": "Liberado",
     "free": "Grátis",
     "members": "Membros",
+    "plus": "Plus",
+    "beta": "Beta",
     "membersSoon": "Este recurso será liberado para membros em breve",
     "empty": "Nenhum recurso publicado ainda",
     "loadError": "Erro ao carregar recursos",
@@ -2744,7 +2746,8 @@
       "typeContent": "Texto liberado no gate",
       "fieldVisibility": "Visibilidade",
       "visibilityFree": "Grátis (libera com cadastro)",
-      "visibilityPaid": "Membros (em breve)",
+      "visibilityPlus": "Plus (assinantes)",
+      "visibilityBeta": "Beta (só testers)",
       "fieldPreviewImage": "Imagem de capa (URL)",
       "fieldExternalUrl": "URL externa",
       "fieldContentMd": "Conteúdo liberado (texto)",
@@ -2875,7 +2878,11 @@
       "promoteConfirm": "Promover {name} a admin?",
       "demoteConfirm": "Remover {name} como admin?",
       "noMembers": "Nenhum membro encontrado.",
-      "noPosts": "Nenhum post ainda."
+      "noPosts": "Nenhum post ainda.",
+      "tierFree": "Free",
+      "tierPlus": "Plus",
+      "tierBeta": "Beta",
+      "tierChanged": "Tier atualizado"
     }
   },
   "messages": {
