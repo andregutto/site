@@ -640,9 +640,16 @@ export default function AppLayout() {
                   </Link>
                   {isAdmin && (
                     <Link to="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.4 2.3h3.2l.4 1.6a4.6 4.6 0 011.2.7l1.6-.5 1.6 2.8-1.3 1.1a4.6 4.6 0 010 1.4l1.3 1.1-1.6 2.8-1.6-.5a4.6 4.6 0 01-1.2.7l-.4 1.6H6.4L6 13.5a4.6 4.6 0 01-1.2-.7l-1.6.5-1.6-2.8 1.3-1.1a4.6 4.6 0 010-1.4L1.6 6.9l1.6-2.8 1.6.5a4.6 4.6 0 011.2-.7l.4-1.6z"/>
-                        <circle cx="8" cy="8" r="1.8"/>
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-4 h-4 shrink-0">
+                        <circle cx="8" cy="8" r="2.6"/>
+                        <line x1="13" y1="8" x2="14.4" y2="8"/>
+                        <line x1="11.54" y1="11.54" x2="12.53" y2="12.53"/>
+                        <line x1="8" y1="13" x2="8" y2="14.4"/>
+                        <line x1="4.46" y1="11.54" x2="3.47" y2="12.53"/>
+                        <line x1="3" y1="8" x2="1.6" y2="8"/>
+                        <line x1="4.46" y1="4.46" x2="3.47" y2="3.47"/>
+                        <line x1="8" y1="3" x2="8" y2="1.6"/>
+                        <line x1="11.54" y1="4.46" x2="12.53" y2="3.47"/>
                       </svg>
                       {(t as any).nav?.admin ?? 'Administração'}
                     </Link>
