@@ -129,7 +129,7 @@ export default function ResourceDetailPage() {
   const actionLabel = unlocking ? r.unlocking : resource.resource_type === 'file' ? r.download : resource.resource_type === 'link' ? r.open : r.view
 
   return (
-    <div className="py-6 space-y-5" style={{ maxWidth: 720 }}>
+    <div className="py-6 space-y-4" style={{ maxWidth: 640 }}>
       <button
         onClick={() => navigate('/recursos')}
         style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}
@@ -137,71 +137,77 @@ export default function ResourceDetailPage() {
         {r.title} <span style={{ opacity: 0.5 }}>/</span> <span style={{ color: 'var(--arvo-fg)' }}>{resource.title}</span>
       </button>
 
-      <div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(26px, 3.2vw, 34px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
-          {resource.title}
-        </h1>
-      </div>
-
-      <span style={{
-        display: 'inline-block', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.10em', textTransform: 'uppercase',
-        color: 'var(--arvo-gold-text, #8C6A28)', background: 'var(--arvo-beige, #F1EDE5)', padding: '4px 12px', borderRadius: 999,
-      }}>
-        {resource.visibility === 'paid' ? r.members : r.free}
-      </span>
-
-      {resource.preview_image_url && (
-        // Imagem contida num card, sem overlay de texto por cima — a
-        // referência (epic.new) mostra ela como um bloco próprio, não como
-        // fundo de hero. maxHeight generoso evita esticar além do que a
-        // imagem original suporta bem.
-        <div style={{ ...card, overflow: 'hidden' }}>
-          <img
-            src={resource.preview_image_url}
-            alt={resource.title}
-            style={{ width: '100%', maxHeight: 360, objectFit: 'cover', objectPosition: resource.cover_image_position ?? '50% 50%', display: 'block' }}
-          />
-        </div>
-      )}
-
-      {/* Card de ação — ícone + tipo à esquerda, botão pequeno à direita, igual à referência */}
-      <div style={{ ...card, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--arvo-beige, #F1EDE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-gold-text, #8C6A28)', flexShrink: 0 }}>
-          <TypeIcon type={resource.resource_type} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: 'var(--arvo-fg)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {resource.title}
-          </p>
-          {unlockError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red)', margin: '2px 0 0' }}>{unlockError}</p>}
-        </div>
-
-        {result ? (
-          result.type === 'link' ? (
-            // Link real (não window.open após await) — evita o bloqueio de popup
-            <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={btnSmall}>{r.openLink}</a>
-          ) : result.type === 'file' ? (
-            <a href={result.download_url} style={btnSmall}>{r.downloadAgain}</a>
-          ) : (
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
-          )
-        ) : resource.visibility === 'paid' ? (
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
+      {/* Um card só — foto como header (mesma faixa de altura da página sem
+          login), título/tag/descrição/ação dentro do mesmo corpo. */}
+      <div style={{ ...card, overflow: 'hidden' }}>
+        {resource.preview_image_url ? (
+          <div style={{ height: 180 }}>
+            <img
+              src={resource.preview_image_url}
+              alt={resource.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: resource.cover_image_position ?? '50% 50%', display: 'block' }}
+            />
+          </div>
         ) : (
-          <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnSmall, opacity: unlocking ? 0.6 : 1 }}>{actionLabel}</button>
+          <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-black)' }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="28" height="30" alt="" />
+          </div>
         )}
-      </div>
 
-      {result?.type === 'content' && (
-        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', maxHeight: 420, overflowY: 'auto', padding: '18px 20px', ...card }}>
-          {result.content_md}
+        <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <span style={{
+              display: 'inline-block', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.10em', textTransform: 'uppercase',
+              color: 'var(--arvo-gold-text, #8C6A28)', background: 'var(--arvo-beige, #F1EDE5)', padding: '4px 12px', borderRadius: 999, marginBottom: 10,
+            }}>
+              {resource.visibility === 'paid' ? r.members : r.free}
+            </span>
+            <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
+              {resource.title}
+            </h1>
+          </div>
+
+          {result?.type === 'content' && (
+            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', maxHeight: 360, overflowY: 'auto', padding: '14px 16px', background: 'var(--arvo-bg, var(--arvo-offwhite))', borderRadius: 10, border: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
+              {result.content_md}
+            </div>
+          )}
+
+          {/* Linha de ação — ícone + tipo à esquerda, botão pequeno à direita */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 4, borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))', marginTop: 4 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--arvo-beige, #F1EDE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-gold-text, #8C6A28)', flexShrink: 0, marginTop: 12 }}>
+              <TypeIcon type={resource.resource_type} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0, marginTop: 12 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {resource.title}
+              </p>
+              {unlockError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red)', margin: '2px 0 0' }}>{unlockError}</p>}
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {result ? (
+                result.type === 'link' ? (
+                  // Link real (não window.open após await) — evita o bloqueio de popup
+                  <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={btnSmall}>{r.openLink}</a>
+                ) : result.type === 'file' ? (
+                  <a href={result.download_url} style={btnSmall}>{r.downloadAgain}</a>
+                ) : (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
+                )
+              ) : resource.visibility === 'paid' ? (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
+              ) : (
+                <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnSmall, opacity: unlocking ? 0.6 : 1 }}>{actionLabel}</button>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       {resource.description && (
-        <div>
-          <h2 style={{ fontFamily: 'var(--arvo-font-display, var(--arvo-font-body))', fontSize: 17, color: 'var(--arvo-fg)', margin: '0 0 8px' }}>{r.aboutTitle}</h2>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.65, margin: 0 }}>
+        <div style={{ padding: '4px 4px' }}>
+          <h2 style={{ fontFamily: 'var(--arvo-font-display, var(--arvo-font-body))', fontSize: 16, color: 'var(--arvo-fg)', margin: '0 0 6px' }}>{r.aboutTitle}</h2>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: 0 }}>
             {resource.description}
           </p>
         </div>
