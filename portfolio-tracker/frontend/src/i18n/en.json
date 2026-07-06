@@ -30,7 +30,8 @@
     "passiveIncome": "Income",
     "voyage": "Trips",
     "community": "Community",
-    "admin": "Admin"
+    "admin": "Admin",
+    "aprender": "Learn"
   },
   "admin": {
     "eyebrow": "ADMIN",
