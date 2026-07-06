@@ -5,9 +5,16 @@ import {
   DM_Sans,
   DM_Mono,
   Archivo,
+  Inter,
   Fragment_Mono,
 } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--f-inter",
+  display: "swap",
+});
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -75,7 +82,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${archivo.variable} ${fragmentMono.variable}`}
+      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${archivo.variable} ${inter.variable} ${fragmentMono.variable}`}
     >
       <head>
         <meta name="color-scheme" content="light only" />

@@ -22,6 +22,9 @@ export default function Footer() {
                 <a href="#videos">Vídeos</a>
               </li>
               <li>
+                <a href="#ferramentas">Ferramentas</a>
+              </li>
+              <li>
                 <a href="#newsletter">Newsletter</a>
               </li>
             </ul>

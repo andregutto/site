@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import KitForm from '@/components/KitForm';
 
 export default function Night() {
@@ -7,7 +6,7 @@ export default function Night() {
     <section className="ag-night" id="newsletter">
       <Image
         className="ag-night-bg"
-        src="/img/lencois-dunas-sol.jpg"
+        src="/img/islandia-aurora.jpg"
         alt=""
         fill
         sizes="100vw"
@@ -27,15 +26,6 @@ export default function Night() {
           buttonText="Quero receber"
           successMessage="Chegou! Bom, quase: confirma no seu email e a primeira carta é sua."
         />
-      </div>
-      <div className="ag-night-lead">
-        <Link href="/planilha-custo-de-vida">
-          <span>
-            Pra começar com o pé direito: a planilha com meu custo de vida
-            real em Paris.
-          </span>
-          <span className="ag-mono">Baixar grátis ↗</span>
-        </Link>
       </div>
     </section>
   );

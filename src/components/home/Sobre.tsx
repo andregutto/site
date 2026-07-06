@@ -9,24 +9,27 @@ export default function Sobre() {
           <Reveal>
             <p className="ag-kicker">Prazer, André</p>
             <p className="ag-lede">
-              Cresci no Brasil, moro em Paris e resolvi contar essa história
-              enquanto ela acontece. Não depois, quando tudo já deu certo e
-              vira palestra. Agora, com a mudança ainda na caixa.
+              Engenheiro de energia renovável de dia, brasileiro em tempo
+              integral. Vim pra França a trabalho e fiquei pela vida que dava
+              pra construir aqui. Esta página é onde eu conto essa história,
+              enquanto ela acontece.
             </p>
           </Reveal>
           <Reveal delay={100}>
             <div className="ag-sobre-body">
               <p>
-                Aqui você não vai encontrar fórmula de enriquecimento nem
-                manual de imigração. Vai encontrar um cara comum decidindo,
-                errando e ajustando a rota em tempo real, com os números e
-                as razões na mesa.
+                Não sou influenciador nem vendedor de fórmula. Sou um cara
+                comum montando uma vida entre dois países, e resolvi abrir o
+                processo: as decisões de carreira, as contas na mesa, as
+                viagens, os recomeços e os dias em que nada sai como o
+                planejado.
               </p>
               <p>
-                Num dia o assunto é o aluguel em Paris. No outro, um trem
-                barato pra um castelo no meio do nada, ou a saudade que
-                aperta quando o resto da família está a nove horas de voo.
-                O tema muda com a vida. A honestidade fica.
+                Se você pensa em sair do Brasil, já saiu, ou só gosta de ver
+                uma vida sendo montada peça por peça, fica por aqui. No
+                canal, na newsletter e nas ferramentas desta página, o
+                combinado é o mesmo: te contar o que eu gostaria que alguém
+                tivesse me contado.
               </p>
             </div>
           </Reveal>

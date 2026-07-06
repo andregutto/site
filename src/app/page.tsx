@@ -5,6 +5,7 @@ import FilmStrip from "@/components/home/FilmStrip";
 import Sobre from "@/components/home/Sobre";
 import Eixos from "@/components/home/Eixos";
 import VideosSection from "@/components/home/VideosSection";
+import Ferramentas from "@/components/home/Ferramentas";
 import Night from "@/components/home/Night";
 import Footer from "@/components/home/Footer";
 
@@ -18,6 +19,7 @@ export default function Home() {
         <Sobre />
         <Eixos />
         <VideosSection />
+        <Ferramentas />
         <Night />
       </main>
       <Footer />

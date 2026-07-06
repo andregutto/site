@@ -3,11 +3,12 @@ export default function Nav() {
     <nav className="ag-nav">
       <div className="ag-wrap ag-nav-inner">
         <a href="#" className="ag-logo">
-          André Gutto
+          André <span>Gutto</span>
         </a>
         <div className="ag-nav-links">
           <a href="#sobre">Sobre</a>
           <a href="#videos">Vídeos</a>
+          <a href="#ferramentas">Ferramentas</a>
           <a href="#newsletter">Newsletter</a>
           <a
             className="ag-nav-cta"
