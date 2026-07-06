@@ -55,14 +55,14 @@ export default function Sobre() {
           <div className="ag-sobre-photos">
             <div className="ag-sobre-photo-main">
               <Image
-                src="/img/andre-luxembourg-3.jpg"
-                alt="André no Jardin du Luxembourg, em Paris"
+                src="/img/andre-islandia.jpg"
+                alt="André na costa sul da Islândia, no inverno"
                 width={724}
                 height={1086}
                 sizes="(max-width: 900px) 90vw, 390px"
               />
               <p className="ag-photo-caption">
-                <span>Paris, o lado de cá</span>
+                <span>Islândia, o lado de cá</span>
                 <span className="ag-num">fig. 02</span>
               </p>
             </div>
