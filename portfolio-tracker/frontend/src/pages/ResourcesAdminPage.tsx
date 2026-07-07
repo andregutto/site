@@ -47,19 +47,53 @@ type FormState = {
   preview_image_url: string
   cover_image_position: string
   visibility: 'free' | 'plus' | 'beta'
-  kit_tag: string
   is_published: boolean
 }
 
 const emptyForm: FormState = {
   slug: '', title: '', description: '', resource_type: 'file', file_path: '',
   external_url: '', content_md: '', preview_image_url: '', cover_image_position: '50% 50%', visibility: 'free',
-  kit_tag: '', is_published: false,
+  is_published: false,
 }
 
 function parsePosition(raw: string): { x: number; y: number } {
   const [x, y] = raw.split(' ').map(v => parseFloat(v))
   return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y }
+}
+
+// Mesma regra do slugify do servidor (community.ts/resources.ts) — deriva o
+// slug do título enquanto o usuário não editar o campo Slug na mão (ver
+// slugTouched). kit_tag (tag do Kit pro sync futuro) reaproveita esse mesmo
+// slug direto no save(), sem campo próprio no formulário: como o sync ainda
+// não existe, expor um campo que não faz nada só confundia.
+function slugifyTitle(name: string): string {
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      style={{
+        position: 'relative', width: 36, height: 21, borderRadius: 999, border: 'none', padding: 0,
+        background: checked ? 'var(--arvo-fg)' : 'var(--arvo-border)', transition: 'background 180ms ease',
+        cursor: 'pointer', flexShrink: 0,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 2, left: checked ? 17 : 2, width: 17, height: 17, borderRadius: '50%',
+        background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 180ms cubic-bezier(0.4,0,0.2,1)',
+      }} />
+    </button>
+  )
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12 }
@@ -80,6 +114,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   const coverInputRef = useRef<HTMLInputElement>(null)
   const coverContainerRef = useRef<HTMLDivElement>(null)
   const dragStart = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
+  const slugTouched = useRef(false)
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
@@ -112,6 +147,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
 
   function startCreate() {
     setForm(emptyForm)
+    slugTouched.current = false
     setEditingId('new')
     setError('')
   }
@@ -126,8 +162,9 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
       resource_type: item.resource_type, file_path: item.file_path ?? '',
       external_url: item.external_url ?? '', content_md: item.content_md ?? '',
       preview_image_url: item.preview_image_url ?? '', cover_image_position: item.cover_image_position ?? '50% 50%',
-      visibility: item.visibility, kit_tag: item.kit_tag ?? '', is_published: item.is_published,
+      visibility: item.visibility, is_published: item.is_published,
     })
+    slugTouched.current = true // recurso já existe — nunca reescrever o slug ao editar o título
     setEditingId(item.id)
     setError('')
   }
@@ -229,7 +266,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
       preview_image_url: form.preview_image_url || null,
       cover_image_position: form.cover_image_position || '50% 50%',
       visibility: form.visibility,
-      kit_tag: form.kit_tag || null,
+      kit_tag: form.slug || null,
       is_published: form.is_published,
     }
     try {
@@ -326,18 +363,97 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
     <div className="space-y-8">
       {editingId !== null ? (
         <section style={{ ...card, padding: 20 }} className="space-y-4">
-          <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
-            {editingId === 'new' ? (ra.newResource ?? '+ Novo recurso') : (ra.editResource ?? 'Editar recurso')}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
+              {editingId === 'new' ? (ra.newResource ?? '+ Novo recurso') : (ra.editResource ?? 'Editar recurso')}
+            </h2>
+            <label className="flex items-center gap-2 shrink-0" style={{ cursor: 'pointer' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+                {form.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
+              </span>
+              <Toggle checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} />
+            </label>
+          </div>
+
+          {/* Imagem no topo — é assim que ela aparece no card da listagem,
+              então faz sentido ver e ajustar a posição logo de cara. */}
+          <div>
+            <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa'}</label>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
+            />
+            {form.preview_image_url ? (
+              <div>
+                <div
+                  ref={coverContainerRef}
+                  className="relative w-full h-40 rounded-xl overflow-hidden select-none"
+                  style={{ cursor: isDraggingCover ? 'grabbing' : 'grab' }}
+                  onMouseDown={onCoverDragStart}
+                  onTouchStart={onCoverDragStart}
+                >
+                  <img
+                    src={form.preview_image_url}
+                    alt=""
+                    draggable={false}
+                    className="w-full h-full object-cover pointer-events-none"
+                    style={{ objectPosition: form.cover_image_position }}
+                  />
+                  {!isDraggingCover && (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                      <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
+                        {ra.dragHint ?? 'Arraste pra reposicionar'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3 mt-1.5">
+                  <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                  >
+                    {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
+                  </button>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
+                  >
+                    {ra.delete ?? 'Excluir'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
+              >
+                {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
+              </button>
+            )}
+          </div>
 
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
             <div>
               <label style={label}>{ra.fieldTitle ?? 'Título'}</label>
-              <input style={input} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+              <input
+                style={input}
+                value={form.title}
+                onChange={e => {
+                  const title = e.target.value
+                  setForm(f => ({ ...f, title, slug: slugTouched.current ? f.slug : slugifyTitle(title) }))
+                }}
+              />
             </div>
             <div>
               <label style={label}>{ra.fieldSlug ?? 'Slug'}</label>
-              <input style={input} value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase() }))} />
+              <input
+                style={input}
+                value={form.slug}
+                onChange={e => { slugTouched.current = true; setForm(f => ({ ...f, slug: e.target.value.toLowerCase() })) }}
+              />
               <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>{(ra.fieldSlugHint ?? '').replace('{slug}', form.slug || 'seu-slug')}</p>
             </div>
           </div>
@@ -404,76 +520,6 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
               <textarea style={{ ...input, minHeight: 140, resize: 'vertical', fontFamily: 'monospace' }} value={form.content_md} onChange={e => setForm(f => ({ ...f, content_md: e.target.value }))} />
             </div>
           )}
-
-          <div>
-            <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa'}</label>
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
-            />
-            {form.preview_image_url ? (
-              <div>
-                <div
-                  ref={coverContainerRef}
-                  className="relative w-full h-40 rounded-xl overflow-hidden select-none"
-                  style={{ cursor: isDraggingCover ? 'grabbing' : 'grab' }}
-                  onMouseDown={onCoverDragStart}
-                  onTouchStart={onCoverDragStart}
-                >
-                  <img
-                    src={form.preview_image_url}
-                    alt=""
-                    draggable={false}
-                    className="w-full h-full object-cover pointer-events-none"
-                    style={{ objectPosition: form.cover_image_position }}
-                  />
-                  {!isDraggingCover && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
-                      <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
-                        {ra.dragHint ?? 'Arraste pra reposicionar'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-3 mt-1.5">
-                  <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
-                  >
-                    {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
-                  </button>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
-                  >
-                    {ra.delete ?? 'Excluir'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => coverInputRef.current?.click()}
-                disabled={uploadingCover}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
-              >
-                {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
-              </button>
-            )}
-          </div>
-
-          <div>
-            <label style={label}>{ra.fieldKitTag ?? 'Tag do Kit'}</label>
-            <input style={input} value={form.kit_tag} onChange={e => setForm(f => ({ ...f, kit_tag: e.target.value }))} />
-          </div>
-
-          <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.is_published} onChange={e => setForm(f => ({ ...f, is_published: e.target.checked }))} />
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
-              {form.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
-            </span>
-          </label>
 
           {error && <p style={{ fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)' }}>{error}</p>}
 
