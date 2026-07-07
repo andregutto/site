@@ -72,6 +72,21 @@ async function bootstrapOAuthProfile(u: User) {
   }
 }
 
+// O gate de Recursos grava sessionStorage['signup_source'] (ex:
+// 'resource:planilha-custo-de-vida-paris') ANTES de mandar pro Google —
+// só sobrevive ao redirect via sessionStorage mesmo, porque o OAuth authorize
+// da Supabase não repassa query params arbitrários de volta. No fluxo
+// email/senha isso vai direto no signUp() (options.data), mas no Google o
+// usuário já existe (sem metadata) quando a gente volta do redirect, então
+// precisa de um updateUser() aqui — o trigger de 072_signup_source_oauth_fix.sql
+// (AFTER UPDATE OF raw_user_meta_data) que grava em profiles.signup_source.
+async function bootstrapResourceSignupSource(u: User) {
+  const pending = sessionStorage.getItem('signup_source')
+  if (!pending || u.user_metadata?.signup_source) return
+  sessionStorage.removeItem('signup_source')
+  await supabase.auth.updateUser({ data: { signup_source: pending } }).catch(() => {})
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -110,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && sess?.user) {
         bootstrapOAuthProfile(sess.user).catch(err => {
           console.warn('[auth] OAuth profile bootstrap failed:', err)
+        })
+        bootstrapResourceSignupSource(sess.user).catch(err => {
+          console.warn('[auth] resource signup_source bootstrap failed:', err)
         })
       }
     })
