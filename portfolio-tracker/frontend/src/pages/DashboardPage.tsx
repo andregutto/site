@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Skeleton } from '../components/Skeleton'
+import { PageLoader } from '../components/ArvoLoader'
 import { usePortfolioValue, usePerformanceInception, usePerformanceSummary, useAssetPositionReturns, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -241,42 +241,7 @@ export default function DashboardPage() {
       .catch(() => {})
   }, [])
 
-  if (loading) return (
-    <div className="space-y-6">
-      <PageTitle
-        eyebrow={t.dashboard.eyebrow}
-        title="Dashboard"
-        actions={
-          <>
-            <div className="w-full sm:w-auto">
-              <Segmented<PeriodMode>
-                ariaLabel={t.archived.period}
-                value={periodMode}
-                onChange={setPeriodMode}
-                options={[
-                  { value: 'last_5d'       as PeriodMode, label: t.performance.last5d },
-                  { value: 'current_month' as PeriodMode, label: t.performance.currentMonth },
-                  { value: 'last_30d'      as PeriodMode, label: t.performance.last30d },
-                  { value: 'last_12m'      as PeriodMode, label: t.performance.last12m },
-                  { value: 'ytd'           as PeriodMode, label: 'YTD' },
-                  { value: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
-                ]}
-              />
-            </div>
-          </>
-        }
-      />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2"><Skeleton style={{ height: 168 }} /></div>
-        <div className="lg:col-span-1"><Skeleton style={{ height: 168 }} /></div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-12 gap-6">
-        <div className="2xl:col-span-5"><Skeleton style={{ height: 220 }} /></div>
-        <div className="2xl:col-span-4"><Skeleton style={{ height: 220 }} /></div>
-        <div className="2xl:col-span-3"><Skeleton style={{ height: 220 }} /></div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   if (error) {
     return (
