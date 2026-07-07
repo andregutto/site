@@ -27,7 +27,7 @@ function Section({ title, meta, defaultOpen = true, children }: { title: string;
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
         <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{title}</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
           {meta}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
             <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
@@ -164,7 +164,7 @@ export default function MomentDetailPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <button
           onClick={() => navigate('/finances/moments')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0, flexShrink: 0 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 0, flexShrink: 0 }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" d="M9 2L4 7l5 5" />
@@ -176,20 +176,20 @@ export default function MomentDetailPage() {
           {isOwner && (
             <button
               onClick={() => setSharingMoment(m)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${m.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${m.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
             >
               {t.finances.shareTitle}
             </button>
           )}
           <button
             onClick={() => setShowEditForm(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
           >
             {t.common.edit}
           </button>
           <button
             onClick={deleteMoment}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}
           >
             {t.common.delete}
           </button>
@@ -228,7 +228,7 @@ export default function MomentDetailPage() {
       </div>
 
       {(m.start_date || m.description) && (
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.01em', marginBottom: 20 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.01em', marginBottom: 20 }}>
           {m.start_date && m.end_date
             ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
             : m.start_date
@@ -427,7 +427,7 @@ export default function MomentDetailPage() {
             style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
           >
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
                 {t.finances.momentCollaboratorsTitle}
               </p>
               <button

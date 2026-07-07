@@ -35,7 +35,7 @@ export function Segmented<T extends string>({ options, value, onChange, ariaLabe
             className="px-3 py-1.5 shrink-0 whitespace-nowrap"
             style={{
               fontFamily: 'var(--arvo-font-body)',
-              fontSize: 11,
+              fontSize: 12,
               letterSpacing: '0.04em',
               border: 'none',
               cursor: opt.disabled ? 'not-allowed' : 'pointer',

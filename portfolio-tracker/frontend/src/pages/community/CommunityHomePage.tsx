@@ -42,7 +42,7 @@ function TopicResultsList({ topics, tc, navigate }: {
               {topic.pinned && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><PinIcon /></span>}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
             </div>
-            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
+            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
               @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
               {topic.matched_in_body && ` · ${tc?.matchedInBody ?? 'encontrado numa resposta'}`}
             </div>
@@ -136,7 +136,7 @@ export default function CommunityHomePage() {
         type="button"
         onClick={toggleMine}
         style={{
-          fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '6px 14px', borderRadius: 999,
+          fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '6px 14px', borderRadius: 999,
           border: `1px solid ${showMine ? OCRE : 'var(--arvo-border)'}`,
           color: showMine ? OCRE : 'var(--arvo-fg-muted)',
           background: showMine ? 'rgba(232,160,32,0.08)' : 'transparent',
@@ -174,7 +174,7 @@ export default function CommunityHomePage() {
     <PullToRefresh onRefresh={loadCategoriesAndRecent}>
     <div className="space-y-7">
       <div>
-        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
+        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
           {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -258,7 +258,7 @@ export default function CommunityHomePage() {
             onClick={() => navigate(`/community/${c.slug}`)}
             className="flex items-center gap-2"
             style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 16px', borderRadius: 999,
+              fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 16px', borderRadius: 999,
               background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
               color: 'var(--arvo-fg)', cursor: 'pointer',
               transition: 'border-color 200ms ease, background 200ms ease',
@@ -301,7 +301,7 @@ export default function CommunityHomePage() {
                     {topic.locked && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><LockIcon /></span>}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
+                  <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
                     {topic.author.name ?? topic.author.username} · {timeAgo(topic.last_post_at)}
                   </div>
                 </div>

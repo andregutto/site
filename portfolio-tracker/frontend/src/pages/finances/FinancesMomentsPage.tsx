@@ -400,7 +400,7 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
           startValue={startDate} endValue={endDate}
           onChangeStart={setStartDate} onChangeEnd={setEndDate}
           startLabel={t.finances.momentStartDate} endLabel={t.finances.momentEndDate}
-          labelStyle={{ display: 'block', fontSize: 11, color: 'var(--arvo-fg-muted)', marginBottom: 4, fontFamily: 'var(--arvo-font-body)' }}
+          labelStyle={{ display: 'block', fontSize: 12, color: 'var(--arvo-fg-muted)', marginBottom: 4, fontFamily: 'var(--arvo-font-body)' }}
         />
 
         <div>
@@ -752,7 +752,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
           {activeMembers.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar name={m.display?.name} email={m.display?.email} avatarUrl={m.display?.avatar_url} size={24} tone={m.status === 'active' ? 'active' : 'neutral'} />
-              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {m.display?.name || m.display?.email || m.invite_email}
               </span>
               <RoleChip role={m.role} />
@@ -760,7 +760,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
               {isOwner && m.role !== 'owner' && (
                 <button
                   type="button" onClick={() => revoke(m)} disabled={removing === m.id}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
                 >
                   {removing === m.id ? '…' : t.finances.momentRevoke}
                 </button>
@@ -784,7 +784,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
                     borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
-                    cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
+                    cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
                   }}
                 >
                   <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
@@ -823,10 +823,10 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
                     }}
                   >
                     <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
                       {sg.name || `@${sg.username}`}
                     </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                       @{sg.username}
                     </span>
                   </button>
@@ -836,7 +836,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
           </form>
         </div>
       )}
-      {error && <p style={{ fontSize: 11, color: RED, marginTop: 6 }}>{error}</p>}
+      {error && <p style={{ fontSize: 12, color: RED, marginTop: 6 }}>{error}</p>}
     </div>
   )
 }
@@ -879,7 +879,7 @@ export function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number
           ))}
         </div>
       )}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
         {shown.length === 0 ? (
           <>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -889,7 +889,7 @@ export function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number
             {t.finances.momentInvite}
           </>
         ) : (
-          <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+          <span style={{ fontSize: 14, lineHeight: 1 }}>+</span>
         )}
       </span>
     </button>
@@ -1146,7 +1146,7 @@ export default function FinancesMomentsPage() {
                     onClick={() => setSelectedTripId(selectedTripId === trip.id ? null : trip.id)}
                     style={{
                       padding: '5px 14px', borderRadius: 999, cursor: 'pointer', transition: 'all 160ms ease',
-                      fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 13,
                       border: `1px solid ${selectedTripId === trip.id ? '#D63B2F' : 'var(--arvo-border)'}`,
                       background: selectedTripId === trip.id ? 'rgba(214,59,47,0.08)' : 'transparent',
                       color: selectedTripId === trip.id ? '#D63B2F' : 'var(--arvo-fg-muted)',
@@ -1323,7 +1323,7 @@ export default function FinancesMomentsPage() {
             style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
           >
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
                 {t.finances.momentCollaboratorsTitle}
               </p>
               <button

@@ -90,16 +90,16 @@ function SwipeableRow({ children, onArchive, onDelete, onMarkUnread, isArchived 
         <button
           onClick={() => { onArchive(); setDragX(0); setOpen(false) }}
           className="flex-1 flex items-center justify-center"
-          style={{ background: 'var(--arvo-fg-soft)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11 }}
+          style={{ background: 'var(--arvo-fg-soft)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}
         >{isArchived ? (tm.unarchive ?? 'Desarquivar') : (tm.archive ?? 'Arquivar')}</button>
         <button
           onClick={() => { onDelete(); setDragX(0); setOpen(false) }}
           className="flex-1 flex items-center justify-center"
-          style={{ background: RED, color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11 }}
+          style={{ background: RED, color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}
         >{tm.deleteAction ?? 'Apagar'}</button>
       </div>
       <div className="absolute inset-y-0 left-0 flex items-center justify-start" style={{ width: UNREAD_THRESHOLD + 20, background: GOLD, opacity: Math.min(1, Math.max(0, dragX) / UNREAD_THRESHOLD) }}>
-        <span style={{ color: '#1a1200', fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, paddingLeft: 14 }}>{tm.markUnread ?? 'Não lida'}</span>
+        <span style={{ color: '#1a1200', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, paddingLeft: 14 }}>{tm.markUnread ?? 'Não lida'}</span>
       </div>
       <div
         onTouchStart={onTouchStart}
@@ -183,7 +183,7 @@ export default function MessagesPage() {
             key={String(tab.key)}
             onClick={() => setShowArchived(tab.key)}
             style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
               background: showArchived === tab.key ? 'var(--arvo-pill-active-bg)' : 'transparent',
               color: showArchived === tab.key ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
             }}
@@ -193,11 +193,11 @@ export default function MessagesPage() {
 
       {showPicker && (
         <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '14px 16px' }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
             {tm.pickFriend ?? 'Escolha um amigo'}
           </p>
           {friends.length === 0 ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)' }}>{tm.noFriendsYet ?? 'Você ainda não tem amigos ativos.'}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-faint)' }}>{tm.noFriendsYet ?? 'Você ainda não tem amigos ativos.'}</p>
           ) : (
             <div className="space-y-1">
               {friends.filter(f => f.user_id).map(f => (
@@ -208,7 +208,7 @@ export default function MessagesPage() {
                   style={{ padding: '8px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={30} />
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
                 </button>
               ))}
             </div>
@@ -224,7 +224,7 @@ export default function MessagesPage() {
             {showArchived ? (tm.emptyArchived ?? 'Nenhuma conversa arquivada.') : (tm.emptyTitle ?? 'Nenhuma conversa por aqui.')}
           </p>
           {!showArchived && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
               {tm.emptySubtitle ?? 'Comece uma conversa com um amigo ativo.'}
             </p>
           )}
@@ -250,12 +250,12 @@ export default function MessagesPage() {
                 <Avatar name={c.peer.name} avatarUrl={c.peer.avatar_url} size={40} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
                       {c.peer.name ?? c.peer.username ?? '-'}
                     </span>
                   </div>
                   {c.last_message && (
-                    <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: c.last_message.deleted_at ? 'italic' : 'normal' }}>
+                    <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: c.last_message.deleted_at ? 'italic' : 'normal' }}>
                       {c.last_message.deleted_at
                         ? (tm.messageDeleted ?? 'Mensagem apagada')
                         : <>{c.last_message.from_me ? `${tm.you ?? 'Você'}: ` : ''}{c.last_message.body}</>}
@@ -263,7 +263,7 @@ export default function MessagesPage() {
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1" style={{ flexShrink: 0 }}>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-faint)' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-faint)' }}>
                     {conversationTimeLabel(c.last_message_at, locale)}
                   </span>
                   {c.unread_count > 0 && (

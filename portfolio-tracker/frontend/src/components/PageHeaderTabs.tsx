@@ -26,7 +26,7 @@ export default function PageHeaderTabs<K extends string>({ title, subtitle, tabs
             onClick={() => onTabChange(item.key)}
             style={{
               flex: 1, padding: '6px 0', border: 'none', borderRadius: 7,
-              fontSize: 13, fontFamily: 'var(--arvo-font-body)',
+              fontSize: 14, fontFamily: 'var(--arvo-font-body)',
               fontWeight: activeTab === item.key ? 600 : 400,
               cursor: 'pointer',
               background: activeTab === item.key ? 'var(--arvo-surface)' : 'transparent',

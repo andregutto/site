@@ -191,7 +191,7 @@ function DayBadge({ day, canEdit, onChangeDay }: {
       onBlur={commit}
       onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
       autoFocus
-      style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: '1px solid var(--arvo-fg)', background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
+      style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: '1px solid var(--arvo-fg)', background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
     />
   )
 
@@ -231,7 +231,7 @@ function DayNumberField({ label, value, onChange }: { label: string; value: numb
         onChange={e => setVal(e.target.value)}
         onBlur={commit}
         onKeyDown={e => { if (e.key === 'Enter') commit() }}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '2px 4px', outline: 'none', width: 48, textAlign: 'center' }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '2px 4px', outline: 'none', width: 48, textAlign: 'center' }}
       />
     </div>
   )
@@ -243,7 +243,7 @@ function TimeField({ label, value, onChange }: { label: string; value: string | 
       <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>{label}</span>
       <input
         type="time" value={value ?? ''} onChange={e => onChange(e.target.value || null)}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '2px 4px', outline: 'none', width: 84 }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '2px 4px', outline: 'none', width: 84 }}
       />
     </div>
   )
@@ -254,7 +254,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
     <div style={{ display: 'flex', gap: 2 }}>
       {[1,2,3,4,5].map(n => (
         <button key={n} type="button" onClick={() => onChange?.(n === value ? 0 : n)}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: onChange ? 'pointer' : 'default', fontSize: 13, opacity: (value ?? 0) >= n ? 1 : 0.25 }}>★</button>
+          style={{ background: 'none', border: 'none', padding: 0, cursor: onChange ? 'pointer' : 'default', fontSize: 14, opacity: (value ?? 0) >= n ? 1 : 0.25 }}>★</button>
       ))}
     </div>
   )
@@ -280,10 +280,10 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
         onChange={e => { setText(e.target.value); setSaved(false) }}
         placeholder={placeholder ?? 'Nota…'}
         onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-        style={{ flex: 1, padding: '6px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
+        style={{ flex: 1, padding: '6px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, outline: 'none', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
       />
       <button type="button" onClick={handleSave}
-        style={{ padding: '6px 12px', borderRadius: 4, background: saved ? GREEN : 'var(--arvo-fg)', color: saved ? '#fff' : 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 11, minWidth: 58, flexShrink: 0, transition: 'background 160ms' }}>
+        style={{ padding: '6px 12px', borderRadius: 4, background: saved ? GREEN : 'var(--arvo-fg)', color: saved ? '#fff' : 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 12, minWidth: 58, flexShrink: 0, transition: 'background 160ms' }}>
         {saved ? '✓ Salvo' : 'Salvar'}
       </button>
     </div>
@@ -492,12 +492,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </div>
           )}
           {item.address && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
           {/* Time summary — for transport items the icon+title already say the
               mode, so only the times are shown here to avoid repeating it */}
           {(item.arrive_time || item.depart_time || (!isTransport && item.transport_mode)) && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
               {[
                 !isTransport && item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
                 item.arrive_time && `${(tv.arrival ?? 'chegada').toLowerCase()} ${item.arrive_time}`,
@@ -507,7 +507,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {item.rating != null && isPlace && <StarRating value={item.rating} />}
           {item.trip_note && !editingNote && (
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
           )}
           {/* Place kind: note is optional, toggled via the "Nota" action below */}
           {isPlace && editingNote && (
@@ -578,7 +578,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {canEdit && isPlace && (
             <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 13, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>★</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 14, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>★</button>
           )}
           {item.google_maps_url && (
             <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
@@ -643,7 +643,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
 
           {isPlace && !isStay && !showStayFields && (
             <button type="button" onClick={() => setShowStayFields(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
               {itemIcon(item)} {tv.markAsStay ?? 'Marcar como estadia de vários dias (hospedagem, carro alugado…)'}
             </button>
           )}
@@ -658,7 +658,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
                     <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
-                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
                       {TRANSPORT_ICONS[k]} {label}
                     </button>
                   ))}
@@ -687,7 +687,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
                       <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
-                        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
                         {TRANSPORT_ICONS[k]} {label}
                       </button>
                     ))}
@@ -697,7 +697,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowTransportFields(true)}
-                  style={{ alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                  style={{ alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
                   + {tv.transportToArrive ?? 'Transporte para chegar aqui'}
                 </button>
               )}
@@ -717,9 +717,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           {/* Row actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4, flexWrap: 'wrap' }}>
             {isPlace && (
-              <button type="button" onClick={() => setEditingNote(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>{tv.note ?? 'Nota'}</button>
+              <button type="button" onClick={() => setEditingNote(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>{tv.note ?? 'Nota'}</button>
             )}
-            <button type="button" onClick={del} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>{tv.remove ?? 'Remover'}</button>
+            <button type="button" onClick={del} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>{tv.remove ?? 'Remover'}</button>
           </div>
         </div>
       )}
@@ -778,7 +778,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
     // children to its full width by default — without this the button spans
     // the whole row and looks like a text input instead of a pill button.
     <button type="button" onClick={() => setOpen(true)}
-      style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '5px 11px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em', padding: '5px 11px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
       onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
       {tv.actions?.addGeneric ? `+ ${tv.actions.addGeneric}` : '+ Item livre'}
@@ -790,7 +790,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
       <div style={{ display: 'flex', gap: 6 }}>
         {(['note', 'transport'] as const).map(k => (
           <button key={k} type="button" onClick={() => setKind(k)}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '4px 12px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${kind === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: kind === k ? 'var(--arvo-hover-bg)' : 'transparent', color: kind === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, padding: '4px 12px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${kind === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: kind === k ? 'var(--arvo-hover-bg)' : 'transparent', color: kind === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
             {k === 'note' ? (tv.actions?.addNote ?? '📝 Anotação') : (tv.actions?.addTransport ?? '🚆 Transporte')}
           </button>
         ))}
@@ -799,9 +799,9 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
         <input autoFocus value={title} onChange={e => setTitle(e.target.value)}
           placeholder={kind === 'note' ? (tv.notePlaceholderFree ?? 'Ex: Levar passaporte') : (tv.transportPlaceholderFree ?? 'Ex: Trem Lisboa → Porto')}
           onKeyDown={e => { if (e.key === 'Enter') save() }}
-          style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, outline: 'none' }} />
+          style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, outline: 'none' }} />
         <input value={day} onChange={e => setDay(e.target.value)} type="number" min="1" inputMode="numeric" placeholder={tv.dayPlaceholder ?? 'Dia'}
-          style={{ width: 56, padding: '7px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, outline: 'none', textAlign: 'center' }} />
+          style={{ width: 56, padding: '7px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, outline: 'none', textAlign: 'center' }} />
       </div>
 
       {/* Transport-specific: pick the icon + times right away */}
@@ -810,7 +810,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
               <button key={k} type="button" onClick={() => setTransportMode(transportMode === k ? null : k)}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: transportMode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: transportMode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
                 {TRANSPORT_ICONS[k]} {label}
               </button>
             ))}
@@ -824,9 +824,9 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
         <button type="button" onClick={reset}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>{tv.actions?.cancel ?? 'Cancelar'}</button>
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>{tv.actions?.cancel ?? 'Cancelar'}</button>
         <button type="button" onClick={save} disabled={saving || !title.trim()}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving || !title.trim() ? 'default' : 'pointer', opacity: saving || !title.trim() ? 0.5 : 1 }}>{tv.actions?.addGeneric ?? 'Adicionar'}</button>
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving || !title.trim() ? 'default' : 'pointer', opacity: saving || !title.trim() ? 0.5 : 1 }}>{tv.actions?.addGeneric ?? 'Adicionar'}</button>
       </div>
     </div>
   )
@@ -1040,12 +1040,12 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           <div style={{ display: 'flex', gap: 6 }}>
             <button type="button" onClick={() => { setRouteMode(v => !v); if (routeMode) setRouteSelection([]) }}
               title={tv.routeSelectTitle ?? 'Marque lugares para montar uma rota personalizada no Google Maps'}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: routeMode ? 'rgba(214,59,47,0.10)' : 'none', border: `1px solid ${routeMode ? RED : 'var(--arvo-border)'}`, color: routeMode ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: routeMode ? 'rgba(214,59,47,0.10)' : 'none', border: `1px solid ${routeMode ? RED : 'var(--arvo-border)'}`, color: routeMode ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
               {routeMode ? (tv.routeSelectCancel ?? 'Cancelar rota') : (tv.routeSelectToggle ?? 'Montar rota no Maps')}
             </button>
             {canEdit && (
               <button type="button" onClick={() => setShowToolMenu(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', padding: '5px 12px', borderRadius: 999, background: RED, border: `1px solid ${RED}`, color: '#fff', cursor: 'pointer', boxShadow: '0 1px 3px rgba(214,59,47,0.35)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em', padding: '5px 12px', borderRadius: 999, background: RED, border: `1px solid ${RED}`, color: '#fff', cursor: 'pointer', boxShadow: '0 1px 3px rgba(214,59,47,0.35)' }}>
                 {tv.actions?.add ?? '+ Adicionar'}
               </button>
             )}
@@ -1060,23 +1060,23 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           {activeTool === null && showToolMenu && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <button type="button" onClick={() => { setActiveTool('place'); setShowToolMenu(false) }}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
                 {tv.actions?.addPlace ?? '📍 Lugar'}
               </button>
               <button type="button" onClick={() => { setActiveTool('stay'); setShowToolMenu(false) }}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
                 {tv.actions?.addStay ?? '🏨🚗 Estadia / Carro'}
               </button>
               <button type="button" onClick={() => { setActiveTool('transport'); setShowToolMenu(false) }}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
                 {tv.actions?.addTransport ?? '🚆 Transporte'}
               </button>
               <button type="button" onClick={() => { setActiveTool('note'); setShowToolMenu(false) }}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
                 {tv.actions?.addNote ?? '📝 Anotação'}
               </button>
               <button type="button" onClick={() => setShowToolMenu(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12, padding: 4 }}>✕</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 13, padding: 4 }}>✕</button>
             </div>
           )}
 
@@ -1116,7 +1116,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           {[1, 2, 3].map(i => <div key={i} style={{ height: 42, borderRadius: 8, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite', animationDelay: `${i * 80}ms` }} />)}
         </div>
       ) : items.length === 0 ? (
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, textAlign: 'center', padding: '16px 0' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, textAlign: 'center', padding: '16px 0' }}>
           {tv.places?.empty ?? 'Adicione lugares à viagem para montar o roteiro'}
         </p>
       ) : (
@@ -1129,10 +1129,10 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                   <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: dayColor(d) }}>
                     {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
                     {inferredDateForDay(d, tripStartDate) && (
-                      <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 12 }}> · {inferredDateForDay(d, tripStartDate)}</span>
+                      <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 13 }}> · {inferredDateForDay(d, tripStartDate)}</span>
                     )}
                     {dayDestinationNames(d).length > 0 && (
-                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 13 }}> · {dayDestinationNames(d).join(' → ')}</span>
+                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 14 }}> · {dayDestinationNames(d).join(' → ')}</span>
                     )}
                   </p>
                 </span>
@@ -1157,7 +1157,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
               {staysOnDay(d)
                 .filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))
                 .map(s => (
-                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
+                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
                     {itemIcon(s)} {s.checkout_day === d
                       ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
                       : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}
@@ -1168,7 +1168,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           ))}
           {undated.length > 0 && (
             <div>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>{tv.noDay ?? 'Sem dia'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>{tv.noDay ?? 'Sem dia'}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(undated)}</div>
             </div>
           )}
@@ -1189,7 +1189,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           padding: '8px 14px', borderRadius: 999, background: 'var(--arvo-surface)',
           border: `1px solid ${RED}`, boxShadow: 'var(--arvo-shadow-lg)',
         }}>
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)' }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
             {routeSelection.length === 0
               ? (tv.routeSelectEmpty ?? 'Marque lugares na lista para montar a rota')
               : (routeSelection.length === 1
@@ -1199,7 +1199,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {routeSelection.length > 0 && (
               <button type="button" onClick={() => setRouteSelection([])}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 {tv.routeSelectClear ?? 'Limpar'}
               </button>
             )}
@@ -1213,7 +1213,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                   .map(p => ({ lat: p.lat!, lng: p.lng! }))
                 openDirections(stops, currentLocation)
               }}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '5px 12px', borderRadius: 999, background: routeSelection.length > 0 ? RED : 'var(--arvo-border)', color: '#fff', border: 'none', cursor: routeSelection.length > 0 ? 'pointer' : 'default' }}>
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, padding: '5px 12px', borderRadius: 999, background: routeSelection.length > 0 ? RED : 'var(--arvo-border)', color: '#fff', border: 'none', cursor: routeSelection.length > 0 ? 'pointer' : 'default' }}>
               {tv.routeSelectOpen ?? 'Abrir no Google Maps'}
             </button>
           </div>

@@ -78,7 +78,7 @@ const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-GB', fr: 'fr-F
 
 const menuItemStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-  padding: '9px 16px', fontSize: 13, fontFamily: 'var(--arvo-font-body)',
+  padding: '9px 16px', fontSize: 14, fontFamily: 'var(--arvo-font-body)',
   color: 'var(--arvo-fg)', background: 'none', border: 'none',
   cursor: 'pointer', textAlign: 'left', whiteSpace: 'nowrap',
 }
@@ -86,11 +86,11 @@ const chipStyle: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 5,
   padding: '4px 10px', borderRadius: 999,
   background: 'var(--arvo-border-soft)', border: '1px solid var(--arvo-border)',
-  fontSize: 12, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)',
+  fontSize: 13, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)',
 }
 const chipXStyle: React.CSSProperties = {
   background: 'none', border: 'none', cursor: 'pointer',
-  padding: 0, fontSize: 11, color: 'var(--arvo-fg-soft)', lineHeight: 1,
+  padding: 0, fontSize: 12, color: 'var(--arvo-fg-soft)', lineHeight: 1,
 }
 
 
@@ -914,7 +914,7 @@ export default function FinancesTransactionsPage() {
                     { mode: 'last30' as const, label: t.performance.last30d, icon: null, onClick: setLast30Days },
                     { mode: 'range' as const, label: t.archived.period, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('range') },
                   ] as const).map(tab => (
-                    <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? 'var(--arvo-surface)' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+                    <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? 'var(--arvo-surface)' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
                       {tab.icon}
                       <span>{tab.label}</span>
                     </button>
@@ -926,7 +926,7 @@ export default function FinancesTransactionsPage() {
                     <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                     </button>
-                    <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                    <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
                     <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                     </button>
@@ -937,7 +937,7 @@ export default function FinancesTransactionsPage() {
                     layout="inline"
                     startValue={dateFrom} endValue={dateTo}
                     onChangeStart={setDateFrom} onChangeEnd={setDateTo}
-                    style={{ width: 'auto', padding: '6px 8px', fontSize: 12, borderRadius: 8 }}
+                    style={{ width: 'auto', padding: '6px 8px', fontSize: 13, borderRadius: 8 }}
                   />
                 )}
               </div>
@@ -961,26 +961,26 @@ export default function FinancesTransactionsPage() {
               {showFilterPanel && (
                 <div style={{ position: 'absolute', right: 0, top: 44, zIndex: 50, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 16, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {accounts.length > 0 && (
-                    <select value={filterAccountId === '' ? '' : String(filterAccountId)} onChange={e => { const v = e.target.value; setFilterAccountId(v === '' ? '' : v === 'unassigned' ? 'unassigned' : Number(v)) }} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
+                    <select value={filterAccountId === '' ? '' : String(filterAccountId)} onChange={e => { const v = e.target.value; setFilterAccountId(v === '' ? '' : v === 'unassigned' ? 'unassigned' : Number(v)) }} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
                       <option value="">{t.finances.allAccounts}</option>
                       <option value="unassigned">{t.finances.csvAccountNone}</option>
                       {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
                     </select>
                   )}
                   {allCategories.length > 0 && (
-                    <select value={filterCatId} onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
+                    <select value={filterCatId} onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
                       <option value="">{t.finances.allCategories}</option>
                       {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                     </select>
                   )}
                   {moments.length > 0 && (
-                    <select value={filterMomentId} onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
+                    <select value={filterMomentId} onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'var(--arvo-font-body)', background: 'var(--arvo-surface)', width: '100%' }}>
                       <option value="">{t.finances.allMoments}</option>
                       {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
                     </select>
                   )}
                   {activeFilterCount > 0 && (
-                    <button onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }} style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '4px 0', fontFamily: 'var(--arvo-font-body)' }}>
+                    <button onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }} style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '4px 0', fontFamily: 'var(--arvo-font-body)' }}>
                       {t.finances.clearFilters}
                     </button>
                   )}
@@ -1046,7 +1046,7 @@ export default function FinancesTransactionsPage() {
                 { mode: 'last30' as const, label: '30d', icon: null, onClick: setLast30Days },
                 { mode: 'range' as const, label: t.archived.period, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('range') },
               ] as const).map(tab => (
-                <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? 'var(--arvo-surface)' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+                <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? 'var(--arvo-surface)' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
                   {tab.icon}
                   <span>{tab.label}</span>
                 </button>
@@ -1057,7 +1057,7 @@ export default function FinancesTransactionsPage() {
                 <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
                 <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
@@ -1069,7 +1069,7 @@ export default function FinancesTransactionsPage() {
                   layout="inline"
                   startValue={dateFrom} endValue={dateTo}
                   onChangeStart={setDateFrom} onChangeEnd={setDateTo}
-                  style={{ width: 'auto', flex: 1, minWidth: 0, padding: '6px 6px', fontSize: 11, borderRadius: 8 }}
+                  style={{ width: 'auto', flex: 1, minWidth: 0, padding: '6px 6px', fontSize: 12, borderRadius: 8 }}
                 />
               </div>
             )}

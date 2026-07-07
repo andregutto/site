@@ -106,15 +106,15 @@ function EmailConfirmGate({ email }: { email: string }) {
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: '0 0 24px' }}>
           {l.registrationDoneBody.replace('{email}', email)}
         </p>
-        {sent && <p style={{ fontSize: 12, color: '#16a34a', marginBottom: 12 }}>{l.emailResent ?? 'E-mail reenviado.'}</p>}
+        {sent && <p style={{ fontSize: 13, color: '#16a34a', marginBottom: 12 }}>{l.emailResent ?? 'E-mail reenviado.'}</p>}
         <button
           onClick={resend}
           disabled={sending || sent}
-          style={{ width: '100%', padding: '12px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: sending || sent ? 0.5 : 1, marginBottom: 16 }}
+          style={{ width: '100%', padding: '12px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: sending || sent ? 0.5 : 1, marginBottom: 16 }}
         >
           {sending ? (l.loading ?? '...') : sent ? (l.emailSent ?? 'Enviado') : (l.resendEmail ?? 'Reenviar e-mail')}
         </button>
-        <button onClick={() => signOut()} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--arvo-fg-soft)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)' }}>
+        <button onClick={() => signOut()} style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--arvo-fg-soft)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)' }}>
           {t.nav.signout}
         </button>
       </div>

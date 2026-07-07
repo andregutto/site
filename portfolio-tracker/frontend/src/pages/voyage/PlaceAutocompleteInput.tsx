@@ -116,12 +116,12 @@ export default function PlaceAutocompleteInput({ value, onChange, onSelect, plac
                 display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
                 background: i === active ? 'var(--arvo-hover-bg)' : 'transparent',
                 border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
               }}
             >
               <span>{s.main_text}</span>
               {s.secondary_text && (
-                <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5, marginLeft: 6 }}>{s.secondary_text}</span>
+                <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12.5, marginLeft: 6 }}>{s.secondary_text}</span>
               )}
             </button>
           ))}

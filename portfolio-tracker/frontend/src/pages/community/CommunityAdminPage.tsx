@@ -139,16 +139,16 @@ export default function CommunityAdminPage() {
     return (
       <div key={c.id} className="flex items-center gap-3" style={{ padding: '11px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', opacity: c.archived ? 0.45 : 1 }}>
         <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={c.slug} iconKey={c.icon_key} size={16} /></span>
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1 }}>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', flex: 1 }}>
           {catName(tc, c)}
         </span>
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
           {(tc?.categoryTopicsMany ?? '{count} tópicos').replace('{count}', String(c.topic_count))}
         </span>
         <button
           onClick={() => toggleArchive(c)}
           disabled={busy === `cat-${c.id}`}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
         >
           {c.archived ? (ta.unarchive ?? 'Restaurar') : (ta.archive ?? 'Arquivar')}
         </button>
@@ -172,19 +172,19 @@ export default function CommunityAdminPage() {
                   value={newCatName}
                   onChange={e => setNewCatName(e.target.value)}
                   placeholder={ta.newCatPlaceholder ?? 'Nome da nova categoria'}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', flex: 1, minWidth: 180 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', flex: 1, minWidth: 180 }}
                 />
                 <button
                   onClick={createCategory}
                   disabled={creating || !newCatName.trim()}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: creating || !newCatName.trim() ? 0.5 : 1 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: creating || !newCatName.trim() ? 0.5 : 1 }}
                 >
                   {creating ? '...' : (ta.createCat ?? 'Criar')}
                 </button>
                 <button
                   onClick={() => { setShowNewCat(false); setCatErr(null); setNewCatName('') }}
                   disabled={creating}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
                 >
                   {t.common?.cancel ?? 'Cancelar'}
                 </button>
@@ -206,14 +206,14 @@ export default function CommunityAdminPage() {
                   </button>
                 ))}
               </div>
-              {catErr && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red, #D63B2F)', marginTop: 8 }}>{catErr}</p>}
+              {catErr && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-red, #D63B2F)', marginTop: 8 }}>{catErr}</p>}
             </div>
           ) : (
             <button
               onClick={() => setShowNewCat(true)}
               className="w-full text-left"
               style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '12px 14px', color: OCRE, cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '12px 14px', color: OCRE, cursor: 'pointer',
                 background: 'none', border: 'none', borderTop: activeCats.length ? '1px solid var(--arvo-border-soft, var(--arvo-border))' : undefined,
               }}
             >
@@ -226,7 +226,7 @@ export default function CommunityAdminPage() {
           <div>
             <button
               onClick={() => setShowArchived(s => !s)}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 2px', letterSpacing: '0.04em' }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 2px', letterSpacing: '0.04em' }}
             >
               {showArchived ? '▾' : '▸'} {ta.showArchived ?? 'Arquivadas'} ({archivedCats.length})
             </button>
@@ -247,7 +247,7 @@ export default function CommunityAdminPage() {
             value={memberQ}
             onChange={e => setMemberQ(e.target.value)}
             placeholder={ta.searchMembers ?? 'Buscar membro'}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '7px 12px', border: '1px solid var(--arvo-border)', borderRadius: 999, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: 200 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '7px 12px', border: '1px solid var(--arvo-border)', borderRadius: 999, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: 200 }}
           />
         </div>
         <div style={card}>
@@ -256,10 +256,10 @@ export default function CommunityAdminPage() {
               <Avatar name={m.name} avatarUrl={m.avatar_url ?? undefined} size={30} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{m.name}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{m.name}</span>
                   {m.is_admin && <img src="/brand/logo/arvo-symbol-gold.svg" width="10" height="10" alt="Admin" title="Admin" />}
                 </div>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
                   {m.username ? `@${m.username}` : ''}{m.username ? ' · ' : ''}{ta.since ?? 'desde'} {new Date(m.joined_at).toLocaleDateString()}
                 </span>
               </div>
@@ -268,7 +268,7 @@ export default function CommunityAdminPage() {
                 onChange={e => changeTier(m, e.target.value as CommunityMemberRow['tier'])}
                 disabled={busy === m.id}
                 style={{
-                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 8px', borderRadius: 999, cursor: 'pointer',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 8px', borderRadius: 999, cursor: 'pointer',
                   border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)',
                   opacity: busy === m.id ? 0.5 : 1,
                 }}
@@ -281,7 +281,7 @@ export default function CommunityAdminPage() {
                 onClick={() => toggleAdmin(m)}
                 disabled={busy === m.id}
                 style={{
-                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, cursor: 'pointer',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 12px', borderRadius: 999, cursor: 'pointer',
                   border: `1px solid ${m.is_admin ? 'var(--arvo-border)' : OCRE}`,
                   background: m.is_admin ? 'none' : 'rgba(232,160,32,0.08)',
                   color: m.is_admin ? 'var(--arvo-fg-soft)' : OCRE,
@@ -293,7 +293,7 @@ export default function CommunityAdminPage() {
             </div>
           ))}
           {filteredMembers.length === 0 && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: '14px' }}>{ta.noMembers ?? 'Nenhum membro encontrado.'}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', padding: '14px' }}>{ta.noMembers ?? 'Nenhum membro encontrado.'}</p>
           )}
         </div>
       </section>
@@ -310,15 +310,15 @@ export default function CommunityAdminPage() {
               style={{ display: 'block', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', cursor: 'pointer' }}
             >
               <div className="flex items-center gap-2">
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>{p.author_name}</span>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-faint)' }}>· {timeAgo(p.created_at)}</span>
-                <span style={{ marginLeft: 'auto', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{p.topic_title}</span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>{p.author_name}</span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-faint)' }}>· {timeAgo(p.created_at)}</span>
+                <span style={{ marginLeft: 'auto', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{p.topic_title}</span>
               </div>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.excerpt}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-muted)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.excerpt}</p>
             </button>
           ))}
           {recent.length === 0 && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: '14px' }}>{ta.noPosts ?? 'Nenhum post ainda.'}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', padding: '14px' }}>{ta.noPosts ?? 'Nenhum post ainda.'}</p>
           )}
         </div>
       </section>

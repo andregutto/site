@@ -166,9 +166,9 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
               )}
             </div>
             {loading ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
             ) : expenses.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>
                 {ev.none ?? 'Nenhuma despesa vinculada ainda'}
               </p>
             ) : (
@@ -177,10 +177,10 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
                   <div key={e.transaction_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0' }}>
                     {e.category && <span style={{ fontSize: 14, flexShrink: 0 }}>{e.category.icon}</span>}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '-'}</p>
-                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{fmtDate(e.date)}</p>
+                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '-'}</p>
+                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtDate(e.date)}</p>
                     </div>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                       {fmtCurrency(Math.abs(e.amount), e.currency)}
                     </span>
                     <button type="button" onClick={() => unlink(e.transaction_id)} title="Desvincular"
@@ -205,12 +205,12 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
               placeholder={ev.searchTx ?? 'Buscar transação…'}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
             />
             {loadingCandidates ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
             ) : candidates.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
                 {search ? (ev.noneFound ?? 'Nenhuma transação encontrada') : (ev.noneAvailable ?? 'Nenhuma transação dos momentos da viagem disponível')}
               </p>
             ) : (
@@ -232,12 +232,12 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
                       <span style={{ width: 15, height: 15, borderRadius: 4, flexShrink: 0, border: `1.5px solid ${checked ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: checked ? 'var(--arvo-fg)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {checked && <span style={{ fontSize: 10, color: 'var(--arvo-bg)' }}>✓</span>}
                       </span>
-                      {c.category && <span style={{ fontSize: 13, flexShrink: 0 }}>{c.category.icon}</span>}
+                      {c.category && <span style={{ fontSize: 14, flexShrink: 0 }}>{c.category.icon}</span>}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description || '-'}</p>
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{fmtDate(c.date)}</p>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description || '-'}</p>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtDate(c.date)}</p>
                       </div>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                         {fmtCurrency(Math.abs(c.amount), c.currency)}
                       </span>
                     </button>
@@ -246,14 +246,14 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
               </div>
             )}
 
-            {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, marginTop: 8 }}>{error}</p>}
+            {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, marginTop: 8 }}>{error}</p>}
 
             {selected.size > 0 && (
               <button
                 type="button"
                 onClick={linkSelected}
                 disabled={saving}
-                style={{ width: '100%', marginTop: 10, padding: '9px 0', borderRadius: 8, background: saving ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: saving ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: saving ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}
+                style={{ width: '100%', marginTop: 10, padding: '9px 0', borderRadius: 8, background: saving ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: saving ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: saving ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 14 }}
               >
                 {saving
                   ? (ev.linking ?? 'Vinculando…')

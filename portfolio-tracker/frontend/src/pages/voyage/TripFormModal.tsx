@@ -97,7 +97,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
   const fieldStyle: React.CSSProperties = {
     width: '100%', padding: '8px 12px', borderRadius: 3,
     border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)',
     outline: 'none', transition: 'border-color 160ms ease',
   }
   const labelStyle: React.CSSProperties = {
@@ -150,7 +150,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 padding: '10px 16px', borderRadius: 8, cursor: 'pointer',
-                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
                 background: 'var(--arvo-hover-bg)',
                 border: '1px solid var(--arvo-border)',
                 transition: 'all 160ms ease', width: '100%',
@@ -251,10 +251,10 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           {!trip && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 0' }}>
               <div>
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
                   {tv.autoCreateMoment ?? 'Criar momento financeiro para esta viagem'}
                 </p>
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
                   {tv.autoCreateMomentHint ?? 'Você poderá lançar e organizar os gastos da viagem'}
                 </p>
               </div>
@@ -277,7 +277,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           )}
 
           {error && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}>{error}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>{error}</p>
           )}
 
           <div className="flex gap-3 justify-end pt-2">
@@ -286,14 +286,14 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
                 type="button"
                 onClick={deleteTrip}
                 disabled={deleting || saving}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, padding: '8px 16px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, padding: '8px 16px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
               >{deleting ? (tv.deleting ?? 'Excluindo…') : (tv.deleteTrip ?? 'Excluir viagem')}</button>
             )}
             <button type="button" onClick={onClose}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', padding: '8px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, letterSpacing: '0.06em', padding: '8px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
             >{tv.actions?.cancel ?? 'Cancelar'}</button>
             <button type="submit" disabled={saving || deleting}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', padding: '8px 20px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, letterSpacing: '0.06em', padding: '8px 20px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
             >{saving ? (tv.actions?.saving ?? 'Salvando…') : (tv.actions?.save ?? 'Salvar')}</button>
           </div>
 

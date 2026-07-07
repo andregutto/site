@@ -30,7 +30,7 @@ interface ResourcePreview {
 
 const inputBase: React.CSSProperties = {
   width: '100%', border: '1px solid var(--arvo-border)', borderRadius: 3, padding: '11px 14px',
-  fontSize: 13.5, fontFamily: F_SANS, color: 'var(--arvo-fg)', background: '#FFFFFF', outline: 'none',
+  fontSize: 14.5, fontFamily: F_SANS, color: 'var(--arvo-fg)', background: '#FFFFFF', outline: 'none',
   transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' as const,
 }
 const labelStyle: React.CSSProperties = {
@@ -150,7 +150,7 @@ export default function ResourcePublicPage() {
         <div style={bgPhoto} /><div style={bgOverlay} /><div className="arvo-grain" />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 420, margin: '0 auto', textAlign: 'center', background: '#FFFFFF', borderRadius: 12, padding: '36px 28px' }}>
           <p style={{ fontFamily: F_SANS, fontSize: 14, fontWeight: 600, color: 'var(--arvo-black)', margin: 0 }}>{r.notFound}</p>
-          <Link to="/" style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{r.backToApp}</Link>
+          <Link to="/" style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg-soft)' }}>{r.backToApp}</Link>
         </div>
       </div>
     )
@@ -165,13 +165,13 @@ export default function ResourcePublicPage() {
         <div style={{ background: '#FFFFFF', borderRadius: 12, padding: '32px 28px', boxShadow: '0 8px 40px rgba(0,0,0,0.35)' }}>
           <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
             <img src="/brand/logo/arvo-symbol-black.svg" width="16" height="16" alt="" />
-            <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.26em', textIndent: '0.26em', color: 'var(--arvo-black)' }}>arvo</span>
+            <span style={{ fontFamily: F_SANS, fontSize: 13, letterSpacing: '0.26em', textIndent: '0.26em', color: 'var(--arvo-black)' }}>arvo</span>
           </Link>
 
           {confirmSent ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <h2 style={{ fontFamily: F_DISPLAY, fontSize: 22, color: 'var(--arvo-black)', marginBottom: 12 }}>{l.registrationDone}</h2>
-              <p style={{ fontFamily: F_SANS, fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 14.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
                 {l.registrationDoneBody.replace('{email}', email)}
               </p>
             </div>
@@ -187,7 +187,7 @@ export default function ResourcePublicPage() {
               <div style={{ display: 'flex', gap: 16, marginBottom: 22 }}>
                 {(['login', 'register'] as const).map(m => (
                   <button key={m} type="button" onClick={() => { setMode(m); setFormError('') }}
-                    style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', padding: '4px 0', border: 0, background: 'transparent',
+                    style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', padding: '4px 0', border: 0, background: 'transparent',
                       color: mode === m ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)',
                       borderBottom: mode === m ? '1px solid var(--arvo-black)' : '1px solid transparent', cursor: 'pointer' }}
                   >
@@ -198,7 +198,7 @@ export default function ResourcePublicPage() {
 
               <button type="button" onClick={handleGoogle} disabled={googleLoading}
                 style={{ width: '100%', padding: '12px 20px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', borderRadius: 3,
-                  fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-fg)',
+                  fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-fg)',
                   cursor: googleLoading ? 'not-allowed' : 'pointer', opacity: googleLoading ? 0.6 : 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxSizing: 'border-box' }}
               >
@@ -246,7 +246,7 @@ export default function ResourcePublicPage() {
                 {mode === 'register' && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
                     <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)} style={{ width: 15, height: 15, accentColor: 'var(--arvo-black)', flexShrink: 0 }} />
-                    <span style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+                    <span style={{ fontFamily: F_SANS, fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>
                       {l.acceptTerms}{' '}
                       <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--arvo-black)', textDecoration: 'underline' }}>{l.termsLink}</a>
                     </span>
@@ -254,12 +254,12 @@ export default function ResourcePublicPage() {
                 )}
 
                 {formError && (
-                  <div style={{ fontFamily: F_SANS, fontSize: 12.5, padding: '10px 14px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-red)', color: 'var(--arvo-fg)' }}>
+                  <div style={{ fontFamily: F_SANS, fontSize: 13.5, padding: '10px 14px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-red)', color: 'var(--arvo-fg)' }}>
                     {formError}
                   </div>
                 )}
 
-                <button type="submit" disabled={formLoading} style={{ ...inputBase, ...{ width: '100%', padding: '13px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: formLoading ? 0.6 : 1 } }}>
+                <button type="submit" disabled={formLoading} style={{ ...inputBase, ...{ width: '100%', padding: '13px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: formLoading ? 0.6 : 1 } }}>
                   {formLoading ? l.loading : mode === 'login' ? r.unlockCta : l.submitRegister}
                 </button>
               </form>
@@ -300,9 +300,9 @@ export default function ResourcePublicPage() {
             )}
 
             {preview.visibility !== 'free' ? (
-              <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: '0 0 0 0', marginTop: 'auto' }}>{r.membersSoon}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 14, color: 'rgba(242,237,228,0.6)', margin: '0 0 0 0', marginTop: 'auto' }}>{r.membersSoon}</p>
             ) : (
-              <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0, marginTop: 'auto' }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 13.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0, marginTop: 'auto' }}>
                 {r.unlockHint}
               </p>
             )}

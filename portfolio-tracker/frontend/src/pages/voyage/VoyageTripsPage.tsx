@@ -92,7 +92,7 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
           const dests = (trip.destinations ?? []).map(d => d.city ?? d.country).filter(Boolean) as string[]
           const label = dests.length > 0 ? dests.join(' · ') : trip.destination
           return label ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-muted)', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {label}
             </p>
           ) : null
@@ -100,13 +100,13 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
         <div className="flex items-center gap-2 flex-wrap">
           {dateStr && (
             <span style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)',
+              fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)',
               background: 'var(--arvo-hover-bg)', padding: '2px 8px', borderRadius: 999,
             }}>{dateStr}</span>
           )}
           {hasCost && (
             <span style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11,
+              fontFamily: 'var(--arvo-font-body)', fontSize: 12,
               color: RED, background: RED_SOFT, padding: '2px 8px', borderRadius: 999,
             }}>
               {fmtCost(trip.cost_total ?? 0)}

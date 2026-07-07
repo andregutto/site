@@ -58,7 +58,7 @@ function _fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
 
 const kpiLabelStyle: CSSProperties = {
   fontFamily: 'var(--arvo-font-body)',
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 600,
   letterSpacing: '0.10em',
   textTransform: 'uppercase',
@@ -1429,7 +1429,7 @@ export default function FinancesFreedomPage() {
                   <XAxis
                     dataKey="month"
                     tickFormatter={m => fmtMonth(m, intlLocale)}
-                    tick={{ ...CHART_AXIS_TICK, fontSize: 11, fill: 'var(--arvo-fg-muted)' }}
+                    tick={{ ...CHART_AXIS_TICK, fontSize: 12, fill: 'var(--arvo-fg-muted)' }}
                     axisLine={CHART_AXIS_LINE}
                     tickLine={false}
                     interval={Math.floor(displayChartData.length / 8)}
@@ -1439,13 +1439,13 @@ export default function FinancesFreedomPage() {
                   <YAxis
                     domain={[0, () => Math.max(fireValue ?? 0, cxFreedom(currentValue)) * 1.15]}
                     tickFormatter={v => hideValues ? '•••' : formatCompactCurrency(v, displayCurrency, intlLocale)}
-                    tick={{ ...CHART_AXIS_TICK, fontSize: 11, fill: 'var(--arvo-fg-muted)' }}
+                    tick={{ ...CHART_AXIS_TICK, fontSize: 12, fill: 'var(--arvo-fg-muted)' }}
                     axisLine={CHART_AXIS_LINE}
                     tickLine={false}
                     width={70}
                   />
                   <Tooltip content={<ChartTooltip currency={displayCurrency} locale={intlLocale} />} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
                   <ReferenceLine
                     y={cxFreedom(activePlan!.target_amount)}
                     stroke="var(--arvo-gold)"

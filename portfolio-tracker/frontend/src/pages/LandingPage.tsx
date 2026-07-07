@@ -589,7 +589,7 @@ export default function LandingPage() {
   const googleLoginBlock = (
     <>
       <button type="button" onClick={handleGoogle} disabled={googleLoading}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', fontFamily: F_SANS, fontSize: 12, color: DARK, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: googleLoading ? 'not-allowed' : 'pointer', opacity: googleLoading ? 0.6 : 1 }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', fontFamily: F_SANS, fontSize: 13, color: DARK, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: googleLoading ? 'not-allowed' : 'pointer', opacity: googleLoading ? 0.6 : 1 }}>
         <GoogleLogo size={14} />
         {t.login.continueWithGoogle}
       </button>
@@ -628,7 +628,7 @@ export default function LandingPage() {
 
           <nav className="hidden lg:flex" style={{ gap: 28 }}>
             {NAV.map(([href, label]) => (
-              <a key={href} href={href} style={{ fontSize: 11.5, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)', transition: 'color .3s' }}
+              <a key={href} href={href} style={{ fontSize: 12.5, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)', transition: 'color .3s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = headerOpaque ? DARK : '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)')}
               >{label}</a>
@@ -642,7 +642,7 @@ export default function LandingPage() {
             <div style={{ width: 1, height: 14, background: headerOpaque ? BORDER : 'rgba(255,255,255,0.20)' }} />
             <div ref={loginRef} style={{ position: 'relative' }}>
               <button onClick={() => { setLoginOpen(o => !o); setLoginErr('') }}
-                style={{ fontSize: 12.5, whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.75)' : 'rgba(255,255,255,.85)', background: 'none', border: 'none', borderBottom: `1px solid ${headerOpaque ? 'rgba(13,13,13,.25)' : 'rgba(255,255,255,.3)'}`, cursor: 'pointer', padding: '0 0 2px', fontFamily: F_SANS, transition: 'color .4s' }}>
+                style={{ fontSize: 13.5, whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.75)' : 'rgba(255,255,255,.85)', background: 'none', border: 'none', borderBottom: `1px solid ${headerOpaque ? 'rgba(13,13,13,.25)' : 'rgba(255,255,255,.3)'}`, cursor: 'pointer', padding: '0 0 2px', fontFamily: F_SANS, transition: 'color .4s' }}>
                 {l.enterBtn}
               </button>
               {loginOpen && (
@@ -653,16 +653,16 @@ export default function LandingPage() {
                   </div>
                   <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <input type="email" required autoFocus placeholder="E-mail" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
+                      style={{ fontFamily: F_SANS, fontSize: 14, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
                     <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
-                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
+                      style={{ fontFamily: F_SANS, fontSize: 14, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
                     {loginErr && (
-                      <div style={{ fontSize: 12, color: 'var(--arvo-red)' }}>
+                      <div style={{ fontSize: 13, color: 'var(--arvo-red)' }}>
                         <p style={{ margin: 0 }}>{loginErr}</p>
                         {loginErr === t.login.errEmailNotConfirmed && (
                           <div style={{ marginTop: 8 }}>
                             {loginResent ? (
-                              <p style={{ margin: 0, fontSize: 11, color: 'var(--arvo-green)' }}>{t.login.emailResent ?? 'E-mail reenviado.'}</p>
+                              <p style={{ margin: 0, fontSize: 12, color: 'var(--arvo-green)' }}>{t.login.emailResent ?? 'E-mail reenviado.'}</p>
                             ) : (
                               <button type="button" onClick={handleResendFromOverlay} disabled={loginResending || !loginEmail}
                                 style={{ background: 'none', border: '1px solid var(--arvo-red)', borderRadius: 3, padding: '4px 10px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-red)', cursor: loginResending || !loginEmail ? 'not-allowed' : 'pointer', opacity: loginResending || !loginEmail ? 0.6 : 1 }}>
@@ -674,21 +674,21 @@ export default function LandingPage() {
                       </div>
                     )}
                     <button type="submit" disabled={loginLoading}
-                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, padding: '11px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}>
+                      style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, padding: '11px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}>
                       {loginLoading ? '...' : l.enterBtn}
                     </button>
                   </form>
                   <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/login?mode=forgot" onClick={() => setLoginOpen(false)}
-                      style={{ fontSize: 11, letterSpacing: '0.08em', color: 'rgba(13,13,13,.55)' }}>{l.forgotPwd}</Link>
+                      style={{ fontSize: 12, letterSpacing: '0.08em', color: 'rgba(13,13,13,.55)' }}>{l.forgotPwd}</Link>
                     <Link to="/login?mode=register" onClick={() => setLoginOpen(false)}
-                      style={{ fontSize: 11, letterSpacing: '0.08em', color: DARK }}>{l.createAccount}</Link>
+                      style={{ fontSize: 12, letterSpacing: '0.08em', color: DARK }}>{l.createAccount}</Link>
                   </div>
                 </div>
               )}
             </div>
             <Link to="/login?mode=register"
-              style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', padding: '10px 24px', borderRadius: 999, background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, border: headerOpaque ? '1px solid transparent' : '1px solid rgba(200,184,154,0.55)', transition: 'all .4s' }}>
+              style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', padding: '10px 24px', borderRadius: 999, background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, border: headerOpaque ? '1px solid transparent' : '1px solid rgba(200,184,154,0.55)', transition: 'all .4s' }}>
               {l.createBtn}
             </Link>
           </div>
@@ -709,7 +709,7 @@ export default function LandingPage() {
           <div className="lg:hidden" style={{ background: 'rgba(255,255,255,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
             {NAV.map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,.55)', borderBottom: `1px solid ${BORDER}` }}>
+                style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,.55)', borderBottom: `1px solid ${BORDER}` }}>
                 {label}
               </a>
             ))}
@@ -719,11 +719,11 @@ export default function LandingPage() {
             {!mobileLoginOpen ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
                 <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
-                  style={{ textAlign: 'center', padding: '14px 0', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: DARK, color: '#fff', borderRadius: 999 }}>
+                  style={{ textAlign: 'center', padding: '14px 0', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', background: DARK, color: '#fff', borderRadius: 999 }}>
                   {l.createAccount}
                 </Link>
                 <button onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
-                  style={{ textAlign: 'center', padding: '10px 0', fontFamily: F_SANS, fontSize: 12, color: 'rgba(13,13,13,.55)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 4 }}>
+                  style={{ textAlign: 'center', padding: '10px 0', fontFamily: F_SANS, fontSize: 13, color: 'rgba(13,13,13,.55)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 4 }}>
                   {l.heroAlready} · {l.enterBtn}
                 </button>
               </div>
@@ -732,17 +732,17 @@ export default function LandingPage() {
                 style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {googleLoginBlock}
                 <input type="email" required autoFocus placeholder="E-mail" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                  style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
+                  style={{ fontFamily: F_SANS, fontSize: 14, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
                 <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
-                  style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
-                {loginErr && <p style={{ fontSize: 12, color: 'var(--arvo-red)', margin: 0 }}>{loginErr}</p>}
+                  style={{ fontFamily: F_SANS, fontSize: 14, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
+                {loginErr && <p style={{ fontSize: 13, color: 'var(--arvo-red)', margin: 0 }}>{loginErr}</p>}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setMobileLoginOpen(false)}
-                    style={{ flex: 1, padding: '12px 0', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: 'pointer', color: 'rgba(13,13,13,.55)' }}>
+                    style={{ flex: 1, padding: '12px 0', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: 'pointer', color: 'rgba(13,13,13,.55)' }}>
                     ←
                   </button>
                   <button type="submit" disabled={loginLoading}
-                    style={{ flex: 2, padding: '12px 0', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
+                    style={{ flex: 2, padding: '12px 0', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
                     {loginLoading ? '...' : l.enterBtn}
                   </button>
                 </div>
@@ -827,7 +827,7 @@ export default function LandingPage() {
                   <div className="mcard" style={{ borderColor: 'rgba(200,184,154,.4)' }}>
                     <p className="mlb" style={{ color: '#8C6A28' }}>{l.mkTotal}</p>
                     <p className="mval">€ 152.480</p>
-                    <p style={{ fontSize: 11, color: '#1F8A5B', marginTop: 2 }}>↑ +19,1%</p>
+                    <p style={{ fontSize: 12, color: '#1F8A5B', marginTop: 2 }}>↑ +19,1%</p>
                   </div>
                   <div className="mcard">
                     <p className="mlb">{l.mkAllocClass}</p>
@@ -837,7 +837,7 @@ export default function LandingPage() {
                   </div>
                   <div className="mcard" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div><p className="mlb">{l.mkFreedom}</p><p className="mval" style={{ fontSize: 15 }}>2041</p></div>
-                    <p style={{ fontSize: 11, color: '#1B4FD8', margin: 0 }}>{l.mkFreedomPath}</p>
+                    <p style={{ fontSize: 12, color: '#1B4FD8', margin: 0 }}>{l.mkFreedomPath}</p>
                   </div>
                 </div>
               </div></div>
@@ -860,18 +860,18 @@ export default function LandingPage() {
                   <ShotNav />
                   <div className="shot-body">
                     <div className="mcard">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><p className="mlb">{l.mkTripName}</p><p style={{ fontSize: 11, color: '#D63B2F', fontWeight: 600, margin: 0 }}>70%</p></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><p className="mlb">{l.mkTripName}</p><p style={{ fontSize: 12, color: '#D63B2F', fontWeight: 600, margin: 0 }}>70%</p></div>
                       <p className="mval" style={{ fontSize: 16 }}>€ 1.680 <span style={{ fontSize: 10, color: 'rgba(13,13,13,.55)' }}>{l.mkOf} € 2.400</span></p>
                       <div className="fillbar"><i style={{ '--w': '70%', background: '#D63B2F' } as React.CSSProperties} /></div>
                     </div>
                     <div className="mcard">
                       <p className="mlb">{l.mkHome}</p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11.5, color: 'rgba(13,13,13,.75)' }}><span>Lucas · € 1.120</span><span>Camille · € 890</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12.5, color: 'rgba(13,13,13,.75)' }}><span>Lucas · € 1.120</span><span>Camille · € 890</span></div>
                       <div className="fillbar"><i style={{ '--w': '56%', background: 'rgba(214,59,47,.7)', transitionDelay: '.4s' } as React.CSSProperties} /></div>
                     </div>
                     <div className="mcard" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                       <div style={{ display: 'flex' }}><div className="av">LS</div><div className="av lt" style={{ marginLeft: -9 }}>CM</div></div>
-                      <p style={{ fontSize: 11, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkAutoSplit}</p>
+                      <p style={{ fontSize: 12, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkAutoSplit}</p>
                     </div>
                   </div>
                 </div></div>
@@ -958,8 +958,8 @@ export default function LandingPage() {
                     </div>
                     <div className="mcard">
                       <p className="mlb">{l.mkBalances}</p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 11 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkOwesYou}</span><span className="up" style={{ fontWeight: 600 }}>€ 23</span></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkYouOwe}</span><span className="dn" style={{ fontWeight: 600 }}>€ 17</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 12 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkOwesYou}</span><span className="up" style={{ fontWeight: 600 }}>€ 23</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 12 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkYouOwe}</span><span className="dn" style={{ fontWeight: 600 }}>€ 17</span></div>
                     </div>
                     <div className="mcard" style={{ textAlign: 'center', background: DARK, borderColor: DARK }}>
                       <span style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: GOLD }}>{l.mkSettle}</span>
@@ -992,11 +992,11 @@ export default function LandingPage() {
                       <div className="mcard feedmsg" key={post.ini}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className="av" style={{ width: 23, height: 23, fontSize: 8 }}>{post.ini}</div>
-                          <p style={{ fontSize: 11.5, fontWeight: 600, margin: 0 }}>{post.name}</p>
+                          <p style={{ fontSize: 12.5, fontWeight: 600, margin: 0 }}>{post.name}</p>
                           <span style={{ fontSize: 9, color: 'rgba(13,13,13,.55)' }}>· {post.time}</span>
                           <span className="ph-pill" style={{ fontSize: 8, padding: '2px 8px' }}>{l[post.tag]}</span>
                         </div>
-                        <p style={{ fontSize: 11.5, fontWeight: 600, marginTop: 7, lineHeight: 1.4 }}>{l[post.tKey]}</p>
+                        <p style={{ fontSize: 12.5, fontWeight: 600, marginTop: 7, lineHeight: 1.4 }}>{l[post.tKey]}</p>
                       </div>
                     ))}
                     <div className="mcard feedmsg" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>

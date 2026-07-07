@@ -60,6 +60,16 @@
   --font-display: 'Tenor Sans', 'Times New Roman', serif;
   --font-serif:   'Playfair Display', Georgia, serif;
   --font-sans:    'DM Sans', system-ui, sans-serif;
+
+  /* text-xs/text-sm são, de longe, as classes de tamanho mais usadas no app
+     (rótulos, participantes, textos secundários) — o padrão do Tailwind
+     (12px/14px) ficava apertado, principalmente no mobile. Sobem 1px cada
+     aqui, de uma vez só, sem precisar mexer em cada componente. text-sm
+     agora bate com --arvo-text-body (15px) já definido em
+     colors_and_type.css. Só afeta quem usa a classe nomeada — fontSize
+     solto no style ou text-[Npx] arbitrário continuam do jeito que estão. */
+  --text-xs: 0.8125rem;  /* 13px, era 12px */
+  --text-sm: 0.9375rem;  /* 15px, era 14px */
 }
 
 html, body {
@@ -153,8 +163,15 @@ textarea:focus-visible {
   width: 100%;
 }
 
-/* Prevent iOS Safari auto-zoom when focusing inputs with small font */
+/* Prevent iOS Safari auto-zoom when focusing inputs with small font.
+   input:not([type]) matters as much as the explicit types below — a plain
+   <input value=... onChange=...> with no type="..." prop (very common in
+   this codebase) defaults to text behavior in the browser, but the
+   attribute selector input[type="text"] only matches when that attribute
+   is literally present in the DOM, so untyped inputs were silently
+   skipping this rule and still triggering the zoom. */
 @media screen and (max-width: 640px) {
+  input:not([type]),
   input[type="text"],
   input[type="email"],
   input[type="password"],

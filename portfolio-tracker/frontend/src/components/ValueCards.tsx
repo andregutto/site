@@ -41,7 +41,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--arvo-font-body)",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 600,
     letterSpacing: '0.10em',
     textTransform: 'uppercase',
@@ -92,7 +92,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
             </span>
             {gain_pct != null && !hideValues && (
-              <span style={{ fontSize: 12, opacity: 0.75, fontFamily: "var(--arvo-font-body)", whiteSpace: 'nowrap', ...pctStyle(gain_brl) }}>
+              <span style={{ fontSize: 13, opacity: 0.75, fontFamily: "var(--arvo-font-body)", whiteSpace: 'nowrap', ...pctStyle(gain_brl) }}>
                 ({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)
               </span>
             )}

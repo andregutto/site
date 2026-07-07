@@ -56,43 +56,47 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl"
-        style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', padding: '24px 24px 20px', maxHeight: '90vh', overflowY: 'auto' }}
+        className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl"
+        style={{
+          background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+          padding: '24px 24px calc(20px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: '92vh', overflowY: 'auto',
+        }}
       >
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, letterSpacing: '0.04em', color: 'var(--arvo-fg)', marginBottom: 18 }}>
           {tc.newTopic ?? 'Novo tópico'}
         </p>
 
-        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
           {tc.topicCategoryLabel ?? 'Categoria'}
         </label>
         <select
           value={categorySlug}
           onChange={e => setCategorySlug(e.target.value)}
-          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}
+          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }}
         >
           {categories.map(c => (
             <option key={c.slug} value={c.slug}>{catName(tc, c)}</option>
           ))}
         </select>
 
-        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
           {tc.topicTitleLabel ?? 'Título'}
         </label>
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder={tc.topicTitlePlaceholder ?? 'Do que você quer falar?'}
-          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}
+          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }}
         />
 
-        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+        <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
           {tc.topicBodyLabel ?? 'Mensagem'}
         </label>
         <textarea
@@ -100,18 +104,18 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
           onChange={e => setBody(e.target.value)}
           rows={5}
           placeholder={tc.topicBodyPlaceholder ?? 'Escreva sua mensagem...'}
-          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, resize: 'vertical', lineHeight: 1.6 }}
+          style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, resize: 'vertical', lineHeight: 1.6 }}
         />
 
         {categorySlug === 'viagens' && trips.length > 0 && (
           <>
-            <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+            <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
               {tc.linkTripLabel ?? 'Vincular uma viagem (opcional)'}
             </label>
             <select
               value={linkedTripId ?? ''}
               onChange={e => setLinkedTripId(e.target.value ? Number(e.target.value) : null)}
-              style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}
+              style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }}
             >
               <option value="">{tc.linkTripNone ?? 'Nenhuma'}</option>
               {trips.map(tr => (
@@ -121,21 +125,21 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
           </>
         )}
 
-        {error && <p style={{ fontSize: 12, color: '#D63B2F', marginBottom: 10 }}>{error}</p>}
+        {error && <p style={{ fontSize: 13, color: '#D63B2F', marginBottom: 10 }}>{error}</p>}
 
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={submit}
             disabled={saving}
             style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+              fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
               padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
               background: GOLD, color: '#1a1200', opacity: saving ? 0.6 : 1,
             }}
           >{saving ? (tc.creating ?? 'Criando...') : (tc.create ?? 'Criar tópico')}</button>
           <button
             onClick={onClose}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 18px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'transparent', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 18px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'transparent', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
           >{tc.cancel ?? 'Cancelar'}</button>
         </div>
       </div>

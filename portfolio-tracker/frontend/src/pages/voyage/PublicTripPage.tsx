@@ -248,7 +248,7 @@ function StarRow({ value }: { value: number }) {
   return (
     <div style={{ display: 'flex', gap: 1 }}>
       {[1,2,3,4,5].map(n => (
-        <span key={n} style={{ fontSize: 11, color: RED, opacity: value >= n ? 1 : 0.25 }}>★</span>
+        <span key={n} style={{ fontSize: 12, color: RED, opacity: value >= n ? 1 : 0.25 }}>★</span>
       ))}
     </div>
   )
@@ -289,20 +289,20 @@ function PlaceCard({ p, selected, onSelect }: { p: PublicPlace; selected?: boole
           )}
         </div>
         {p.address && (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{p.address}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{p.address}</p>
         )}
         {(p.arrive_time || p.depart_time) && (
           <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkIn ?? 'check-in') : (tv.public?.arrival ?? 'arrival')} {p.arrive_time}</span>}
-            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkOut ?? 'check-out') : (tv.public?.departure ?? 'departure')} {p.depart_time}</span>}
+            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkIn ?? 'check-in') : (tv.public?.arrival ?? 'arrival')} {p.arrive_time}</span>}
+            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkOut ?? 'check-out') : (tv.public?.departure ?? 'departure')} {p.depart_time}</span>}
           </div>
         )}
         {p.rating != null && p.rating > 0 && <div style={{ marginTop: 3 }}><StarRow value={p.rating} /></div>}
         {p.trip_note && (
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 4 }}>{p.trip_note}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, marginTop: 4 }}>{p.trip_note}</p>
         )}
         {(p.expense_total ?? 0) > 0 && (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>
             {tv.public?.expenseHere ?? 'Spent here:'} <strong style={{ color: 'var(--arvo-fg)' }}>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong>
           </p>
         )}
@@ -312,7 +312,7 @@ function PlaceCard({ p, selected, onSelect }: { p: PublicPlace; selected?: boole
           href={p.google_maps_url}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}
+          style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}
         >
           <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
@@ -332,7 +332,7 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
       <p style={{
         fontFamily: isTransport ? 'var(--arvo-font-body)' : 'var(--arvo-font-serif)',
         fontStyle: isTransport ? 'normal' : 'italic',
-        fontSize: 13, color: 'var(--arvo-fg-soft)', flex: 1,
+        fontSize: 14, color: 'var(--arvo-fg-soft)', flex: 1,
       }}>
         {p.name}
         {isTransport && p.arrive_time && <span style={{ color: 'var(--arvo-fg-muted)' }}> · {p.arrive_time}{p.depart_time ? ` → ${p.depart_time}` : ''}</span>}
@@ -369,7 +369,7 @@ function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, on
         )}
       </div>
       {staysPassingThrough.map(s => (
-        <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
+        <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
           {itemIcon(s)} {s.checkout_day === day
             ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
             : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}
@@ -441,7 +441,7 @@ export default function PublicTripPage() {
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
           {error || tv.public?.notFound || 'Page not found'}
         </p>
-        <a href="/" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED, textDecoration: 'none' }}>
+        <a href="/" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: RED, textDecoration: 'none' }}>
           {tv.public?.discoverArvo ?? 'Discover Arvo →'}
         </a>
       </div>
@@ -503,7 +503,7 @@ export default function PublicTripPage() {
         {/* Arvo badge */}
         <div style={{ position: 'absolute', top: 18, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
           <img src="/brand/logo/arvo-symbol-gold.svg" width="16" height="17" alt="" />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.85)' }}>arvo voyage</span>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.85)' }}>arvo voyage</span>
         </div>
 
         {/* Language selector — overrides the theme CSS vars the shared
@@ -524,7 +524,7 @@ export default function PublicTripPage() {
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
               {(() => {
                 const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
                 return <>{pre}<strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>{post}</>
@@ -541,7 +541,7 @@ export default function PublicTripPage() {
                 const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
                 if (!mobileLabel) return null
                 return (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'rgba(255,255,255,0.68)' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.68)' }}>
                     <span className="sm:hidden">{mobileLabel}</span>
                     <span className="hidden sm:inline">{desktopLabel}</span>
                   </span>
@@ -550,7 +550,7 @@ export default function PublicTripPage() {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999 }}>
                   {dateStr}
                 </span>
               )}
@@ -601,10 +601,10 @@ export default function PublicTripPage() {
               </svg>
             </span>
             <span style={{ flex: 1 }}>
-              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
+              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>
                 {tv.public?.photoAlbumTitle ?? 'Álbum de fotos compartilhado'}
               </span>
-              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
                 {tv.public?.photoAlbum ?? 'Ver mais fotos →'}
               </span>
             </span>
@@ -626,7 +626,7 @@ export default function PublicTripPage() {
               <a
                 href={`/api/voyage/public/${token}/kml`}
                 download
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.02em' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.02em' }}
               >
                 <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
@@ -639,7 +639,7 @@ export default function PublicTripPage() {
                 <div style={{ position: 'relative' }}>
                   <button
                     type="button" onClick={() => setShowMapsMenu(v => !v)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
                   >
                     <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
@@ -654,7 +654,7 @@ export default function PublicTripPage() {
                         {dests.map(d => (
                           <a key={d.id} href={mapsQuery(destText(d))} target="_blank" rel="noopener noreferrer"
                             onClick={() => setShowMapsMenu(false)}
-                            style={{ display: 'block', padding: '8px 14px', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                            style={{ display: 'block', padding: '8px 14px', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
                             {destText(d)}
                           </a>
                         ))}
@@ -666,7 +666,7 @@ export default function PublicTripPage() {
                 <a
                   href={mapsQuery(dests[0] ? destText(dests[0]) : `${trip.destination ?? ''} ${trip.country ?? ''}`)}
                   target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
                 >
                   <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
@@ -680,7 +680,7 @@ export default function PublicTripPage() {
                 type="button" onClick={() => setShowKmlHelp(v => !v)}
                 title={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
                 aria-label={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
-                style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: showKmlHelp ? 'var(--arvo-hover-bg)' : 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}
+                style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: showKmlHelp ? 'var(--arvo-hover-bg)' : 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 14 }}
               >
                 ?
               </button>
@@ -693,7 +693,7 @@ export default function PublicTripPage() {
                   <ol style={{
                     textAlign: 'left', maxWidth: 420, margin: '10px auto 0', padding: '14px 18px 14px 34px',
                     borderRadius: 12, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
-                    fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', lineHeight: 1.7,
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)', lineHeight: 1.7,
                   }}>
                     <li>{tv.public?.kmlStep1 ?? 'Baixe o arquivo KML pelo botão acima.'}</li>
                     <li>{tv.public?.kmlStep2 ?? 'Abra google.com/maps no computador e entre na sua conta Google.'}</li>
@@ -725,14 +725,14 @@ export default function PublicTripPage() {
                 </button>
                 {days.map(d => (
                   <button key={d} type="button" onClick={() => setSelectedDay(d)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`, background: selectedDay === d ? dayColorWash(d, 10) : 'transparent', color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`, background: selectedDay === d ? dayColorWash(d, 10) : 'transparent', color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)' }}>
                     <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d) }} />
                     {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(d))}
                   </button>
                 ))}
                 {hasUndated && (
                   <button type="button" onClick={() => setSelectedDay('none')}
-                    style={{ cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: selectedDay === 'none' ? 'var(--arvo-hover-bg)' : 'transparent', color: selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
+                    style={{ cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: selectedDay === 'none' ? 'var(--arvo-hover-bg)' : 'transparent', color: selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
                     {tv.public?.noDayLabel ?? 'No day'}
                   </button>
                 )}
@@ -798,22 +798,22 @@ export default function PublicTripPage() {
                                 <button
                                   type="button"
                                   onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
-                                  style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 13 }}
+                                  style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 14 }}
                                 >✕</button>
                                 {p.day_number != null && (
                                   <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
                                     {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}
                                   </span>
                                 )}
-                                <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                                <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{p.name}</p>
                                 {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
-                                {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                                {p.address && <p style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                                 <OpeningHoursBlock hours={p.opening_hours} />
                                 {(p.expense_total ?? 0) > 0 && (
-                                  <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
+                                  <p style={{ fontSize: 12, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
                                 )}
                                 {p.google_maps_url && (
-                                  <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
+                                  <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#555', textDecoration: 'none' }}>
                                     {tv.public?.openInMaps ?? 'Open in Maps →'}
                                   </a>
                                 )}
@@ -843,7 +843,7 @@ export default function PublicTripPage() {
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--arvo-fg-soft)', marginBottom: 14, lineHeight: 1.6 }}>
             {tv.public?.ctaBody ?? "Build your own itinerary, organize places on the map and track your trip's cost, all in one place."}
           </p>
-          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em' }}>
+          <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, letterSpacing: '0.04em' }}>
             {tv.public?.ctaButton ?? 'Create my itinerary on Arvo Voyage →'}
           </a>
         </div>
@@ -852,7 +852,7 @@ export default function PublicTripPage() {
         <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/brand/logo/arvo-symbol-gold.svg" width="14" height="15" alt="" style={{ opacity: 0.6 }} />
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
               {tv.public?.createdWith ?? 'Created with'} <a href="/" style={{ color: GOLD, textDecoration: 'none' }}>Arvo Voyage</a>
             </p>
           </div>

@@ -238,14 +238,14 @@ export default function SetupChecklist({ firstName, userId }: Props) {
         >
           {/* Header */}
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--arvo-border-soft)' }}>
-            <p style={{ margin: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg)', letterSpacing: '0.04em' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg)', letterSpacing: '0.04em' }}>
               {name ? `${name}, ` : ''}{s.title}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
               <div style={{ flex: 1, height: 3, background: 'rgba(27,79,216,0.12)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct * 100}%`, background: '#1B4FD8', borderRadius: 2, transition: 'width 0.4s ease' }} />
               </div>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: '#1B4FD8', flexShrink: 0 }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: '#1B4FD8', flexShrink: 0 }}>
                 {doneCount}/{steps.length}
               </span>
             </div>
@@ -282,7 +282,7 @@ export default function SetupChecklist({ firstName, userId }: Props) {
                   )}
                 </div>
                 <span style={{
-                  flex: 1, fontSize: 13, fontFamily: 'var(--arvo-font-body)',
+                  flex: 1, fontSize: 14, fontFamily: 'var(--arvo-font-body)',
                   color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg-muted)',
                   textDecoration: step.done ? 'line-through' : 'none',
                 }}>
@@ -305,7 +305,7 @@ export default function SetupChecklist({ firstName, userId }: Props) {
                 width: '100%', padding: '6px 12px',
                 borderRadius: 8, border: '1px solid var(--arvo-fg-faint)',
                 background: 'none', cursor: 'pointer',
-                fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13,
                 color: 'var(--arvo-fg-soft)', textAlign: 'center',
                 transition: 'background 0.15s',
               }}

@@ -29,7 +29,7 @@ export default function LoginFooter() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <img src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} width="13" height="13" alt="" style={{ opacity: 0.5 }} />
-          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.28em', color: 'var(--arvo-fg-soft)', lineHeight: 1 }}>arvo</span>
+          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.28em', color: 'var(--arvo-fg-soft)', lineHeight: 1 }}>arvo</span>
         </div>
 
         {/* Links + social */}
@@ -43,7 +43,7 @@ export default function LoginFooter() {
       </div>
 
       {/* Copyright */}
-      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', color: 'var(--arvo-fg-soft)' }}>{f.copyright}</p>
+      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.08em', color: 'var(--arvo-fg-soft)' }}>{f.copyright}</p>
     </footer>
   )
 }

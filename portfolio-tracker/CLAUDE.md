@@ -95,6 +95,23 @@ Any new "shared between users" feature (mirroring Voyage trip collaboration, Fin
 7. Apply across all copies per the route-duplication trap above.
 8. **Removing a friend connection must cascade-revoke all sharing** between the two users (all trips/moments/categories where either invited the other) — see `revokeAllSharingBetween()` in `shared-api/src/routes/people.ts`.
 
+## Mobile UI conventions (decided 2026-07-07)
+
+**Every full-screen modal/overlay must use the bottom-sheet pattern**, not a plain centered card. On mobile it sticks to the bottom edge-to-edge with rounded corners only on top; on desktop (`sm:` breakpoint) it becomes a normal centered card. Canonical example: `ModalOverlay` in `frontend/src/components/SharedGroupModals.tsx`. Template:
+```jsx
+<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+  <div
+    className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto"
+    style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(20px + env(safe-area-inset-bottom, 0px))' }}
+    onClick={e => e.stopPropagation()}
+  >
+```
+Note: `components/ui/Modal.tsx` exists but is centered-only and has zero importers — don't use it as a reference; every modal currently hand-rolls its own overlay. New modals should follow the template above directly.
+
+**Every `<input>`/`<select>`/`<textarea>` must render at ≥16px font on mobile**, or iOS Safari auto-zooms the viewport on focus. `index.css` enforces this via a `@media (max-width: 640px)` rule forcing `font-size: 16px !important` — but the selector list must include `input:not([type])`, not just `input[type="text"]` etc: a bare `<input value=... onChange=...>` with no `type` prop (very common pattern in this codebase) behaves as text but doesn't match the `[type="text"]` attribute selector. If a new input still zooms on iOS, check it isn't using a `type` value missing from that selector list.
+
+**Small text (`text-xs`/`text-sm`) reads cramped, especially on mobile — but there's no single global fix.** Tailwind v4's `--text-xs`/`--text-sm` are overridden in `index.css`'s `@theme` block (13px/15px instead of the 12px/14px default) — this covers every use of those *named* classes app-wide in one place. It does **not** cover arbitrary values (`text-[10px]`) or inline `style={{ fontSize: N }}` (both extremely common across this codebase, e.g. the friend/group names in HomePage's "Entre amigos" card use `fontSize: 13.5` inline, untouched by the theme override). There's no shortcut for those — they need per-instance judgment, since some tiny text is intentionally tiny (eyebrow labels, ~9-10px uppercase tracked labels, defined as `--arvo-text-eyebrow`/`--arvo-text-meta` in `colors_and_type.css`) and shouldn't be bumped just because it's small. When touching a screen with cramped-feeling reading text (names, list items, body copy — not tags/eyebrows), bump the inline/arbitrary sizes there directly rather than assuming the theme override already covers it.
+
 ## Key IDs
 
 - Supabase project: `bkgpivxpzuzedezxtknd`

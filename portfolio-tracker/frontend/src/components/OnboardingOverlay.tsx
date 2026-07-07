@@ -162,8 +162,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-md relative flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md relative flex flex-col max-h-[92vh] sm:max-h-[90vh]">
 
         {/* Header: progress dots + skip */}
         <div className="px-6 pt-5 pb-4 shrink-0">

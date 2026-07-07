@@ -98,8 +98,8 @@ function Toggle({ checked, onChange, activeColor = 'var(--arvo-fg)' }: { checked
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12 }
-const label: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }
-const input: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: '100%', boxSizing: 'border-box' }
+const label: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }
+const input: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: '100%', boxSizing: 'border-box' }
 
 interface Props {
   onRegisterNew?: (fn: () => void) => void
@@ -362,7 +362,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
       <div>
         <div className="space-y-2">
           {[directLink(), ...item.links].map(link => (
-            <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
+            <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 12.5 }}>
               <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: link.id === -1 ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontStyle: link.id === -1 ? 'italic' : 'normal', flex: '0 1 auto', maxWidth: 170 }}>{link.label}</span>
               <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
               <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -383,9 +383,9 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
             onChange={e => setNewLinkLabel(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') createLink(item) }}
             placeholder={ra.linkLabelPlaceholder ?? 'Onde vai usar esse link? Ex: Vídeo custo de vida Paris'}
-            style={{ ...input, flex: 1, minWidth: 160, fontSize: 12.5, padding: '6px 10px' }}
+            style={{ ...input, flex: 1, minWidth: 160, fontSize: 13.5, padding: '6px 10px' }}
           />
-          <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+          <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
             {ra.generateLink ?? 'Gerar link'}
           </button>
         </div>
@@ -415,7 +415,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
               )}
             </h2>
             <label className="flex items-center gap-2 shrink-0" style={{ cursor: 'pointer' }}>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
                 {form.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
               </span>
               <Toggle checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} activeColor="var(--arvo-green, #1F8A5B)" />
@@ -459,12 +459,12 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                   </div>
                   <div className="flex justify-end gap-3 mt-1.5">
                     <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
-                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
                     >
                       {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
                     </button>
                     <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
-                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
                     >
                       {ra.delete ?? 'Excluir'}
                     </button>
@@ -475,7 +475,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                   type="button"
                   onClick={() => coverInputRef.current?.click()}
                   disabled={uploadingCover}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
                 >
                   {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
                 </button>
@@ -503,7 +503,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                   value={form.slug}
                   onChange={e => { slugTouched.current = true; setForm(f => ({ ...f, slug: e.target.value.toLowerCase() })) }}
                 />
-                <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>{(ra.fieldSlugHint ?? '').replace('{slug}', form.slug || 'seu-slug')}</p>
+                <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>{(ra.fieldSlugHint ?? '').replace('{slug}', form.slug || 'seu-slug')}</p>
               </div>
             </div>
 
@@ -541,7 +541,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploading ? 0.6 : 1 }}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploading ? 0.6 : 1 }}
                   >
                     {uploading ? (ra.uploading ?? 'Enviando...') : (ra.uploadFile ?? 'Escolher arquivo')}
                   </button>
@@ -551,7 +551,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                     style={{ display: 'none' }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
                   />
-                  <span style={{ fontSize: 12, color: form.file_path ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontSize: 13, color: form.file_path ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)' }}>
                     {form.file_path ? `${ra.uploaded ?? 'Arquivo enviado'}: ${form.file_path.split('/').pop()}` : (ra.noFileYet ?? 'Nenhum arquivo enviado ainda')}
                   </span>
                 </div>
@@ -585,19 +585,19 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
             ) : null
           })()}
 
-          {error && <p style={{ fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)', marginTop: 16 }}>{error}</p>}
+          {error && <p style={{ fontSize: 13.5, color: 'var(--arvo-red, #D63B2F)', marginTop: 16 }}>{error}</p>}
 
           <div className="flex items-center gap-3" style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 20, marginTop: 20 }}>
             <button
               onClick={save}
               disabled={saving}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '9px 20px', borderRadius: 999, border: 'none', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '9px 20px', borderRadius: 999, border: 'none', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
             >
               {saving ? (ra.saving ?? 'Salvando...') : (ra.save ?? 'Salvar')}
             </button>
             <button
               onClick={() => setEditingId(null)}
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '9px 20px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '9px 20px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
             >
               {ra.cancel ?? 'Cancelar'}
             </button>
@@ -660,8 +660,8 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                     </button>
                   </div>
                 </div>
-                <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/resources/{item.slug}</p>
-                <p className="truncate" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
+                <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/resources/{item.slug}</p>
+                <p className="truncate" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}
                 </p>
                 {Object.keys(item.stats.by_source ?? {}).length > 0 && (
@@ -674,10 +674,10 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
-                  <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
+                  <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
                     {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
                   </button>
-                  <button onClick={() => { setLinksOpenId(linksOpenId === item.id ? null : item.id); setNewLinkLabel('') }} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${linksOpenId === item.id ? OCRE : 'var(--arvo-border)'}`, background: linksOpenId === item.id ? 'rgba(232,160,32,0.08)' : 'none', color: linksOpenId === item.id ? OCRE : 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                  <button onClick={() => { setLinksOpenId(linksOpenId === item.id ? null : item.id); setNewLinkLabel('') }} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '4px 12px', borderRadius: 999, border: `1px solid ${linksOpenId === item.id ? OCRE : 'var(--arvo-border)'}`, background: linksOpenId === item.id ? 'rgba(232,160,32,0.08)' : 'none', color: linksOpenId === item.id ? OCRE : 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
                     {ra.manageLinks ?? 'Links'} {item.links.length > 0 ? `(${item.links.length})` : ''}
                   </button>
                 </div>
@@ -695,7 +695,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
             </div>
           ))}
           {items.length === 0 && (
-            <p style={{ ...card, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 16 }}>{ra.empty ?? 'Nenhum recurso criado ainda'}</p>
+            <p style={{ ...card, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', padding: 16 }}>{ra.empty ?? 'Nenhum recurso criado ainda'}</p>
           )}
         </div>
       )}

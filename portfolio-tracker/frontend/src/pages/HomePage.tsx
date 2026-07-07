@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
-import { useActiveFriends, useActiveFriendsReady, type ActiveFriend } from '../hooks/useActiveFriends'
+import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useLongPressReorder } from '../hooks/useLongPressReorder'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
@@ -25,6 +25,36 @@ import type { PortfolioValue } from '../lib/types'
    amigos. Layout largo como o dashboard, cada card só aparece quando tem algo
    a dizer. Atalhos no fim, só pra destinos que não estão no header. */
 
+interface HomeFriendEntry { type: 'friend'; user_id: string; name: string; avatar_url?: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
+interface HomeGroupEntry {
+  type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null
+  members: { name?: string; avatar_url?: string }[]
+  member_count: number
+}
+
+// Avatar de grupo: 2 primeiros membros sobrepostos + "+N" se tiver mais —
+// mesma ideia da pilha de avatares do GroupCard em Pessoas, só que mais
+// compacta pro espaço de uma linha só aqui.
+function GroupAvatarStack({ members, memberCount }: { members: { name?: string; avatar_url?: string }[]; memberCount: number }) {
+  const shown = members.slice(0, 2)
+  const extra = memberCount - shown.length
+  const ring: React.CSSProperties = { border: '2px solid var(--arvo-surface)', borderRadius: '50%', flexShrink: 0 }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      {shown.map((m, i) => (
+        <div key={i} style={{ ...ring, marginLeft: i === 0 ? 0 : -8, zIndex: 2 - i }}>
+          <Avatar name={m.name} avatarUrl={m.avatar_url} size={20} />
+        </div>
+      ))}
+      {extra > 0 && (
+        <div style={{ ...ring, marginLeft: -8, width: 20, height: 20, background: 'var(--arvo-hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 8.5, fontWeight: 700, color: 'var(--arvo-fg-muted)' }}>+{extra}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
@@ -32,11 +62,32 @@ interface TodayData {
   active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
   month_summary: { spent: number; budget: number; currency: string; income: number } | null
   community_unseen: number
+  top_friends: HomeFriendEntry[]
+  top_groups: HomeGroupEntry[]
 }
 
-interface ContactBalance { currency: string; amount: number }
-interface NamedBalance { name: string; currency: string; amount: number; avatar_url?: string; user_id: string }
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
+
+// Card "Entre amigos": 3 amigos + 2 grupos por padrão, mas preenche até 5 com
+// o outro tipo quando um lado tem menos (ex: só 1 grupo → 4 amigos + 1 grupo).
+// Ambas as listas já chegam ordenadas por atividade recente (não por saldo).
+function allocateFriendsAndGroups(
+  friends: HomeFriendEntry[], groups: HomeGroupEntry[], max = 5, friendShare = 3, groupShare = 2,
+): (HomeFriendEntry | HomeGroupEntry)[] {
+  let friendCount = Math.min(friends.length, friendShare)
+  let groupCount = Math.min(groups.length, groupShare)
+  let remaining = max - friendCount - groupCount
+  if (remaining > 0) {
+    const extraFriends = Math.min(friends.length - friendCount, remaining)
+    friendCount += extraFriends
+    remaining -= extraFriends
+  }
+  if (remaining > 0) {
+    const extraGroups = Math.min(groups.length - groupCount, remaining)
+    groupCount += extraGroups
+  }
+  return [...friends.slice(0, friendCount), ...groups.slice(0, groupCount)]
+}
 
 const GOLD_RGB = '200,184,154'
 
@@ -50,8 +101,8 @@ function timeAgo(iso: string): string {
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
-const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
-const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
+const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
+const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }
 
 // Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
 // rótulo/título/data. Um componente só pros dois — sem duplicar.
@@ -77,7 +128,7 @@ function CoverCard({ to, coverUrl, accent, icon, label, title, subtitle, fallbac
       <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
         <p style={{ ...cardLabel, display: 'flex', alignItems: 'center', gap: 6 }}>{icon}{label}</p>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</p>
-        {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
+        {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
       </div>
     </Link>
   )
@@ -106,9 +157,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [wealth, setWealth] = useState<number | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
-  const [balances, setBalances] = useState<{ toReceive: NamedBalance[]; toPay: NamedBalance[] } | null>(null)
   const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
-  const [peopleLoaded, setPeopleLoaded] = useState(false)
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -117,7 +166,6 @@ export default function HomePage() {
   const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
   const [resources, setResources] = useState<ResourceItem[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
-  const activeFriendsReady = useActiveFriendsReady()
 
   // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
   // Performance (lib/performanceComparison), só reusado aqui numa linha compacta.
@@ -141,27 +189,19 @@ export default function HomePage() {
       apiFetch<PortfolioValue>('/portfolio/value')
         .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
         .catch(() => setHasAssets(false)),
-      apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[]; balancesByMoment?: MomentBalance[] }> }>('/people')
+      // Só balancesByMomentMap importa aqui — o resumo pro card "Entre amigos"
+      // agora vem pronto (e junto com o resto) em data.top_friends/top_groups.
+      // Isso ainda alimenta o PairMomentModal do fluxo de "dividir despesa".
+      apiFetch<{ contacts: Array<{ user_id: string | null; balancesByMoment?: MomentBalance[] }> }>('/people')
         .then(({ contacts }) => {
-          const toReceive: NamedBalance[] = []
-          const toPay: NamedBalance[] = []
           const bbmMap: Record<string, MomentBalance[]> = {}
           for (const c of contacts ?? []) {
             if (!c.user_id) continue
             if (c.balancesByMoment) bbmMap[c.user_id] = c.balancesByMoment
-            const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
-            for (const b of c.balances ?? []) {
-              if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url, user_id: c.user_id })
-              else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url, user_id: c.user_id })
-            }
           }
-          toReceive.sort((a, b) => b.amount - a.amount)
-          toPay.sort((a, b) => b.amount - a.amount)
-          setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
           setBalancesByMomentMap(bbmMap)
         })
-        .catch(() => {})
-        .finally(() => setPeopleLoaded(true)),
+        .catch(() => {}),
       apiFetch<FreedomPlan[]>('/finances/freedom-plans')
         .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
         .catch(() => setPlan(null)),
@@ -274,25 +314,23 @@ export default function HomePage() {
     return (ia === -1 ? sidebarCards.length : ia) - (ib === -1 ? sidebarCards.length : ib)
   })
 
+  // Amigos + grupos pro card "Entre amigos" — já vêm prontos e ordenados por
+  // atividade recente dentro de `data` (mesma resposta de /home/today que
+  // gate `loading`), então não há mais carregamento assíncrono separado pra
+  // sincronizar aqui (evita o piscar que existia quando isso dependia de
+  // fetches independentes terminando em momentos diferentes).
+  const friendsAndGroups = allocateFriendsAndGroups(data?.top_friends ?? [], data?.top_groups ?? [])
+
   // Metas (Liberdade financeira) só aparece quando falta conteúdo pra
   // preencher a coluna — se já tem Viagem + Momento + Recursos + Entre
   // amigos, a página já está cheia e Metas (algo que não muda todo dia)
   // só empilha mais um card sem necessidade.
-  //
-  // "Entre amigos" depende de dois carregamentos assíncronos independentes
-  // (balances vem do /people dentro de loadHome, activeFriends vem de um
-  // hook com cache próprio) que não terminam juntos — decidir hasAllFillers
-  // antes dos dois resolverem fazia Metas aparecer (achando que não tinha
-  // amigo) e sumir um instante depois (quando o amigo finalmente chegava).
-  // Só decide depois que os dois sinais confirmarem, pra não piscar.
-  const sidebarDataReady = peopleLoaded && activeFriendsReady
   const hasAllFillers =
-    sidebarDataReady &&
     sidebarCards.some(c => c.id === 'trip') &&
     sidebarCards.some(c => c.id === 'moment') &&
     sidebarCards.some(c => c.id === 'resource') &&
-    !!(balances || activeFriends.length > 0)
-  const showGoals = sidebarDataReady && !hasAllFillers
+    friendsAndGroups.length > 0
+  const showGoals = !hasAllFillers
   const reorder = useLongPressReorder(
     orderedSidebarCards.map(c => ({ id: c.id })),
     async (newList) => {
@@ -315,7 +353,7 @@ export default function HomePage() {
     <div className="space-y-5">
       {/* Saudação */}
       <div>
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 30, color: 'var(--arvo-fg)', marginTop: 4 }}>
           {greeting}{data?.first_name ? `, ${data.first_name}` : ''}
         </h1>
@@ -341,7 +379,7 @@ export default function HomePage() {
                     {wealth != null ? fmt(wealth, 0) : '…'}
                   </p>
                 </div>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
@@ -352,9 +390,9 @@ export default function HomePage() {
                   pro mesmo índice. Aqui é sempre "quanto eu bati esse índice", sem ambiguidade. */}
               {!hideValues && cmp30 && (
                 <div style={{ position: 'relative', marginTop: 18, paddingTop: 14, borderTop: `1px solid rgba(${GOLD_RGB},0.35)`, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 20px' }}>
-                  <span style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
+                  <span style={{ ...cardLabel, fontSize: 10.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)' }}>
-                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>{th.walletShort ?? 'Carteira'} </span>
+                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12 }}>{th.walletShort ?? 'Carteira'} </span>
                     <span className={cmp30.portfolio >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 700 }}>{cmp30.portfolio >= 0 ? '+' : ''}{cmp30.portfolio.toFixed(1)}%</span>
                   </span>
                   {[
@@ -365,10 +403,10 @@ export default function HomePage() {
                     const delta = it.v == null ? null : Math.round((cmp30.portfolio - it.v) * 10) / 10
                     return (
                       <span key={i} style={{ fontFamily: 'var(--arvo-font-body)' }}>
-                        <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>vs {it.label} </span>
+                        <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12 }}>vs {it.label} </span>
                         {delta == null
-                          ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 13 }}>–</span>
-                          : <span className={delta >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 13, fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta}%</span>}
+                          ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 14 }}>–</span>
+                          : <span className={delta >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta}%</span>}
                       </span>
                     )
                   })}
@@ -383,7 +421,7 @@ export default function HomePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
                 {data.month_summary.budget > 0 && !hideValues && (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
                     {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
                   </span>
                 )}
@@ -391,7 +429,7 @@ export default function HomePage() {
               <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                 {fmtCur(data.month_summary.spent, data.month_summary.currency)}
                 {data.month_summary.budget > 0 && (
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+                  <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
                 )}
               </p>
               {data.month_summary.budget > 0 && (
@@ -402,21 +440,21 @@ export default function HomePage() {
               <div style={{ display: 'flex', gap: 32, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
                 {forecast != null && (
                   <div>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
+                    <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
                     <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
                       {fmtCur(forecast, data.month_summary.currency)}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.incomeLabel ?? 'Renda'}</p>
+                  <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.incomeLabel ?? 'Renda'}</p>
                   <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: 'var(--arvo-fg)', marginTop: 3 }}>
                     {fmtCur(data.month_summary.income, data.month_summary.currency)}
                   </p>
                 </div>
                 {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
                   <div>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
+                    <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
                     <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
                       <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{saldo < 0 ? '−' : ''}{fmtCur(Math.abs(saldo), data.month_summary.currency)}</span>
                     </p>
@@ -441,7 +479,7 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
               {data.hot_topics.map(topic => (
                 <button
@@ -451,8 +489,8 @@ export default function HomePage() {
                   style={{ padding: '14px 20px', background: 'none', border: 'none', borderTop: '1px solid var(--arvo-border-soft)', cursor: 'pointer' }}
                 >
                   <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={15} /></span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
                 </button>
               ))}
             </div>
@@ -469,8 +507,8 @@ export default function HomePage() {
           {showGoals && plan === null && (
             <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '16px 18px', textDecoration: 'none' }}>
               <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
                 {th.goalCreate ?? 'Criar plano'}
               </span>
@@ -487,13 +525,13 @@ export default function HomePage() {
                 <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
                 <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                   {hideValues ? '•••' : `${Math.round(pct)}%`}
-                  <span style={{ fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}> {th.goalAchieved ?? 'conquistado'}</span>
+                  <span style={{ fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}> {th.goalAchieved ?? 'conquistado'}</span>
                 </p>
                 <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 12 }}>
                   <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: 'var(--arvo-gold)' }} />
                 </div>
                 {goalYear && (
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 9 }}>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 9 }}>
                     {th.goalForYear ?? 'meta para'} {goalYear}
                   </p>
                 )}
@@ -501,10 +539,11 @@ export default function HomePage() {
             )
           })()}
 
-          {/* Entre amigos — quem e quanto, com botão de dividir por amigo + dividir despesa.
-              Fica logo após Metas (as duas são cards "financeiros") pra deixar Viagem,
-              Momento e Recursos juntos como bloco de conteúdo, sem intercalar. */}
-          {(balances || activeFriends.length > 0) && (
+          {/* Entre amigos — amigos e grupos, ordenados por atividade recente
+              (não por saldo), até 5 no total. Fica logo após Metas (as duas
+              são cards "financeiros") pra deixar Viagem, Momento e Recursos
+              juntos como bloco de conteúdo, sem intercalar. */}
+          {friendsAndGroups.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(140,106,40,0.12), transparent 70%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -513,29 +552,40 @@ export default function HomePage() {
                   </span>
                   <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
                 </div>
-                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
               <div style={{ padding: '14px 20px 18px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {(balances
-                    ? [...balances.toReceive.map(b => ({ ...b, receive: true })), ...balances.toPay.map(b => ({ ...b, receive: false }))].sort((a, b) => b.amount - a.amount)
-                    : activeFriends.map(f => ({ name: f.name ?? f.email ?? '?', avatar_url: f.avatar_url, user_id: f.user_id as string, amount: null as number | null, currency: '', receive: true }))
-                  ).slice(0, 4).map((b, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
-                      <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
-                      {b.amount != null && (
-                        <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
-                          {b.receive ? '' : '−'}{fmtCur(b.amount, b.currency)}
+                  {friendsAndGroups.map(entry => (
+                    <div key={entry.type === 'friend' ? `f-${entry.user_id}` : `g-${entry.id}`} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      {entry.type === 'friend'
+                        ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
+                        : <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />}
+                      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
+                        {entry.type === 'group' && (
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                        )}
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
+                      </span>
+                      {entry.balance && (
+                        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
+                          {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
                         </span>
                       )}
-                      <button type="button" onClick={() => setSplitFriend({ email: '', name: b.name, user_id: b.user_id } as ActiveFriend)} title={th.splitExpense ?? 'Dividir despesa'} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}>
+                      <button
+                        type="button"
+                        onClick={() => entry.type === 'friend'
+                          ? setSplitFriend({ email: '', name: entry.name, user_id: entry.user_id } as ActiveFriend)
+                          : setSplitGroup({ id: entry.id, name: entry.name })}
+                        title={th.splitExpense ?? 'Dividir despesa'}
+                        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}
+                      >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
                       </button>
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, cursor: 'pointer' }}>
+                <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, cursor: 'pointer' }}>
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
                   {th.splitExpense ?? 'Dividir despesa'}
                 </button>
@@ -595,7 +645,7 @@ export default function HomePage() {
               </button>
             </div>
             {activeFriends.length === 0 && splitGroups.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
                 {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
                 <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
               </p>
@@ -607,10 +657,10 @@ export default function HomePage() {
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
-                    <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
+                    <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
                       {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
                     </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
                   </button>
                 ))}
                 {splitGroups.length > 0 && (
@@ -624,7 +674,7 @@ export default function HomePage() {
                         <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
                         </span>
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
                       </button>
                     ))}
                   </div>
@@ -678,8 +728,8 @@ function SetupCard({ setup, onNavigate }: {
           <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 700, fill: '#1B4FD8' }}>{setup.doneCount}</text>
         </svg>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg)' }}>{s.title}</p>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>{setup.doneCount}/{setup.total}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{s.title}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>{setup.doneCount}/{setup.total}</p>
         </div>
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={2} style={{ flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" /></svg>
       </button>
@@ -696,12 +746,12 @@ function SetupCard({ setup, onNavigate }: {
               <span style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${step.done ? '#22c55e' : '#1B4FD8'}`, background: step.done ? '#22c55e' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {step.done && <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
               </span>
-              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
               {!step.done && <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="rgba(27,79,216,0.5)" strokeWidth={2.2} style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
             </button>
           ))}
           <div style={{ padding: '4px 10px 6px' }}>
-            <button onClick={setup.hide} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{s.dismiss}</button>
+            <button onClick={setup.hide} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{s.dismiss}</button>
           </div>
         </div>
       )}

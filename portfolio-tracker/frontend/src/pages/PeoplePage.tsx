@@ -115,7 +115,7 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: open ? 6 : 0 }}
       >
         <p style={{
-          fontFamily: 'var(--arvo-font-display)', fontSize: 11.5, letterSpacing: '0.16em',
+          fontFamily: 'var(--arvo-font-display)', fontSize: 12.5, letterSpacing: '0.16em',
           textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flex: 1, textAlign: 'left',
         }}>
           {title} <span style={{ color: 'var(--arvo-fg-soft)' }}>({count})</span>
@@ -171,12 +171,17 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   return createPortal(
     // O portal renderiza direto em document.body, fora do wrapper com a classe
     // .dark do AppLayout — sem isso, o modal caía sempre no tema claro (fundo branco).
-    <div className={resolvedTheme === 'dark' ? 'dark' : undefined} style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
-        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
-      }}>
+    // Bottom-sheet no mobile (colado embaixo, cantos só em cima) — igual ao padrão
+    // já usado em outros modais do app (ex: ModalOverlay de SharedGroupModals) —
+    // aproveita mais a tela num formulário que já é comprido (saldos + despesas +
+    // form de nova despesa), em vez do card centralizado com sobra de espaço nas
+    // bordas.
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${resolvedTheme === 'dark' ? 'dark' : ''}`} style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(28px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {friendName}
@@ -189,7 +194,7 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
         </div>
         {momentId == null && needsChoice && !choiceMade ? (
           <div>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
               {t.people.splitWhereTitle}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -203,9 +208,9 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
-                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{m.moment_name}</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{m.moment_name}</span>
                   {m.balances.map(b => (
-                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
                       {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
                     </span>
                   ))}
@@ -219,14 +224,14 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
               >
-                <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
+                <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
               </button>
             </div>
           </div>
         ) : loading ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>…</p>
         ) : error ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED }}>{error}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
           <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
         ) : null}
@@ -263,7 +268,7 @@ function ResourceRow({
       style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)', cursor: 'pointer' }}
     >
       <span style={{ color: 'var(--arvo-fg-muted)', display: 'flex', flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {title}
       </span>
       {role && <RoleChip role={role} />}
@@ -454,13 +459,13 @@ function ContactCard({
       >
         <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={28} tone={isActive ? 'active' : 'neutral'} />
         <p style={{
-          flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+          flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
           fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           display: 'flex', alignItems: 'baseline', gap: 6,
         }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</span>
           {contact.username && (
-            <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
+            <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
           )}
         </p>
         {/* Saldo agregado de despesas divididas — soma finance_moment_expense_shares de
@@ -471,7 +476,7 @@ function ContactCard({
             key={b.currency}
             title={b.amount > 0 ? t.people.balanceTheyOweYou : t.people.balanceYouOweThem}
             style={{
-              flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600,
+              flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600,
               color: b.amount > 0 ? '#1F8A5B' : RED,
             }}
           >
@@ -519,7 +524,7 @@ function ContactCard({
 
       {!expanded ? null : (<>
       <p style={{
-        fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+        fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 10,
       }}>
         {contact.email}
@@ -528,12 +533,12 @@ function ContactCard({
           do corpo expandido, fora das listas de recursos. */}
       {incomingPending && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(200,184,154,0.10)', border: '1px solid rgba(200,184,154,0.25)', marginBottom: 14 }}>
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
             {t.people.invitedYouConnect}
           </span>
           <button
             type="button" onClick={() => acceptFriend(incomingPending)} disabled={accepting}
-            className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '4px 12px' }}
+            className="arvo-btn arvo-btn--primary" style={{ fontSize: 12, padding: '4px 12px' }}
           >
             {accepting ? '…' : t.people.accept}
           </button>
@@ -546,14 +551,14 @@ function ContactCard({
       {(contact.balances ?? []).length > 0 && contact.user_id && (
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
           <p style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 11.5, letterSpacing: '0.16em',
+            fontFamily: 'var(--arvo-font-display)', fontSize: 12.5, letterSpacing: '0.16em',
             textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 6,
           }}>
             {t.people.sectionBalance}
           </p>
           {(contact.balances ?? []).map(b => (
             <div key={b.currency} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: b.amount > 0 ? '#1F8A5B' : RED, flex: 1 }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: b.amount > 0 ? '#1F8A5B' : RED, flex: 1 }}>
                 {b.amount > 0
                   ? t.people.balanceTheyOweYouLine.replace('{amount}', new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency }).format(Math.abs(b.amount)))
                   : t.people.balanceYouOweThemLine.replace('{amount}', new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency }).format(Math.abs(b.amount)))}
@@ -583,11 +588,11 @@ function ContactCard({
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {isPureOneOnOne ? t.people.expensesWithPrefix : m.moment_name}
                   </span>
                   {m.balances.map(b => (
-                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
                       {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
                     </span>
                   ))}
@@ -683,7 +688,7 @@ function ContactCard({
               type="button"
               onClick={() => setPairModal({ momentId: null })}
               style={{
-                display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+                display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.02em',
                 padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
                 color: 'var(--arvo-fg-muted)', cursor: 'pointer',
               }}
@@ -699,7 +704,7 @@ function ContactCard({
               <button
                 type="button" onClick={() => setShowShareMenu(v => !v)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+                  display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.02em',
                   padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
                   color: 'var(--arvo-fg-muted)', cursor: 'pointer',
                 }}
@@ -722,7 +727,7 @@ function ContactCard({
                       <button
                         key={mode} type="button"
                         onClick={() => { setShareMode(mode); setShowShareMenu(false) }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}
                       >
                         {label}
                       </button>
@@ -738,22 +743,22 @@ function ContactCard({
             <select
               value={shareTarget}
               onChange={e => setShareTarget(e.target.value ? Number(e.target.value) : '')}
-              style={{ flex: 1, fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
+              style={{ flex: 1, fontSize: 13.5, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
             >
               <option value="">{shareMode === 'trip' ? t.people.selectTrip : shareMode === 'moment' ? t.people.selectMoment : t.people.selectCategory}</option>
               {(shareMode === 'trip' ? trips : shareMode === 'moment' ? moments : groups).map(item => (
                 <option key={item.id} value={item.id}>{'title' in item ? item.title : item.name}</option>
               ))}
             </select>
-            <button type="button" onClick={confirmShare} disabled={sharing || shareTarget === ''} className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '5px 12px' }}>
+            <button type="button" onClick={confirmShare} disabled={sharing || shareTarget === ''} className="arvo-btn arvo-btn--primary" style={{ fontSize: 12, padding: '5px 12px' }}>
               {sharing ? '…' : t.people.inviteCta}
             </button>
-            <button type="button" onClick={() => { setShareMode(null); setShareError('') }} style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button type="button" onClick={() => { setShareMode(null); setShareError('') }} style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {t.people.cancel}
             </button>
           </div>
         )}
-        {shareError && <p style={{ fontSize: 11, color: RED, marginTop: 8 }}>{shareError}</p>}
+        {shareError && <p style={{ fontSize: 12, color: RED, marginTop: 8 }}>{shareError}</p>}
       </div>
 
       {/* Auto-aceite — vale para qualquer convite (viagem, momento, categoria),
@@ -765,7 +770,7 @@ function ContactCard({
             checked={auto} disabled={togglingAutoAccept}
             onChange={() => toggleAutoAccept(mineFriendCtx ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
           />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
             {t.people.autoAcceptLabel}
           </span>
         </div>
@@ -779,7 +784,7 @@ function ContactCard({
           <button
             type="button" onClick={() => unfriend(removableFriendCtx)}
             style={{
-              width: '100%', padding: '9px 0', borderRadius: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+              width: '100%', padding: '9px 0', borderRadius: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 13,
               background: 'none', border: '1px solid rgba(214,59,47,0.30)', color: RED, cursor: 'pointer',
             }}
           >
@@ -818,12 +823,13 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
   }, [groupId, initialMomentId])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
-        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
-      }}>
+    // Bottom-sheet no mobile, mesmo padrão do PairMomentModal (ver comentário lá).
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(28px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {groupName}
@@ -835,9 +841,9 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
           </button>
         </div>
         {loading ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>…</p>
         ) : error ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED }}>{error}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
           <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
         ) : null}
@@ -1029,13 +1035,13 @@ function GroupsSection({ fullGroups, onOpenExpenses, onManage, onNewGroup }: {
         </p>
         <button
           type="button" onClick={onNewGroup}
-          style={{ fontSize: 12, fontFamily: 'var(--arvo-font-body)', padding: '5px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+          style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', padding: '5px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
         >
           {t.people.newGroupButton}
         </button>
       </div>
       {fullGroups.length === 0 ? (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>{t.people.noGroupsYet}</p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>{t.people.noGroupsYet}</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {fullGroups.map(g => (
@@ -1075,11 +1081,11 @@ function GroupCard({ group: g, fmt, onOpenExpenses, onManage }: {
             </div>
           ))}
         </div>
-        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {g.name}
         </span>
         {(g.balance ?? []).map(b => (
-          <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
+          <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
             {b.amount > 0 ? '+' : '−'}{fmt(Math.abs(b.amount), b.currency)}
           </span>
         ))}
@@ -1092,7 +1098,7 @@ function GroupCard({ group: g, fmt, onOpenExpenses, onManage }: {
           <button
             type="button" onClick={onOpenExpenses}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.02em',
               padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
               color: 'var(--arvo-fg-muted)', cursor: 'pointer',
             }}
@@ -1105,7 +1111,7 @@ function GroupCard({ group: g, fmt, onOpenExpenses, onManage }: {
           <button
             type="button" onClick={onManage}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13,
               padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
             }}
           >
@@ -1250,7 +1256,7 @@ export default function PeoplePage() {
           <div style={{ display: 'flex', gap: 8 }}>
             {activeCount > 0 && (
               <span style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: '#1F8A5B',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B',
                 background: 'rgba(31,138,91,0.08)', padding: '2px 10px', borderRadius: 999,
                 border: '1px solid rgba(31,138,91,0.16)',
               }}>
@@ -1259,7 +1265,7 @@ export default function PeoplePage() {
             )}
             {pendingCount > 0 && (
               <span style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: GOLD,
+                fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: GOLD,
                 background: 'rgba(200,184,154,0.10)', padding: '2px 10px', borderRadius: 999,
                 border: '1px solid rgba(200,184,154,0.20)',
               }}>
@@ -1279,7 +1285,7 @@ export default function PeoplePage() {
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           style={{
-            flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 12px',
+            flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 12px',
             borderRadius: 8, border: '1px solid var(--arvo-border)',
             background: 'var(--arvo-surface)', color: 'var(--arvo-fg)',
           }}
@@ -1304,10 +1310,10 @@ export default function PeoplePage() {
                 }}
               >
                 <Avatar name={s.name} avatarUrl={s.avatar_url} size={28} />
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
                   {s.name || `@${s.username}`}
                 </span>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
                   @{s.username}
                 </span>
               </button>
@@ -1315,7 +1321,7 @@ export default function PeoplePage() {
           </div>
         )}
       </form>
-      {inviteError && <p style={{ fontSize: 12, color: RED, marginBottom: 16 }}>{inviteError}</p>}
+      {inviteError && <p style={{ fontSize: 13, color: RED, marginBottom: 16 }}>{inviteError}</p>}
 
       <GroupsSection
         fullGroups={fullGroups}
@@ -1363,10 +1369,10 @@ export default function PeoplePage() {
           padding: '16px 18px', borderRadius: 10, border: '1px solid rgba(214,59,47,0.25)',
           background: 'rgba(214,59,47,0.06)', display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: RED }}>
             {t.people.loadErrorPrefix} {loadError}
           </p>
-          <button type="button" onClick={() => load()} className="arvo-btn arvo-btn--primary" style={{ alignSelf: 'flex-start', fontSize: 12 }}>
+          <button type="button" onClick={() => load()} className="arvo-btn arvo-btn--primary" style={{ alignSelf: 'flex-start', fontSize: 13 }}>
             {t.people.retry}
           </button>
         </div>

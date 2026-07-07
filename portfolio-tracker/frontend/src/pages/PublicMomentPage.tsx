@@ -36,7 +36,7 @@ const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-F
 
 const labelStyle: CSSProperties = {
   fontFamily: 'var(--arvo-font-body)',
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 600,
   letterSpacing: '0.10em',
   textTransform: 'uppercase',

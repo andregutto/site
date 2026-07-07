@@ -79,10 +79,10 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
       onClick={() => navigate('/portfolio/indices')}
       title={t.common.allIndices}
     >
-      <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
+      <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
         {t.indices.title ?? 'Índices'}
       </h2>
-      <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
+      <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
       <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: `1fr auto auto${portfolioReturnPct != null ? ' auto' : ''}`, columnGap: 14, rowGap: 10 }}>
@@ -100,7 +100,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
               const vsNeg = vsPortfolio != null && vsPortfolio < 0
               return (
                 <Fragment key={idx.code}>
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
                     {idx.name}
                   </span>
                   <span className="arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', justifySelf: 'end' }}>
@@ -108,7 +108,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
                   </span>
                   <span
                     className="arvo-num"
-                    style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 56, textAlign: 'right' }}
+                    style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 56, textAlign: 'right' }}
                     title={pct == null ? (isCDI ? t.indices.cdiDeltaTooltip : t.indices.deltaUnavailable) : undefined}
                   >
                     {fmtPct(pct)}
@@ -116,7 +116,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
                   {portfolioReturnPct != null && (
                     <span
                       className="arvo-num"
-                      style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11.5, fontWeight: 600, color: vsPos ? 'var(--arvo-green)' : vsNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 60, textAlign: 'right' }}
+                      style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12.5, fontWeight: 600, color: vsPos ? 'var(--arvo-green)' : vsNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 60, textAlign: 'right' }}
                       title={t.indices.vsPortfolioTooltip}
                     >
                       {vsPortfolio == null ? '-' : `${vsPortfolio >= 0 ? '+' : ''}${vsPortfolio.toFixed(2)}%`}

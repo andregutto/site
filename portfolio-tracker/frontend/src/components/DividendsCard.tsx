@@ -65,7 +65,7 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
   return (
     <div className={`rounded-2xl p-5 ${vertical ? 'h-full flex flex-col' : ''}`} style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <div className="flex items-center justify-between mb-3">
-        <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
+        <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
         {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
       </div>
       {divLoading ? (

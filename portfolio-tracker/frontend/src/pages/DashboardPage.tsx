@@ -371,7 +371,7 @@ export default function DashboardPage() {
           {hasMovers && (
           <div className={`${hasAllocation ? '' : 'lg:col-span-2'} 2xl:col-span-4`}>
           <div className="rounded-2xl p-5 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-          <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
+          <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
             {tdd.topMovers} · {periodLabel}
           </h2>
           {dashReturnsLoading ? (
@@ -432,7 +432,7 @@ export default function DashboardPage() {
             <div className="flex justify-end mt-auto pt-3">
               <button
                 onClick={() => navigate('/assets')}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
               >
                 {t.nav.assets} ({data.by_asset.length})
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -469,7 +469,7 @@ export default function DashboardPage() {
         <div className="flex justify-end">
           <button
             onClick={() => navigate('/assets')}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             {t.nav.assets} ({data.by_asset.length})
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -507,7 +507,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, fontWeight: 400, margin: 0, color: 'var(--arvo-fg)' }}>{s.title}</h2>
-                <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', margin: '4px 0 0', lineHeight: 1.4 }}>{s.subtitle}</p>
+                <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', margin: '4px 0 0', lineHeight: 1.4 }}>{s.subtitle}</p>
               </div>
               <button onClick={() => setShowShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4, lineHeight: 1 }}>✕</button>
             </div>
@@ -517,8 +517,8 @@ export default function DashboardPage() {
             {/* Show values toggle */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.showValues}</div>
-                <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.showValues}</div>
+                <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
               </div>
               <button
                 onClick={handleToggleShowValues}
@@ -531,8 +531,8 @@ export default function DashboardPage() {
             {/* Hide holdings toggle */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.hideHoldings}</div>
-                <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.hideHoldingsHint}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.hideHoldings}</div>
+                <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.hideHoldingsHint}</div>
               </div>
               <button
                 onClick={handleToggleHideHoldings}
@@ -544,7 +544,7 @@ export default function DashboardPage() {
 
             {/* Period selector */}
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{s.periodLabel}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{s.periodLabel}</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {(['inception', '12m', 'ytd'] as const).map(p => {
                   const label = p === 'inception' ? s.periodInception : p === '12m' ? s.period12m : s.periodYtd
@@ -553,7 +553,7 @@ export default function DashboardPage() {
                     <button
                       key={p}
                       onClick={() => setSharePeriod(p)}
-                      style={{ flex: 1, padding: '7px 4px', borderRadius: 8, border: `1px solid ${active ? '#1B4FD8' : 'var(--arvo-border)'}`, background: active ? 'rgba(27,79,216,0.08)' : 'var(--arvo-surface-2)', color: active ? '#1B4FD8' : 'var(--arvo-fg-soft)', fontSize: 11, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', fontWeight: active ? 600 : 400, transition: 'all 0.15s' }}
+                      style={{ flex: 1, padding: '7px 4px', borderRadius: 8, border: `1px solid ${active ? '#1B4FD8' : 'var(--arvo-border)'}`, background: active ? 'rgba(27,79,216,0.08)' : 'var(--arvo-surface-2)', color: active ? '#1B4FD8' : 'var(--arvo-fg-soft)', fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', fontWeight: active ? 600 : 400, transition: 'all 0.15s' }}
                     >
                       {label}
                     </button>
@@ -566,7 +566,7 @@ export default function DashboardPage() {
             <button
               onClick={handleGenerateShare}
               disabled={shareLoading}
-              style={{ width: '100%', padding: '12px 16px', background: shareLoading ? 'rgba(13,13,13,0.5)' : '#0D0D0D', color: '#F4F3F1', border: 'none', borderRadius: 10, fontSize: 13, fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', cursor: shareLoading ? 'default' : 'pointer', marginBottom: shareLoading ? 6 : 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
+              style={{ width: '100%', padding: '12px 16px', background: shareLoading ? 'rgba(13,13,13,0.5)' : '#0D0D0D', color: '#F4F3F1', border: 'none', borderRadius: 10, fontSize: 14, fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', cursor: shareLoading ? 'default' : 'pointer', marginBottom: shareLoading ? 6 : 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
             >
               <svg style={{ width: 13, height: 13, animation: shareLoading ? 'arvo-spin 1s linear infinite' : 'none' }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1 8A7 7 0 1 0 8 1M1 1v4h4"/>
@@ -586,7 +586,7 @@ export default function DashboardPage() {
             {shareSuccess && !shareLoading && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 8l4 4 8-8"/></svg>
-                <span style={{ fontSize: 12, color: '#16A34A', fontFamily: 'var(--arvo-font-body)' }}>{s.dataUpdated}</span>
+                <span style={{ fontSize: 13, color: '#16A34A', fontFamily: 'var(--arvo-font-body)' }}>{s.dataUpdated}</span>
               </div>
             )}
 
@@ -595,7 +595,7 @@ export default function DashboardPage() {
               <svg style={{ width: 12, height: 12, flexShrink: 0, color: 'var(--arvo-fg-soft)' }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
                 <rect x="1" y="3" width="14" height="12" rx="2"/><path d="M1 7h14M5 1v4M11 1v4"/>
               </svg>
-              <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+              <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                 {s.updatedAt}{' '}
                 {shareLink?.updated_at
                   ? new Date(shareLink.updated_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : locale === 'en' ? 'en-GB' : 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -606,12 +606,12 @@ export default function DashboardPage() {
             {/* Link area */}
             {shareLink && (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{s.linkLabel}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{s.linkLabel}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1, background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ flex: 1, background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {window.location.origin}/share/portfolio/{shareLink.token}
                   </div>
-                  <button onClick={copyShareLink} style={{ padding: '8px 14px', background: shareCopied ? '#16A34A' : 'var(--arvo-pill-active-bg)', color: shareCopied ? '#fff' : 'var(--arvo-pill-active-fg)', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+                  <button onClick={copyShareLink} style={{ padding: '8px 14px', background: shareCopied ? '#16A34A' : 'var(--arvo-pill-active-bg)', color: shareCopied ? '#fff' : 'var(--arvo-pill-active-fg)', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
                     {shareCopied ? s.copied : s.copy}
                   </button>
                 </div>
@@ -625,7 +625,7 @@ export default function DashboardPage() {
                   href={`/share/portfolio/${shareLink.token}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ padding: '9px 14px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                  style={{ padding: '9px 14px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 13, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
                 >
                   <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9M9 1h6v6M15 1L7.5 8.5"/>
@@ -636,7 +636,7 @@ export default function DashboardPage() {
                   href={`/share/portfolio/${shareLink.token}?print=1`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ padding: '9px 14px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                  style={{ padding: '9px 14px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 13, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
                 >
                   <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 2v8M5 7l3 3 3-3M3 12h10"/>
@@ -645,7 +645,7 @@ export default function DashboardPage() {
                 </a>
                 <button
                   onClick={handleDeactivateShare}
-                  style={{ padding: '9px 14px', background: 'rgba(220,38,38,0.12)', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', marginLeft: 'auto' }}
+                  style={{ padding: '9px 14px', background: 'rgba(220,38,38,0.12)', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', marginLeft: 'auto' }}
                 >
                   {s.deactivate}
                 </button>

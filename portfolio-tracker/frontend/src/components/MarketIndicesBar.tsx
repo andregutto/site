@@ -54,7 +54,7 @@ export default function MarketIndicesBar() {
         const isNeg = pct != null && pct < 0
         return (
           <div key={idx.code} className="rounded-2xl p-4" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-            <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
               {idx.name}
             </div>
             <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 17, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1.1 }}>

@@ -116,7 +116,7 @@ export default function MomentPickerModal({ onClose }: Props) {
             style={{
               width: '100%', padding: '8px 12px', borderRadius: 8,
               border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-              fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+              fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
               outline: 'none',
             }}
             onFocus={e => (e.target.style.borderColor = GOLD)}
@@ -127,7 +127,7 @@ export default function MomentPickerModal({ onClose }: Props) {
         {/* Error */}
         {createError && (
           <div className="px-6 pb-2 shrink-0">
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#D63B2F', background: 'rgba(214,59,47,0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(214,59,47,0.16)' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: '#D63B2F', background: 'rgba(214,59,47,0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(214,59,47,0.16)' }}>
               {createError}
             </p>
           </div>
@@ -143,7 +143,7 @@ export default function MomentPickerModal({ onClose }: Props) {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ paddingTop: 32, textAlign: 'center' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)' }}>
                 {moments.length === 0
                   ? 'Nenhum momento encontrado. Crie um em Finanças → Momentos.'
                   : 'Nenhum resultado para essa busca.'}
@@ -186,21 +186,21 @@ export default function MomentPickerModal({ onClose }: Props) {
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{
-                        fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
+                        fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)',
                         fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         marginBottom: 2,
                       }}>
                         {m.name}
                       </p>
                       {dateStr && (
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                           {dateStr}
                         </p>
                       )}
                     </div>
 
                     {isCreating ? (
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
                         Criando…
                       </span>
                     ) : (

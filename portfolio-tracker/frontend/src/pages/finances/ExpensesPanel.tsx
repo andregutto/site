@@ -73,6 +73,11 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const [myCategories, setMyCategories] = useState<ExpenseCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  // Recolhe saldos + lista de despesas assim que o form de nova despesa abre —
+  // no mobile, os dois juntos empurravam o form (e o botão Salvar) pra fora da
+  // tela, exigindo scroll só pra ver os campos. Usuário pode reabrir a
+  // qualquer momento com o resumo de uma linha que aparece no lugar.
+  const [historyOpen, setHistoryOpen] = useState(true)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -114,6 +119,10 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   }, [momentId])
 
   useEffect(() => { load() }, [load])
+
+  // Recolhe saldos + histórico assim que o form abre (nova despesa ou edição);
+  // volta a mostrar tudo quando fecha.
+  useEffect(() => { setHistoryOpen(!showForm) }, [showForm])
 
   // Sugere categoria com base na descrição enquanto o usuário digita, mas só
   // enquanto ele não tiver escolhido uma manualmente — não queremos sobrescrever
@@ -281,89 +290,104 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] italic text-[var(--arvo-fg-soft)]">{t.finances.expenseSectionHint}</p>
+      {historyOpen ? (
+        <>
+          <p className="text-[11px] italic text-[var(--arvo-fg-soft)]">{t.finances.expenseSectionHint}</p>
 
-      {/* Saldos vivos deste Momento — inclui quem deve o quê pra mim, com acerto direto,
-          sem precisar sair pra página Pessoas (que só mostra o agregado entre TODOS os Momentos). */}
-      <div className="p-3 rounded-xl border border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseBalances}</p>
-        {balances.length === 0 ? (
-          <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.expenseBalancesSettled}</p>
-        ) : balances.map(b => {
-          const name = b.display?.name ?? b.display?.email ?? b.user_id
-          return (
-            <div key={b.user_id} className="flex items-center gap-2">
-              <Avatar name={b.display?.name} email={b.display?.email} avatarUrl={b.display?.avatar_url} size={18} />
-              <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{name}</span>
-              {Object.entries(b.perCurrency).map(([cur, amt]) => (
-                <span key={cur} className="text-xs font-semibold" style={{ color: amt > 0 ? '#1F8A5B' : '#D63B2F' }}>
-                  {amt > 0 ? '+' : '−'}{fmt(Math.abs(amt), cur)}
-                </span>
-              ))}
-              <button
-                onClick={() => settleWith(b.user_id, name)}
-                disabled={settlingWith === b.user_id}
-                className="arvo-btn arvo-btn--ghost arvo-btn--sm"
-              >
-                {settlingWith === b.user_id ? '…' : t.people.settleUp}
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      {expenses.length > 0 ? (
-        <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
-          {expenses.map((e, i) => {
-            const converted = e.currency !== displayCurrency
-              ? convertBetween(e.amount, e.currency, displayCurrency, fxRates)
-              : null
-            return (
-              <div key={e.id} className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
-                <Avatar name={e.paid_by_display?.name} email={e.paid_by_display?.email} avatarUrl={e.paid_by_display?.avatar_url} size={22} />
-                <div className="flex-1 min-w-0">
-                  <span className="text-[var(--arvo-fg)] truncate text-xs flex items-center gap-1.5">
-                    {e.description}
-                    {e.category && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: e.category.color + '22', color: e.category.color }}>
-                        {e.category.icon} {e.category.name}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-[10px] text-[var(--arvo-fg-soft)] block truncate">
-                    {t.finances.expensePaidBy}: {e.paid_by_display?.name} · {e.shares.length} {t.finances.expenseParticipants.toLowerCase()}
-                  </span>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs font-semibold block text-[var(--arvo-fg)]">{fmt(e.amount, e.currency)}</span>
-                  {converted != null && (
-                    <span className="text-[10px] block text-[var(--arvo-fg-soft)]">≈ {fmt(converted, displayCurrency)}</span>
-                  )}
-                </div>
-                {!e.is_settlement && (
-                  <button onClick={() => startEdit(e)} className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors" title={t.finances.expenseEdit}>
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
+          {/* Saldos vivos deste Momento — inclui quem deve o quê pra mim, com acerto direto,
+              sem precisar sair pra página Pessoas (que só mostra o agregado entre TODOS os Momentos). */}
+          <div className="p-3 rounded-xl border border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] space-y-1.5">
+            <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseBalances}</p>
+            {balances.length === 0 ? (
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.expenseBalancesSettled}</p>
+            ) : balances.map(b => {
+              const name = b.display?.name ?? b.display?.email ?? b.user_id
+              return (
+                <div key={b.user_id} className="flex items-center gap-2">
+                  <Avatar name={b.display?.name} email={b.display?.email} avatarUrl={b.display?.avatar_url} size={18} />
+                  <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{name}</span>
+                  {Object.entries(b.perCurrency).map(([cur, amt]) => (
+                    <span key={cur} className="text-xs font-semibold" style={{ color: amt > 0 ? '#1F8A5B' : '#D63B2F' }}>
+                      {amt > 0 ? '+' : '−'}{fmt(Math.abs(amt), cur)}
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => settleWith(b.user_id, name)}
+                    disabled={settlingWith === b.user_id}
+                    className="arvo-btn arvo-btn--ghost arvo-btn--sm"
+                  >
+                    {settlingWith === b.user_id ? '…' : t.people.settleUp}
                   </button>
-                )}
-                <button onClick={() => remove(e.id)} className="p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-red)] transition-colors" title={t.finances.expenseDelete}>
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )
-          })}
-        </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {expenses.length > 0 ? (
+            <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
+              {expenses.map((e, i) => {
+                const converted = e.currency !== displayCurrency
+                  ? convertBetween(e.amount, e.currency, displayCurrency, fxRates)
+                  : null
+                return (
+                  <div key={e.id} className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
+                    <Avatar name={e.paid_by_display?.name} email={e.paid_by_display?.email} avatarUrl={e.paid_by_display?.avatar_url} size={22} />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[var(--arvo-fg)] truncate text-xs flex items-center gap-1.5">
+                        {e.description}
+                        {e.category && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: e.category.color + '22', color: e.category.color }}>
+                            {e.category.icon} {e.category.name}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)] block truncate">
+                        {t.finances.expensePaidBy}: {e.paid_by_display?.name} · {e.shares.length} {t.finances.expenseParticipants.toLowerCase()}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-semibold block text-[var(--arvo-fg)]">{fmt(e.amount, e.currency)}</span>
+                      {converted != null && (
+                        <span className="text-[10px] block text-[var(--arvo-fg-soft)]">≈ {fmt(converted, displayCurrency)}</span>
+                      )}
+                    </div>
+                    {!e.is_settlement && (
+                      <button onClick={() => startEdit(e)} className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors" title={t.finances.expenseEdit}>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                    )}
+                    <button onClick={() => remove(e.id)} className="p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-red)] transition-colors" title={t.finances.expenseDelete}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.expenseNoEntries}</p>
+          )}
+        </>
       ) : (
-        <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.expenseNoEntries}</p>
+        <button
+          type="button"
+          onClick={() => setHistoryOpen(true)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors"
+        >
+          <span>{(t.finances.expenseHistorySummary ?? '{count} despesas · ver saldos').replace('{count}', String(expenses.length))}</span>
+          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
       )}
 
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full text-center text-xs py-2 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
+          className="w-full text-center text-sm py-3 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
         >
           + {t.finances.expenseAdd}
         </button>
@@ -385,15 +409,17 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expensePaidBy}</p>
-          <select
-            value={paidBy} onChange={e => setPaidBy(e.target.value)}
-            className={`w-full ${fieldCls}`}
-          >
-            {participants.map(p => (
-              <option key={p.user_id} value={p.user_id}>{p.display?.name ?? p.user_id}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] shrink-0">{t.finances.expensePaidBy}</span>
+            <select
+              value={paidBy} onChange={e => setPaidBy(e.target.value)}
+              className={`flex-1 min-w-0 ${fieldCls}`}
+            >
+              {participants.map(p => (
+                <option key={p.user_id} value={p.user_id}>{p.display?.name ?? p.user_id}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Categoria só existe pro próprio pagador (categorias são por usuário) — se quem
               está editando não é quem pagou, não dá pra saber/mexer na categoria dele. */}
@@ -410,52 +436,57 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
             <p className="text-[11px] text-[var(--arvo-fg-soft)]">{t.finances.expenseCategorizeLaterHint}</p>
           ) : null}
 
-          <div className="flex gap-2 text-xs">
+          <div className="flex gap-2 text-sm">
             <button
               onClick={() => setSplitType('equal')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitEqual}
             </button>
             <button
               onClick={() => setSplitType('custom')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitCustom}
             </button>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseParticipants}</p>
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.has(p.user_id)}
-                  onChange={() => toggleParticipant(p.user_id)}
-                  className="shrink-0"
-                />
-                <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={18} />
-                <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
+                {/* <label> em volta do checkbox+avatar+nome — clicar em qualquer
+                    ponto dessa área (não só na caixinha de 13px) já marca/desmarca,
+                    sem precisar acertar o checkbox pelo dedo no mobile. */}
+                <label className="flex items-center gap-2.5 flex-1 min-w-0 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.user_id)}
+                    onChange={() => toggleParticipant(p.user_id)}
+                    className="shrink-0 w-[18px] h-[18px] accent-[var(--arvo-fg)]"
+                  />
+                  <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={24} />
+                  <span className="text-sm text-[var(--arvo-fg)] flex-1 min-w-0 truncate">{p.display?.name ?? p.user_id}</span>
+                </label>
                 {splitType === 'custom' && selected.has(p.user_id) && (
                   <>
-                    <div className="w-16 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pl-1.5 shrink-0">{CURRENCY_SYMBOLS[expCurrency] ?? expCurrency}</span>
+                    <div className="w-16 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden shrink-0">
+                      <span className="text-xs text-[var(--arvo-fg-soft)] pl-1.5 shrink-0">{CURRENCY_SYMBOLS[expCurrency] ?? expCurrency}</span>
                       <input
                         value={customValues[p.user_id] ?? ''}
                         onChange={e => setCustomValue(p.user_id, e.target.value)}
                         inputMode="decimal"
-                        className="w-full min-w-0 text-xs pl-1 pr-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                        className="w-full min-w-0 text-sm pl-1 pr-1.5 py-1.5 bg-transparent text-[var(--arvo-fg)] text-right"
                       />
                     </div>
-                    <div className="w-14 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
+                    <div className="w-14 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden shrink-0">
                       <input
                         value={customPercents[p.user_id] ?? ''}
                         onChange={e => setCustomPercent(p.user_id, e.target.value)}
                         inputMode="decimal"
-                        className="w-full min-w-0 text-xs pl-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                        className="w-full min-w-0 text-sm pl-1.5 py-1.5 bg-transparent text-[var(--arvo-fg)] text-right"
                       />
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pr-1.5 shrink-0">%</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] pr-1.5 shrink-0">%</span>
                     </div>
                   </>
                 )}
@@ -468,13 +499,13 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           <div className="flex gap-2">
             <button
               onClick={() => { setShowForm(false); resetForm() }}
-              className="flex-1 text-xs py-2 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]"
+              className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={submit} disabled={saving}
-              className="flex-1 text-xs py-2 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60"
+              className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60"
             >
               {t.common.save}
             </button>
@@ -560,48 +591,54 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="w-full sm:max-w-xs rounded-t-2xl sm:rounded-2xl max-h-[92vh] sm:max-h-[85vh] overflow-y-auto p-5 space-y-3"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div>
           <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitTransactionTitle}</h3>
           <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{transaction.description} · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: transaction.currency }).format(Math.abs(transaction.amount))}</p>
         </div>
 
         {loading ? <p className="text-xs text-[var(--arvo-fg-soft)]">…</p> : (<>
-          <div className="flex gap-2 text-xs">
+          <div className="flex gap-2 text-sm">
             <button
               onClick={() => setSplitType('equal')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitEqual}
             </button>
             <button
               onClick={() => setSplitType('custom')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitCustom}
             </button>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
-                <input type="checkbox" checked={selected.has(p.user_id)} onChange={() => toggleParticipant(p.user_id)} className="shrink-0" />
-                <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={18} />
-                <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
+                <label className="flex items-center gap-2.5 flex-1 min-w-0 py-2 cursor-pointer">
+                  <input type="checkbox" checked={selected.has(p.user_id)} onChange={() => toggleParticipant(p.user_id)} className="shrink-0 w-[18px] h-[18px] accent-[var(--arvo-fg)]" />
+                  <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={24} />
+                  <span className="text-sm text-[var(--arvo-fg)] flex-1 min-w-0 truncate">{p.display?.name ?? p.user_id}</span>
+                </label>
                 {splitType === 'custom' && selected.has(p.user_id) && (
                   <>
                     <input
                       value={customValues[p.user_id] ?? ''}
                       onChange={e => setCustomValue(p.user_id, e.target.value)}
                       placeholder={t.finances.expenseSplitCustomValue} inputMode="decimal"
-                      className="w-16 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
+                      className="w-16 shrink-0 text-sm px-2 py-1.5 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
                     />
                     <input
                       value={customPercents[p.user_id] ?? ''}
                       onChange={e => setCustomPercent(p.user_id, e.target.value)}
                       placeholder={t.finances.expenseSplitCustomPercent} inputMode="decimal"
-                      className="w-14 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
+                      className="w-14 shrink-0 text-sm px-2 py-1.5 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
                     />
                   </>
                 )}
@@ -612,10 +649,10 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
           {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
 
           <div className="flex gap-2">
-            <button onClick={onClose} className="flex-1 text-xs py-2 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
+            <button onClick={onClose} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
               {t.common.cancel}
             </button>
-            <button onClick={submit} disabled={saving} className="flex-1 text-xs py-2 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+            <button onClick={submit} disabled={saving} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
               {t.common.save}
             </button>
           </div>

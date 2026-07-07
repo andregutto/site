@@ -120,7 +120,7 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12, boxShadow: '0 4px 16px rgba(13,13,13,0.08)', padding: '8px 12px', fontSize: 12, minWidth: 140 }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12, boxShadow: '0 4px 16px rgba(13,13,13,0.08)', padding: '8px 12px', fontSize: 13, minWidth: 140 }}>
       <p style={{ color: 'var(--arvo-fg-soft)', marginBottom: 6, fontWeight: 500 }}>{label}</p>
       {payload.map(p => p.value > 0 && (
         <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 2 }}>
@@ -144,14 +144,14 @@ function CollapsibleInfoCard({ title, children }: { title: string; children: Rea
         type="button"
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-2.5 px-4 py-3 text-left"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
       >
         <Icon name="info" size={14} style={{ flexShrink: 0 }} />
         <span className="flex-1">{title}</span>
         <Icon name="plus" size={12} style={{ flexShrink: 0, transform: expanded ? 'rotate(45deg)' : 'none', transition: 'transform var(--arvo-dur-fast) var(--arvo-ease)' }} />
       </button>
       {expanded && (
-        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 12, lineHeight: 1.6 }}>
+        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 13, lineHeight: 1.6 }}>
           {children}
         </div>
       )}
@@ -173,8 +173,8 @@ function SparkTooltip({ active, payload, label, fmt, cx, currency, tf }: {
   const projected = payload.find(p => p.dataKey === 'projected' && p.value != null)
   if (!actual && !projected) return null
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'var(--arvo-font-body)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
-      <p style={{ color: 'var(--arvo-fg-soft)', marginBottom: 4, fontSize: 11 }}>Dia {label}</p>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+      <p style={{ color: 'var(--arvo-fg-soft)', marginBottom: 4, fontSize: 12 }}>Dia {label}</p>
       {actual    && <p style={{ color: 'var(--arvo-fg)',      fontWeight: 600, margin: 0 }}>{tf.overviewChartActual}:    {fmt(cx(Number(actual.value)),    currency, true)}</p>}
       {projected && <p style={{ color: 'var(--arvo-fg-soft)', margin: 0 }}>{tf.overviewChartProjected}: {fmt(cx(Number(projected.value)), currency, true)}</p>}
     </div>
@@ -344,7 +344,7 @@ export default function FinancesOverviewPage() {
             <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
+            <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
             <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-faint)', borderRadius: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
@@ -478,13 +478,13 @@ export default function FinancesOverviewPage() {
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
             <path d="M9 21V12h6v9"/>
           </svg>
-          <p style={{ flex: 1, fontSize: 13, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-muted)', lineHeight: 1.4, margin: 0 }}>
+          <p style={{ flex: 1, fontSize: 14, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-muted)', lineHeight: 1.4, margin: 0 }}>
             {t.finances.homePromptText}
           </p>
           <button
             onClick={confirmHomeSection}
             disabled={savingHome}
-            style={{ flexShrink: 0, fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--arvo-fg)', background: 'rgba(200,184,154,0.25)', border: '1px solid rgba(200,184,154,0.5)', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', opacity: savingHome ? 0.5 : 1, whiteSpace: 'nowrap' }}
+            style={{ flexShrink: 0, fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--arvo-fg)', background: 'rgba(200,184,154,0.25)', border: '1px solid rgba(200,184,154,0.5)', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', opacity: savingHome ? 0.5 : 1, whiteSpace: 'nowrap' }}
           >
             {t.finances.homePromptConfirm}
           </button>
@@ -506,7 +506,7 @@ export default function FinancesOverviewPage() {
             <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
+            <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
             <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-faint)', borderRadius: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
@@ -533,7 +533,7 @@ export default function FinancesOverviewPage() {
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
-                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '2px 10px', borderRadius: 999, fontSize: 12, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
                   background: totalExpenses === 0 ? 'var(--arvo-chip-bg)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
                   color: totalExpenses === 0 ? 'var(--arvo-fg-faint)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
                   border: `1px solid ${totalExpenses === 0 ? 'var(--arvo-border)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
@@ -551,7 +551,7 @@ export default function FinancesOverviewPage() {
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, false) : '-'}
                 </span>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                   {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, false)}
                 </span>
               </div>
@@ -561,7 +561,7 @@ export default function FinancesOverviewPage() {
                   {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, false) : '-'}
                 </span>
                 {totalBudgeted > 0 && (
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                     {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, false)}
                   </span>
                 )}
@@ -572,7 +572,7 @@ export default function FinancesOverviewPage() {
                   {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '-'}
                 </span>
                 {receivedIncome > 0 && (
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-faint)' }}>{t.finances.overviewStatus}</span>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-faint)' }}>{t.finances.overviewStatus}</span>
                 )}
               </div>
             </div>
@@ -589,7 +589,7 @@ export default function FinancesOverviewPage() {
                       {fmt(cx(displayValue), currency, false)}
                     </span>
                     {totalBudgeted > 0 && (
-                      <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
+                      <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
                     )}
                   </div>
                 </div>
@@ -620,7 +620,7 @@ export default function FinancesOverviewPage() {
                   </div>
                 )}
                 {totalBudgeted > 0 && displayValue != null && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
                     {displayOver
                       ? `+${fmt(cx(displayValue - totalBudgeted), currency, false)} ${t.finances.overviewOverBudget}`
                       : `${fmt(cx(totalBudgeted - displayValue), currency, false)} ${t.finances.overviewUnderBudget}`}
@@ -643,11 +643,11 @@ export default function FinancesOverviewPage() {
                     {fmt(cx(displayValue), currency, false)}
                   </span>
                   {totalBudgeted > 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
+                    <span style={{ fontSize: 13, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
                   )}
                 </div>
                 {isCurrentMonth && (
-                  <p style={{ fontSize: 11, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: '-4px 0 8px' }}>
+                  <p style={{ fontSize: 12, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: '-4px 0 8px' }}>
                     {t.finances.overviewProjectionBasis}
                   </p>
                 )}
@@ -672,7 +672,7 @@ export default function FinancesOverviewPage() {
                   </div>
                 )}
                 {totalBudgeted > 0 && displayValue != null && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
                     {displayOver
                       ? `+${fmt(cx(displayValue - totalBudgeted), currency, false)} ${t.finances.overviewOverBudget}`
                       : `${fmt(cx(totalBudgeted - displayValue), currency, false)} ${t.finances.overviewUnderBudget}`}
@@ -680,7 +680,7 @@ export default function FinancesOverviewPage() {
                 )}
               </>
             ) : isCurrentMonth ? (
-              <p style={{ fontSize: 12, color: 'var(--arvo-fg-faint)', fontStyle: 'italic' }}>
+              <p style={{ fontSize: 13, color: 'var(--arvo-fg-faint)', fontStyle: 'italic' }}>
                 {daysElapsed} {t.finances.overviewInsufficientData}
               </p>
             ) : (
@@ -717,7 +717,7 @@ export default function FinancesOverviewPage() {
       {budgetAlerts.map(item => (
         <div key={item.key} className="lg:col-span-2" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--arvo-ocre)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <p style={{ flex: 1, fontSize: 12, color: 'var(--arvo-ocre)', margin: 0, fontFamily: 'var(--arvo-font-body)' }}>
+          <p style={{ flex: 1, fontSize: 13, color: 'var(--arvo-ocre)', margin: 0, fontFamily: 'var(--arvo-font-body)' }}>
             {resolveNotificationText(item, t, locale).title}
           </p>
           <button
@@ -741,17 +741,17 @@ export default function FinancesOverviewPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <div className="flex items-center gap-1 min-w-0">
-                  <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", fontWeight: 600 }} className="truncate">{t.finances.overviewIncomeSection}</span>
+                  <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", fontWeight: 600 }} className="truncate">{t.finances.overviewIncomeSection}</span>
                   {incomeEnvelopeBar.categories.length > 0 && (
                     <span className="text-[9px] text-[var(--arvo-fg-faint)] leading-none shrink-0">{expandedEnvIds.has(incomeEnvelopeBar.id) ? '▲' : '▼'}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--arvo-green)' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-green)' }}>
                     {fmt(cx(incomeEnvelopeBar.actual), currency, true)}
                   </span>
                   {incomeEnvelopeBar.budget > 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(incomeEnvelopeBar.budget), currency, true)}</span>
+                    <span style={{ fontSize: 13, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(incomeEnvelopeBar.budget), currency, true)}</span>
                   )}
                 </div>
               </div>
@@ -773,8 +773,8 @@ export default function FinancesOverviewPage() {
                   <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--arvo-green)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
+                      <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--arvo-green)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                   </div>
                 </div>
@@ -803,17 +803,17 @@ export default function FinancesOverviewPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-1 min-w-0">
-                      <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }} className="truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
+                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }} className="truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                       {env.categories.length > 0 && (
                         <span className="text-[9px] text-[var(--arvo-fg-faint)] leading-none shrink-0">{expandedEnvIds.has(env.id) ? '▲' : '▼'}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: env.over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                         {fmt(cx(env.actual), currency, true)}
                       </span>
                       {env.budget > 0 && (
-                        <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(env.budget), currency, true)}</span>
+                        <span style={{ fontSize: 13, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(env.budget), currency, true)}</span>
                       )}
                       {env.budget > 0 && env.actual > 0 && (() => {
                         // % of the envelope's budget already spent (not the delta vs budget) —
@@ -821,7 +821,7 @@ export default function FinancesOverviewPage() {
                         // something had gone wrong, when it just meant "10% consumed".
                         const pctConsumed = Math.round((env.actual / env.budget) * 100)
                         return (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: pctConsumed > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', minWidth: 30, textAlign: 'right' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: pctConsumed > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', minWidth: 30, textAlign: 'right' }}>
                             {pctConsumed}%
                           </span>
                         )
@@ -855,10 +855,10 @@ export default function FinancesOverviewPage() {
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                         <span className="text-sm leading-none w-5 shrink-0">{cat.icon}</span>
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                          <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                          <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                           <div className="flex items-center gap-1 shrink-0">
-                            <span style={{ fontSize: 12, fontWeight: 600, color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
-                            {catBudget > 0 && <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
+                            <span style={{ fontSize: 13, fontWeight: 600, color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
+                            {catBudget > 0 && <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
                           </div>
                         </div>
                       </div>
@@ -894,7 +894,7 @@ export default function FinancesOverviewPage() {
               const barPct = hasBudget ? Math.min(pct, 100) : 0
               return (
                 <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-[var(--arvo-hover-bg)] transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', width: 16, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', width: 16, flexShrink: 0 }}>{i + 1}</span>
                   <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -905,7 +905,7 @@ export default function FinancesOverviewPage() {
                       <div className="h-full rounded-full" style={{ width: `${barPct}%`, backgroundColor: hasBudget && pct > 100 ? 'var(--arvo-red)' : breakdownColor(i) }} />
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, color: hasBudget && pct > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>
+                  <span style={{ fontSize: 13, color: hasBudget && pct > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>
                     {hasBudget ? `${pct.toFixed(0)}%` : '-'}
                   </span>
                 </div>
@@ -926,7 +926,7 @@ export default function FinancesOverviewPage() {
                   key={n}
                   onClick={() => setEnvHistoryMonths(n)}
                   style={{
-                    padding: '4px 10px', fontSize: 12, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
+                    padding: '4px 10px', fontSize: 13, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
                     background: envHistoryMonths === n ? 'var(--arvo-pill-active-bg)' : 'transparent',
                     color: envHistoryMonths === n ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
                     border: 'none', cursor: 'pointer',
@@ -951,12 +951,12 @@ export default function FinancesOverviewPage() {
             >
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
+                tick={{ fontSize: 12, fill: 'var(--arvo-fg-soft)' }}
                 interval={envHistoryMonths <= 6 ? 0 : envHistoryMonths <= 12 ? 1 : Math.max(0, Math.ceil(chartData.length / 8) - 1)}
               />
               <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10, fill: 'var(--arvo-fg-soft)' }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
               {data.envelopes.filter(e => e.type !== 'income').map((env, i, arr) => (
                 <Bar
                   key={env.id}
@@ -985,7 +985,7 @@ export default function FinancesOverviewPage() {
                     key={n}
                     onClick={() => setCatHistoryMonths(n)}
                     style={{
-                      padding: '4px 10px', fontSize: 12, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
+                      padding: '4px 10px', fontSize: 13, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
                       background: catHistoryMonths === n ? 'var(--arvo-pill-active-bg)' : 'transparent',
                       color: catHistoryMonths === n ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
                       border: 'none', cursor: 'pointer',
@@ -1049,7 +1049,7 @@ export default function FinancesOverviewPage() {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={catChartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval={catHistoryMonths <= 6 ? 0 : catHistoryMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--arvo-fg-soft)' }} interval={catHistoryMonths <= 6 ? 0 : catHistoryMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
                   <YAxis tickFormatter={v => fmt(cx(Number(v)), currency, true)} tick={{ fontSize: 10, fill: 'var(--arvo-fg-soft)' }} width={70} />
                   <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
                   {filtered.map((cat, i) => (

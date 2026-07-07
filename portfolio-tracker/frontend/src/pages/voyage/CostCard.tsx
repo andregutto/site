@@ -68,9 +68,9 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
         {tv.selectMoment ?? 'Selecionar momento'}
       </p>
       {loadingMoments ? (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
       ) : moments.length === 0 ? (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Nenhum momento encontrado</p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>Nenhum momento encontrado</p>
       ) : (
         <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
           {moments.map(m => (
@@ -79,7 +79,7 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
                 textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
                 border: selectedMoment === m.id ? '1px solid var(--arvo-fg-muted)' : '1px solid transparent',
                 background: selectedMoment === m.id ? 'var(--arvo-hover-bg)' : 'transparent',
-                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}
             >
@@ -90,9 +90,9 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
         </div>
       )}
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={() => setMode('none')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
+        <button type="button" onClick={() => setMode('none')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
         <button type="button" onClick={linkMoment} disabled={!selectedMoment || saving}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: !selectedMoment || saving ? 'default' : 'pointer', opacity: !selectedMoment || saving ? 0.5 : 1 }}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: !selectedMoment || saving ? 'default' : 'pointer', opacity: !selectedMoment || saving ? 0.5 : 1 }}
         >{saving ? 'Vinculando…' : tv.linkMoment ?? 'Vincular'}</button>
       </div>
     </div>
@@ -183,7 +183,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   if (!hasMoments) {
     return (
       <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 0, marginBottom: 12 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, marginTop: 0, marginBottom: 12 }}>
           {tv.costNone ?? 'Nenhum momento vinculado'}
         </p>
         <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} />
@@ -197,10 +197,10 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
       {cost.budget != null && (
         <div style={{ marginBottom: hasCategories ? 18 : 0 }}>
           <div className="flex items-baseline justify-between" style={{ marginBottom: 6 }}>
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
               {fmt(cost.total)} {tv.costOf ?? 'de'} {fmt(cost.budget)}
             </span>
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: overBudget ? RED : GREEN }}>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontVariantNumeric: 'tabular-nums', color: overBudget ? RED : GREEN }}>
               {overBudget
                 ? `+${fmt(cost.total - cost.budget)} ${tv.costOver ?? 'acima'}`
                 : `${fmt(cost.budget - cost.total)} ${tv.costLeft ?? 'restantes'}`}
@@ -234,9 +234,9 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: ARVO_PALETTE[i % ARVO_PALETTE.length], flexShrink: 0 }} />
                   <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolveCategoryName(c.name, c.name_key, categoryNameKeys)}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(c.total)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolveCategoryName(c.name, c.name_key, categoryNameKeys)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(c.total)}</span>
                 </div>
               )
             })}
@@ -257,8 +257,8 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                   <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: USER_COLORS[i % USER_COLORS.length], borderRadius: 999 }} />
                   </div>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(u.total)}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(u.total)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                 </div>
               )
             })}
@@ -273,7 +273,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
             <SectionLabel>{tv.expenses?.byPlace ?? 'Por lugar'}</SectionLabel>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
               {showByPlace ? (tv.actions?.collapse ?? 'Recolher') : `${places.length} ${tv.placesWord ?? 'lugares'}`}
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: showByPlace ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
                 <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
@@ -287,8 +287,8 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 return (
                   <div key={p.trip_place_id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.total)}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.total)}</span>
                     </div>
                     <div style={{ height: 3, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: 'var(--arvo-fg-soft)', borderRadius: 999, transition: 'width 300ms ease' }} />
@@ -307,7 +307,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
         >
           <SectionLabel>{tv.allTransactions ?? 'Todas as transações'}</SectionLabel>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
             {showTransactions ? (tv.actions?.collapse ?? 'Recolher') : (tv.actions?.expand ?? 'Expandir')}
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: showTransactions ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
               <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
@@ -317,9 +317,9 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
         {showTransactions && (
           <div style={{ marginTop: 12 }}>
             {loadingTx ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
             ) : txDisplayItems.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.noTransactions ?? 'Nenhuma transação'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{tv.noTransactions ?? 'Nenhuma transação'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--arvo-border-soft)', borderRadius: 10, overflow: 'hidden' }}>
                 {txDisplayItems.map((item, i) => {
@@ -338,16 +338,16 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                           <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--arvo-fg-soft)', transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 160ms', flexShrink: 0 }}>
                             <path d="M6 3.5L10.5 8 6 12.5V3.5z"/>
                           </svg>
-                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{item.txs.length}</span>
-                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 56, textAlign: 'right' }}>{fmt(Math.abs(item.net))}</span>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{item.txs.length}</span>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 56, textAlign: 'right' }}>{fmt(Math.abs(item.net))}</span>
                         </div>
                         {expanded && item.txs.map(tx => (
                           <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px 7px 26px', borderTop: '1px solid var(--arvo-border-soft)' }}>
-                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
-                            <span style={{ fontSize: 12, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
-                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
-                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                            <span style={{ fontSize: 13, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
                           </div>
                         ))}
                       </div>
@@ -356,10 +356,10 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                   const tx = item.tx
                   return (
                     <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderTop: i > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
-                      <span style={{ fontSize: 12, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: tx.amount < 0 ? 'var(--arvo-fg-soft)' : GREEN, fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                      <span style={{ fontSize: 13, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: tx.amount < 0 ? 'var(--arvo-fg-soft)' : GREEN, fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
                     </div>
                   )
                 })}
@@ -373,7 +373,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
           <SectionLabel>{tv.linkedMoments ?? 'Momentos'}</SectionLabel>
-          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
+          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
             {tv.actions?.viewMoments ?? 'Ver momentos →'}
           </Link>
         </div>
@@ -381,10 +381,10 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {cost.moments.map(m => (
             <div key={m.id} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: 13 }}>{m.icon}</span>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{m.name}</span>
+                <span style={{ fontSize: 14 }}>{m.icon}</span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{m.name}</span>
               </div>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>
                 {fmt(m.spent)}
               </span>
             </div>

@@ -115,19 +115,19 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
               background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-hover-bg)',
             }}
           >
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fg }}>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: fg }}>
               {[d.city, d.country].filter(Boolean).join(', ') || '-'}
             </span>
             <input
               autoFocus value={editDayStart} onChange={e => setEditDayStart(e.target.value)} type="number" min="1" placeholder="ini." inputMode="numeric"
-              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 11, outline: 'none', textAlign: 'center' }}
+              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', textAlign: 'center' }}
             />
             <input
               value={editDayEnd} onChange={e => setEditDayEnd(e.target.value)} type="number" min="1" placeholder="fim" inputMode="numeric"
-              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 11, outline: 'none', textAlign: 'center' }}
+              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', textAlign: 'center' }}
             />
             <button type="button" onClick={() => saveEdit(d)} disabled={savingEdit}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? GOLD : 'var(--arvo-fg)', padding: 2, display: 'flex', fontSize: 11 }}>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? GOLD : 'var(--arvo-fg)', padding: 2, display: 'flex', fontSize: 12 }}>
               {savingEdit ? '…' : '✓'}
             </button>
             <button type="button" onClick={() => setEditingId(null)}
@@ -144,7 +144,7 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
               display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px',
               borderRadius: 999, border: `1px solid ${border}`,
               background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-hover-bg)',
-              fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fg,
+              fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: fg,
             }}
           >
             <button type="button" onClick={() => startEdit(d)} title="Editar dias"
@@ -167,7 +167,7 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
           <button
             type="button" onClick={() => setAdding(true)}
             style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fgSoft,
+              fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: fgSoft,
               background: 'none', border: `1px dashed ${border}`, borderRadius: 999, padding: '4px 12px', cursor: 'pointer',
             }}
           >
@@ -184,22 +184,22 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
               onChange={v => { setCity(v); setCountry('') }}
               onSelect={d => { if (d.city) setCity(d.city); setCountry(d.country ?? '') }}
               placeholder="Cidade ou destino"
-              style={{ width: '100%', padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
           <input
             value={dayStart} onChange={e => setDayStart(e.target.value)} type="number" min="1" placeholder="Dia ini." inputMode="numeric"
-            style={{ width: 64, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', textAlign: 'center' }}
+            style={{ width: 64, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 13, outline: 'none', textAlign: 'center' }}
           />
           <input
             value={dayEnd} onChange={e => setDayEnd(e.target.value)} type="number" min="1" placeholder="Dia fim" inputMode="numeric"
-            style={{ width: 64, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', textAlign: 'center' }}
+            style={{ width: 64, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 13, outline: 'none', textAlign: 'center' }}
           />
           <button type="button" onClick={addDestination} disabled={saving}
-            style={{ padding: '5px 12px', borderRadius: 5, background: dark ? GOLD : 'var(--arvo-fg)', color: dark ? '#000' : 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}>
+            style={{ padding: '5px 12px', borderRadius: 5, background: dark ? GOLD : 'var(--arvo-fg)', color: dark ? '#000' : 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}>
             {saving ? '…' : 'Salvar'}
           </button>
-          <button type="button" onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: fgSoft, fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}>
+          <button type="button" onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: fgSoft, fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}>
             Cancelar
           </button>
         </div>

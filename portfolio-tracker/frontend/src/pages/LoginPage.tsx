@@ -204,7 +204,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.20em', color: 'rgba(242,237,228,0.45)', position: 'relative', zIndex: 2 }}>
+        <div style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.20em', color: 'rgba(242,237,228,0.45)', position: 'relative', zIndex: 2 }}>
           cultivate what is yours
         </div>
       </aside>
@@ -217,7 +217,7 @@ export default function LoginPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="arvo" />
-            <span style={{ fontFamily: F_SANS, fontSize: 13, letterSpacing: '0.28em', textIndent: '0.28em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
+            <span style={{ fontFamily: F_SANS, fontSize: 14, letterSpacing: '0.28em', textIndent: '0.28em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
           </a>
           <LanguageSelector />
         </div>
@@ -241,7 +241,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setRegistered(false); switchMode('login') }}
-              style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer' }}
+              style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer' }}
             >
               {l.goToLogin}
             </button>
@@ -282,7 +282,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => switchMode(m)}
                     style={{
-                      fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+                      fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase',
                       padding: '4px 0', border: 0, background: 'transparent',
                       color: mode === m ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)',
                       borderBottom: mode === m ? '1px solid var(--arvo-black)' : '1px solid transparent',
@@ -314,7 +314,7 @@ export default function LoginPage() {
                   style={{
                     width: '100%', padding: '13px 24px', background: '#FFFFFF',
                     border: '1px solid var(--arvo-border)', borderRadius: 3,
-                    fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
+                    fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase',
                     color: 'var(--arvo-fg)', cursor: googleLoading ? 'not-allowed' : 'pointer',
                     opacity: googleLoading ? 0.6 : 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -442,7 +442,7 @@ export default function LoginPage() {
                     <div style={{ display: 'flex', gap: 8 }}>
                       {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
                         <button key={c} type="button" onClick={() => setCurrency(c)}
-                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : '#FFFFFF', color: currency === c ? 'var(--arvo-offwhite)' : 'var(--arvo-fg-muted)', transition: 'all 0.2s' }}
+                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : '#FFFFFF', color: currency === c ? 'var(--arvo-offwhite)' : 'var(--arvo-fg-muted)', transition: 'all 0.2s' }}
                         >
                           {c}
                         </button>
@@ -454,7 +454,7 @@ export default function LoginPage() {
                     <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)}
                       style={{ width: 16, height: 16, accentColor: 'var(--arvo-black)', flexShrink: 0 }}
                     />
-                    <span style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
+                    <span style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg-soft)' }}>
                       {l.acceptTerms}{' '}
                       <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--arvo-black)', textDecoration: 'underline' }}>
                         {l.termsLink}
@@ -465,18 +465,18 @@ export default function LoginPage() {
               )}
 
               {error && (
-                <div style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-red)', color: 'var(--arvo-fg)' }}>
+                <div style={{ fontFamily: F_SANS, fontSize: 14, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-red)', color: 'var(--arvo-fg)' }}>
                   <p style={{ margin: 0 }}>{error}</p>
                   {error === l.errEmailNotConfirmed && (
                     <div style={{ marginTop: 10 }}>
                       {resent ? (
-                        <p style={{ margin: 0, fontSize: 12, color: 'var(--arvo-green)' }}>{l.emailResent ?? 'E-mail reenviado. Verifique sua caixa de entrada.'}</p>
+                        <p style={{ margin: 0, fontSize: 13, color: 'var(--arvo-green)' }}>{l.emailResent ?? 'E-mail reenviado. Verifique sua caixa de entrada.'}</p>
                       ) : (
                         <button
                           type="button"
                           onClick={handleResend}
                           disabled={resending || !email}
-                          style={{ background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 3, padding: '5px 12px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-fg)', cursor: resending || !email ? 'not-allowed' : 'pointer', opacity: resending || !email ? 0.6 : 1 }}
+                          style={{ background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 3, padding: '5px 12px', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-fg)', cursor: resending || !email ? 'not-allowed' : 'pointer', opacity: resending || !email ? 0.6 : 1 }}
                         >
                           {resending ? (l.loading ?? '...') : (l.resendEmail ?? 'Reenviar e-mail')}
                         </button>
@@ -486,7 +486,7 @@ export default function LoginPage() {
                 </div>
               )}
               {info && (
-                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-gold)', color: 'var(--arvo-fg-muted)' }}>
+                <p style={{ fontFamily: F_SANS, fontSize: 14, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-gold)', color: 'var(--arvo-fg-muted)' }}>
                   {info}
                 </p>
               )}
@@ -494,7 +494,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s', marginTop: 4, boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s', marginTop: 4, boxSizing: 'border-box' }}
               >
                 {loading && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="animate-spin">
@@ -506,7 +506,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.05em', color: 'var(--arvo-fg-soft)', marginTop: 32, maxWidth: 400, lineHeight: 1.7 }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.05em', color: 'var(--arvo-fg-soft)', marginTop: 32, maxWidth: 400, lineHeight: 1.7 }}>
               ao entrar, você aceita os termos de uso e a política de privacidade. arvo guarda seus dados em servidores na União Europeia.
             </p>
           </div>
