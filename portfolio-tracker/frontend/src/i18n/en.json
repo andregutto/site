@@ -2781,6 +2781,7 @@
       "signups": "signups",
       "bySource": "Source:",
       "manageLinks": "Promo links",
+      "directLink": "Direct link (no source)",
       "linkLabelPlaceholder": "Where will you use this link? E.g. Paris cost of living video",
       "generateLink": "Generate link",
       "copy": "Copy",

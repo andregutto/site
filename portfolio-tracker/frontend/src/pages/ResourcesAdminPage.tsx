@@ -92,7 +92,6 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   const [isDraggingCover, setIsDraggingCover] = useState(false)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
-  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [linksOpenId, setLinksOpenId] = useState<number | null>(null)
   const [newLinkLabel, setNewLinkLabel] = useState('')
   const [creatingLink, setCreatingLink] = useState(false)
@@ -275,16 +274,17 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
     }
   }
 
-  function copyLink(slug: string) {
-    const url = `${window.location.origin}/resources/${slug}`
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedSlug(slug)
-      setTimeout(() => setCopiedSlug(null), 1800)
-    })
+  function linkUrl(item: ResourceRow, link: ResourceLink): string {
+    const base = `${window.location.origin}/resources/${item.slug}`
+    if (!link.utm_campaign) return base
+    return `${base}?utm_source=youtube&utm_campaign=${encodeURIComponent(link.utm_campaign)}`
   }
 
-  function linkUrl(item: ResourceRow, link: ResourceLink): string {
-    return `${window.location.origin}/resources/${item.slug}?utm_source=youtube&utm_campaign=${encodeURIComponent(link.utm_campaign)}`
+  // Linha fixa no topo do painel de links — sempre existe, não precisa gerar
+  // (é só a URL crua, sem UTM). Resolve a confusão de ter dois botões
+  // separados ("link público" x "link de divulgação"): agora é um só lugar.
+  function directLink(): ResourceLink {
+    return { id: -1, label: ra.directLink ?? 'Link direto (sem origem)', utm_campaign: '', created_at: '' }
   }
 
   function copyGeneratedLink(item: ResourceRow, link: ResourceLink) {
@@ -494,33 +494,40 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
           </div>
         </section>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map(item => (
-            <div key={item.id} className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--arvo-surface)', borderColor: 'var(--arvo-border)' }}>
-              {item.preview_image_url ? (
-                <div className="h-28 overflow-hidden relative">
+            <div key={item.id} className="rounded-[14px] border overflow-hidden" style={{ background: 'var(--arvo-surface)', borderColor: 'var(--arvo-border)' }}>
+              <div className="relative" style={{ paddingBottom: '56.25%', background: 'var(--arvo-black)', overflow: 'hidden' }}>
+                {item.preview_image_url ? (
                   <img
                     src={item.preview_image_url}
                     alt={item.title}
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                     style={{ objectPosition: item.cover_image_position ?? '50% 50%' }}
                   />
-                </div>
-              ) : (
-                <div className="h-20 flex items-center justify-center" style={{ background: 'var(--arvo-black)' }}>
-                  <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="26" alt="" />
-                </div>
-              )}
-
-              <div style={{ padding: '14px 16px' }}>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
-                  <span className="shrink-0" style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: item.is_published ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-faint)' }}>
-                    {item.is_published ? (ra.publishedYes ?? 'Publicado').split(' ')[0] : (ra.publishedNo ?? 'Rascunho').split(' ')[0]}
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="26" alt="" />
+                  </div>
+                )}
+                {/* Status — mesma posição/estilo do badge de status do card de Viagens */}
+                <div className="absolute top-3 right-3" style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  background: 'rgba(13,13,13,0.65)', backdropFilter: 'blur(8px)',
+                  padding: '3px 10px', borderRadius: 999,
+                  border: `1px solid ${item.is_published ? 'rgba(31,138,91,0.4)' : 'rgba(255,255,255,0.2)'}`,
+                }}>
+                  {item.is_published && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--arvo-green, #1F8A5B)', display: 'inline-block' }} />}
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: item.is_published ? 'var(--arvo-green, #1F8A5B)' : 'rgba(255,255,255,0.75)' }}>
+                    {item.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
                   </span>
                 </div>
+              </div>
+
+              <div style={{ padding: '14px 16px' }}>
+                <span className="block truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
                 <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/resources/{item.slug}</p>
-                <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
+                <p className="truncate" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}
                 </p>
                 {Object.keys(item.stats.by_source ?? {}).length > 0 && (
@@ -533,56 +540,54 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
-                  <button onClick={() => copyLink(item.slug)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-                    {copiedSlug === item.slug ? (ra.linkCopied ?? 'Link copiado!') : (ra.copyLink ?? 'Copiar link público')}
-                  </button>
                   <button onClick={() => startEdit(item)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
                     {ra.editResource ?? 'Editar'}
                   </button>
                   <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
                     {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
                   </button>
-                  <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
-                    {ra.delete ?? 'Excluir'}
-                  </button>
                   <button onClick={() => { setLinksOpenId(linksOpenId === item.id ? null : item.id); setNewLinkLabel('') }} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${linksOpenId === item.id ? OCRE : 'var(--arvo-border)'}`, background: linksOpenId === item.id ? 'rgba(232,160,32,0.08)' : 'none', color: linksOpenId === item.id ? OCRE : 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-                    {ra.manageLinks ?? 'Links de divulgação'} {item.links.length > 0 ? `(${item.links.length})` : ''}
+                    {ra.manageLinks ?? 'Links'} {item.links.length > 0 ? `(${item.links.length})` : ''}
+                  </button>
+                  <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1, marginLeft: 'auto' }}>
+                    {ra.delete ?? 'Excluir'}
                   </button>
                 </div>
 
+                {/* Um só lugar pra links: a 1ª linha é sempre a URL crua (sem
+                    UTM, "pública"), as seguintes são as geradas com rótulo —
+                    resolve a confusão de ter dois botões parecidos. */}
                 {linksOpenId === item.id && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--arvo-border)' }}>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="space-y-2">
+                      {[directLink(), ...item.links].map(link => (
+                        <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
+                          <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: link.id === -1 ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontStyle: link.id === -1 ? 'italic' : 'normal', flex: '0 1 auto', maxWidth: 170 }}>{link.label}</span>
+                          <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
+                          <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            {copiedLinkId === link.id ? (ra.linkCopied ?? 'Copiado!') : (ra.copy ?? 'Copiar')}
+                          </button>
+                          {link.id !== -1 && (
+                            <button onClick={() => deleteLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer' }}>
+                              {ra.delete ?? 'Excluir'}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 10 }}>
                       <input
                         value={newLinkLabel}
                         onChange={e => setNewLinkLabel(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') createLink(item) }}
                         placeholder={ra.linkLabelPlaceholder ?? 'Onde vai usar esse link? Ex: Vídeo custo de vida Paris'}
-                        style={{ ...input, flex: 1, minWidth: 200, fontSize: 12.5, padding: '6px 10px' }}
+                        style={{ ...input, flex: 1, minWidth: 160, fontSize: 12.5, padding: '6px 10px' }}
                       />
                       <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
                         {ra.generateLink ?? 'Gerar link'}
                       </button>
                     </div>
-
-                    {item.links.length > 0 ? (
-                      <div className="space-y-2" style={{ marginTop: 10 }}>
-                        {item.links.map(link => (
-                          <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
-                            <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)', flex: '0 1 auto', maxWidth: 180 }}>{link.label}</span>
-                            <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
-                            <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                              {copiedLinkId === link.id ? (ra.linkCopied ?? 'Copiado!') : (ra.copy ?? 'Copiar')}
-                            </button>
-                            <button onClick={() => deleteLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer' }}>
-                              {ra.delete ?? 'Excluir'}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '10px 0 0' }}>{ra.noLinks ?? 'Nenhum link gerado ainda pra este recurso.'}</p>
-                    )}
                   </div>
                 )}
               </div>

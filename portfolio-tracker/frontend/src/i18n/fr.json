@@ -2781,6 +2781,7 @@
       "signups": "inscriptions",
       "bySource": "Origine :",
       "manageLinks": "Liens de promotion",
+      "directLink": "Lien direct (sans origine)",
       "linkLabelPlaceholder": "Où allez-vous utiliser ce lien ? Ex : Vidéo coût de la vie à Paris",
       "generateLink": "Générer un lien",
       "copy": "Copier",
