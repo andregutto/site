@@ -267,11 +267,12 @@ export default function VoyageTripDetailPage() {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: trip.cover_image_position, filter: 'sepia(0.20) saturate(1.10) brightness(0.80)' }}
             />
           ) : (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1a1a18 0%, #2a2820 100%)' }}>
-              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" stroke="rgba(200,184,154,0.12)" strokeWidth="1.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 44L18 18l16 12 14-22 16 12"/>
-                <path strokeLinecap="round" d="M4 52h52"/>
-              </svg>
+            // Preto sólido + logo/wordmark — mesmo fallback de "sem foto" usado em
+            // Viagens (VoyageTripsPage), Momentos (FinancesMomentsPage) e na Hoje
+            // (CoverCard), pra não parecer foto real da viagem quando não é.
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#0D0D0D' }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" width="32" height="34" alt="" />
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
             </div>
           )}
           {/* Gradient */}

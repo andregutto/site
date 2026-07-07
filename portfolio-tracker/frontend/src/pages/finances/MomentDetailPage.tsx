@@ -5,7 +5,6 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
-import { resolveMomentIcon } from '../../lib/momentIcons'
 import {
   _fmt, fmtDate, resolveKey, ByUserBreakdown, MomentCollaboratorsHero, TransformToTripButton,
   ShareModal, AssignModal, MembersPanel, MomentForm,
@@ -213,13 +212,19 @@ export default function MomentDetailPage() {
             </div>
           </div>
         ) : (
-          <div className="h-32 flex items-center justify-center relative" style={{ background: 'var(--arvo-surface-2)' }}>
-            <Icon name={resolveMomentIcon(m.icon)} size={40} style={{ color: m.color }} />
-            <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
+          // Preto sólido + logo/wordmark — mesmo fallback de "sem foto" usado em
+          // Viagens (VoyageTripDetailPage), Momentos (FinancesMomentsPage) e na
+          // Hoje (CoverCard), pra não parecer foto real do momento quando não é.
+          <div className="h-52 sm:h-44 relative" style={{ background: '#0D0D0D' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" width="30" height="32" alt="" />
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
+            </div>
+            <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
               <MomentCollaboratorsHero momentId={m.id} onOpen={() => setShowMembers(true)} />
             </div>
-            <div style={{ position: 'absolute', top: 12, left: 16 }}>
-              <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px 22px', pointerEvents: 'none' }}>
+              <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 26, letterSpacing: '0.06em', color: '#fff', lineHeight: 1.2 }}>
                 {m.name}
               </h1>
             </div>
