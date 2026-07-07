@@ -179,7 +179,7 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
     <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${resolvedTheme === 'dark' ? 'dark' : ''}`} style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
       <div
         className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
-        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(28px + env(safe-area-inset-bottom, 0px))' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -827,7 +827,7 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
       <div
         className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
-        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(28px + env(safe-area-inset-bottom, 0px))' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>

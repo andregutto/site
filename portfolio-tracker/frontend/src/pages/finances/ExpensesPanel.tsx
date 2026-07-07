@@ -387,7 +387,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full text-center text-xs py-2 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
+          className="w-full text-center text-sm py-3 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
         >
           + {t.finances.expenseAdd}
         </button>
@@ -436,52 +436,57 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
             <p className="text-[11px] text-[var(--arvo-fg-soft)]">{t.finances.expenseCategorizeLaterHint}</p>
           ) : null}
 
-          <div className="flex gap-2 text-xs">
+          <div className="flex gap-2 text-sm">
             <button
               onClick={() => setSplitType('equal')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitEqual}
             </button>
             <button
               onClick={() => setSplitType('custom')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitCustom}
             </button>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseParticipants}</p>
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.has(p.user_id)}
-                  onChange={() => toggleParticipant(p.user_id)}
-                  className="shrink-0"
-                />
-                <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={18} />
-                <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
+                {/* <label> em volta do checkbox+avatar+nome — clicar em qualquer
+                    ponto dessa área (não só na caixinha de 13px) já marca/desmarca,
+                    sem precisar acertar o checkbox pelo dedo no mobile. */}
+                <label className="flex items-center gap-2.5 flex-1 min-w-0 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.user_id)}
+                    onChange={() => toggleParticipant(p.user_id)}
+                    className="shrink-0 w-[18px] h-[18px] accent-[var(--arvo-fg)]"
+                  />
+                  <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={24} />
+                  <span className="text-sm text-[var(--arvo-fg)] flex-1 min-w-0 truncate">{p.display?.name ?? p.user_id}</span>
+                </label>
                 {splitType === 'custom' && selected.has(p.user_id) && (
                   <>
-                    <div className="w-16 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pl-1.5 shrink-0">{CURRENCY_SYMBOLS[expCurrency] ?? expCurrency}</span>
+                    <div className="w-16 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden shrink-0">
+                      <span className="text-xs text-[var(--arvo-fg-soft)] pl-1.5 shrink-0">{CURRENCY_SYMBOLS[expCurrency] ?? expCurrency}</span>
                       <input
                         value={customValues[p.user_id] ?? ''}
                         onChange={e => setCustomValue(p.user_id, e.target.value)}
                         inputMode="decimal"
-                        className="w-full min-w-0 text-xs pl-1 pr-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                        className="w-full min-w-0 text-sm pl-1 pr-1.5 py-1.5 bg-transparent text-[var(--arvo-fg)] text-right"
                       />
                     </div>
-                    <div className="w-14 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
+                    <div className="w-14 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden shrink-0">
                       <input
                         value={customPercents[p.user_id] ?? ''}
                         onChange={e => setCustomPercent(p.user_id, e.target.value)}
                         inputMode="decimal"
-                        className="w-full min-w-0 text-xs pl-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                        className="w-full min-w-0 text-sm pl-1.5 py-1.5 bg-transparent text-[var(--arvo-fg)] text-right"
                       />
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pr-1.5 shrink-0">%</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] pr-1.5 shrink-0">%</span>
                     </div>
                   </>
                 )}
@@ -494,13 +499,13 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           <div className="flex gap-2">
             <button
               onClick={() => { setShowForm(false); resetForm() }}
-              className="flex-1 text-xs py-2 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]"
+              className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={submit} disabled={saving}
-              className="flex-1 text-xs py-2 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60"
+              className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60"
             >
               {t.common.save}
             </button>
