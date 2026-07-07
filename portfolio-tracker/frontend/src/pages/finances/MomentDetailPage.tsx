@@ -212,13 +212,15 @@ export default function MomentDetailPage() {
             </div>
           </div>
         ) : (
-          // Preto sólido + logo/wordmark — mesmo fallback de "sem foto" usado em
-          // Viagens (VoyageTripDetailPage), Momentos (FinancesMomentsPage) e na
-          // Hoje (CoverCard), pra não parecer foto real do momento quando não é.
+          // Preto sólido — mesmo fallback de "sem foto" usado em Viagens
+          // (VoyageTripDetailPage), Momentos (FinancesMomentsPage) e na Hoje
+          // (CoverCard), pra não parecer foto real do momento quando não é.
+          // Logo/wordmark no canto superior esquerdo em vez de centralizado:
+          // centralizado colidia com o título ancorado embaixo.
           <div className="h-52 sm:h-44 relative" style={{ background: '#0D0D0D' }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <img src="/brand/logo/arvo-symbol-gold.svg" width="30" height="32" alt="" />
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
+            <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" width="17" height="18" alt="" />
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.26em', textIndent: '0.26em', color: 'rgba(246,243,236,0.45)' }}>arvo</span>
             </div>
             <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
               <MomentCollaboratorsHero momentId={m.id} onOpen={() => setShowMembers(true)} />

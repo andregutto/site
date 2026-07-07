@@ -267,12 +267,19 @@ export default function VoyageTripDetailPage() {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: trip.cover_image_position, filter: 'sepia(0.20) saturate(1.10) brightness(0.80)' }}
             />
           ) : (
-            // Preto sólido + logo/wordmark — mesmo fallback de "sem foto" usado em
-            // Viagens (VoyageTripsPage), Momentos (FinancesMomentsPage) e na Hoje
+            // Preto sólido — mesmo fallback de "sem foto" usado em Viagens
+            // (VoyageTripsPage), Momentos (FinancesMomentsPage) e na Hoje
             // (CoverCard), pra não parecer foto real da viagem quando não é.
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#0D0D0D' }}>
-              <img src="/brand/logo/arvo-symbol-gold.svg" width="32" height="34" alt="" />
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
+            // Aqui o logo/wordmark vai no canto superior esquerdo (espelhando
+            // a pill de status no canto superior direito) em vez de
+            // centralizado: centralizado colidia visualmente com o título
+            // grande que fica ancorado embaixo (título + destino + data).
+            <div style={{ position: 'absolute', inset: 0, background: '#0D0D0D' }} />
+          )}
+          {!trip.cover_image_url && (
+            <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" width="17" height="18" alt="" />
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.26em', textIndent: '0.26em', color: 'rgba(246,243,236,0.45)' }}>arvo</span>
             </div>
           )}
           {/* Gradient */}
