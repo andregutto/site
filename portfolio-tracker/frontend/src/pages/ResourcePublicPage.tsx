@@ -275,11 +275,13 @@ export default function ResourcePublicPage() {
           border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, overflow: 'hidden',
           display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
         }}>
-          {preview.preview_image_url && (
-            <div style={{ height: 180, flexShrink: 0 }}>
-              <img src={preview.preview_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            </div>
-          )}
+          <div style={{ height: 180, flexShrink: 0 }}>
+            <img
+              src={preview.preview_image_url || '/brand/imagery/arvo-fallback-recurso.jpg'}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: preview.preview_image_url ? '50% 50%' : '50% 30%', display: 'block' }}
+            />
+          </div>
 
           <div style={{ padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
             <div>
