@@ -101,7 +101,7 @@ function timeAgo(iso: string): string {
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
-const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
+const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }
 
 // Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
@@ -390,7 +390,7 @@ export default function HomePage() {
                   pro mesmo índice. Aqui é sempre "quanto eu bati esse índice", sem ambiguidade. */}
               {!hideValues && cmp30 && (
                 <div style={{ position: 'relative', marginTop: 18, paddingTop: 14, borderTop: `1px solid rgba(${GOLD_RGB},0.35)`, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 20px' }}>
-                  <span style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
+                  <span style={{ ...cardLabel, fontSize: 10.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)' }}>
                     <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12 }}>{th.walletShort ?? 'Carteira'} </span>
                     <span className={cmp30.portfolio >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 700 }}>{cmp30.portfolio >= 0 ? '+' : ''}{cmp30.portfolio.toFixed(1)}%</span>
@@ -440,21 +440,21 @@ export default function HomePage() {
               <div style={{ display: 'flex', gap: 32, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
                 {forecast != null && (
                   <div>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
+                    <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
                     <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
                       {fmtCur(forecast, data.month_summary.currency)}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.incomeLabel ?? 'Renda'}</p>
+                  <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.incomeLabel ?? 'Renda'}</p>
                   <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: 'var(--arvo-fg)', marginTop: 3 }}>
                     {fmtCur(data.month_summary.income, data.month_summary.currency)}
                   </p>
                 </div>
                 {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
                   <div>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
+                    <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
                     <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
                       <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{saldo < 0 ? '−' : ''}{fmtCur(Math.abs(saldo), data.month_summary.currency)}</span>
                     </p>
