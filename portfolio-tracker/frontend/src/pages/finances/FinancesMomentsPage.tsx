@@ -1231,7 +1231,7 @@ export default function FinancesMomentsPage() {
               </p>
             </button>
             {isOpen && (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {groups.get(year)!.map(m => (
                   <div key={m.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
                     {m.cover_image_url ? (
@@ -1251,7 +1251,7 @@ export default function FinancesMomentsPage() {
                       </div>
                     )}
                     <div
-                      className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
+                      className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors flex-wrap"
                       onClick={() => navigate(`/finances/moments/${m.id}`)}
                     >
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
