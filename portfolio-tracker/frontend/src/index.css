@@ -153,8 +153,15 @@ textarea:focus-visible {
   width: 100%;
 }
 
-/* Prevent iOS Safari auto-zoom when focusing inputs with small font */
+/* Prevent iOS Safari auto-zoom when focusing inputs with small font.
+   input:not([type]) matters as much as the explicit types below — a plain
+   <input value=... onChange=...> with no type="..." prop (very common in
+   this codebase) defaults to text behavior in the browser, but the
+   attribute selector input[type="text"] only matches when that attribute
+   is literally present in the DOM, so untyped inputs were silently
+   skipping this rule and still triggering the zoom. */
 @media screen and (max-width: 640px) {
+  input:not([type]),
   input[type="text"],
   input[type="email"],
   input[type="password"],

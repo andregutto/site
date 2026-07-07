@@ -591,48 +591,54 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="w-full sm:max-w-xs rounded-t-2xl sm:rounded-2xl max-h-[92vh] sm:max-h-[85vh] overflow-y-auto p-5 space-y-3"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div>
           <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitTransactionTitle}</h3>
           <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{transaction.description} · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: transaction.currency }).format(Math.abs(transaction.amount))}</p>
         </div>
 
         {loading ? <p className="text-xs text-[var(--arvo-fg-soft)]">…</p> : (<>
-          <div className="flex gap-2 text-xs">
+          <div className="flex gap-2 text-sm">
             <button
               onClick={() => setSplitType('equal')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitEqual}
             </button>
             <button
               onClick={() => setSplitType('custom')}
-              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+              className={`flex-1 py-2.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
             >
               {t.finances.expenseSplitCustom}
             </button>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
-                <input type="checkbox" checked={selected.has(p.user_id)} onChange={() => toggleParticipant(p.user_id)} className="shrink-0" />
-                <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={18} />
-                <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
+                <label className="flex items-center gap-2.5 flex-1 min-w-0 py-2 cursor-pointer">
+                  <input type="checkbox" checked={selected.has(p.user_id)} onChange={() => toggleParticipant(p.user_id)} className="shrink-0 w-[18px] h-[18px] accent-[var(--arvo-fg)]" />
+                  <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={24} />
+                  <span className="text-sm text-[var(--arvo-fg)] flex-1 min-w-0 truncate">{p.display?.name ?? p.user_id}</span>
+                </label>
                 {splitType === 'custom' && selected.has(p.user_id) && (
                   <>
                     <input
                       value={customValues[p.user_id] ?? ''}
                       onChange={e => setCustomValue(p.user_id, e.target.value)}
                       placeholder={t.finances.expenseSplitCustomValue} inputMode="decimal"
-                      className="w-16 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
+                      className="w-16 shrink-0 text-sm px-2 py-1.5 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
                     />
                     <input
                       value={customPercents[p.user_id] ?? ''}
                       onChange={e => setCustomPercent(p.user_id, e.target.value)}
                       placeholder={t.finances.expenseSplitCustomPercent} inputMode="decimal"
-                      className="w-14 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
+                      className="w-14 shrink-0 text-sm px-2 py-1.5 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
                     />
                   </>
                 )}
@@ -643,10 +649,10 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
           {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
 
           <div className="flex gap-2">
-            <button onClick={onClose} className="flex-1 text-xs py-2 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
+            <button onClick={onClose} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
               {t.common.cancel}
             </button>
-            <button onClick={submit} disabled={saving} className="flex-1 text-xs py-2 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+            <button onClick={submit} disabled={saving} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
               {t.common.save}
             </button>
           </div>

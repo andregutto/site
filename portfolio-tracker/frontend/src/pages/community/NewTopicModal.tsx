@@ -56,14 +56,18 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl"
-        style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', padding: '24px 24px 20px', maxHeight: '90vh', overflowY: 'auto' }}
+        className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl"
+        style={{
+          background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+          padding: '24px 24px calc(20px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: '92vh', overflowY: 'auto',
+        }}
       >
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, letterSpacing: '0.04em', color: 'var(--arvo-fg)', marginBottom: 18 }}>
           {tc.newTopic ?? 'Novo tópico'}

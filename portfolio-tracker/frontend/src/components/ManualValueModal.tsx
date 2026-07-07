@@ -142,8 +142,8 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4">
+      <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md flex flex-col max-h-[92vh] sm:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-[var(--arvo-border)]">
           <div>
