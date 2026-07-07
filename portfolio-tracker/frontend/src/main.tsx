@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { isNativeApp } from './lib/platform'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,7 +13,9 @@ createRoot(document.getElementById('root')!).render(
 // SW only intercepts same-origin requests; Supabase (cross-origin) is never touched.
 // Skipped in dev: Vite dev-server module URLs are unhashed, so the SW's cache-first
 // strategy would serve stale source files indefinitely, masking code changes.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Skipped in a Capacitor shell: the bundle is already local/offline-capable there, and
+// registering a SW inside the native WebView just adds a redundant caching layer.
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isNativeApp()) {
   // clients.claim() in a new SW doesn't refresh the JS already running in this tab,
   // so a session opened before a deploy can stay on a stale bundle indefinitely
   // (especially PWAs that are suspended/resumed instead of fully relaunched).

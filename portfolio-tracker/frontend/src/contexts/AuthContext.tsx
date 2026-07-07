@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { isNativeApp, NATIVE_AUTH_CALLBACK_URL } from '../lib/platform'
 
 interface AuthContextType {
   user: User | null
@@ -147,10 +148,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // pending_invite_token etc.), but callers like the resource gate page
     // pass their own path so the OAuth round-trip lands directly back on
     // them instead of visibly bouncing through /login first.
+    //
+    // Inside a Capacitor shell, window.location.origin isn't a real reachable web
+    // origin, so the redirect must target the reserved custom scheme instead — this
+    // only sets up the correct redirectTo URL. Actually catching the deep link back
+    // (opening the system browser via @capacitor/browser, listening for appUrlOpen
+    // via @capacitor/app, then exchanging the code for a session) still needs to be
+    // wired once those packages are added; isNativeApp() is always false until then,
+    // so this branch is unreachable today and web/PWA behavior is unchanged.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${redirectPath}`,
+        redirectTo: isNativeApp() ? NATIVE_AUTH_CALLBACK_URL : `${window.location.origin}${redirectPath}`,
         queryParams: { prompt: 'select_account' },
       },
     })
