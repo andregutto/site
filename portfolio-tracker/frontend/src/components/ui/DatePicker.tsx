@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { useI18n } from '../../contexts/I18nContext'
 import {
   addMonths, daysInMonth, firstWeekdayMon, formatDisplay, isSameDay,
@@ -10,6 +11,34 @@ import {
 // + digitação manual. Dois exports: DatePicker (data única) e
 // DateRangePicker (início/fim no mesmo calendário, clique 1 define início,
 // clique 2 define fim — clicar antes do início reinicia o intervalo).
+//
+// O calendário sobe num portal pra <body> em vez de renderizar dentro do
+// próprio campo: os modais (bottom-sheet, ver CLAUDE.md) usam
+// overflow-y-auto no corpo, e um position:absolute comum fica recortado por
+// isso (escapa do fluxo normal, mas não do clipping de um ancestral com
+// overflow) — dias no fim do mês ficavam inacessíveis. Com portal +
+// position:fixed calculado a partir do retângulo do campo, o calendário
+// nunca é cortado, não importa o modal.
+
+function usePopoverRect(open: boolean, anchorRef: React.RefObject<HTMLElement | null>) {
+  const [rect, setRect] = useState<{ top: number; left: number } | null>(null)
+  useEffect(() => {
+    if (!open || !anchorRef.current) { setRect(null); return }
+    function update() {
+      const r = anchorRef.current!.getBoundingClientRect()
+      setRect({ top: r.bottom + 6, left: r.left })
+    }
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+  return rect
+}
 
 const fieldStyle: CSSProperties = {
   width: '100%', padding: '8px 12px', borderRadius: 'var(--arvo-radius-xs)',
@@ -18,12 +47,18 @@ const fieldStyle: CSSProperties = {
   outline: 'none', transition: 'border-color 160ms ease', boxSizing: 'border-box',
 }
 
-function useOutsideClose(open: boolean, onClose: () => void) {
+// popoverRef também conta como "dentro" — o calendário agora vive num
+// portal em <body>, fora da árvore de `ref`, então sem isso qualquer clique
+// nele seria tratado como clique de fora e fecharia o popover na hora.
+function useOutsideClose(open: boolean, onClose: () => void, popoverRef?: React.RefObject<HTMLElement | null>) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+      const target = e.target as Node
+      if (ref.current?.contains(target)) return
+      if (popoverRef?.current?.contains(target)) return
+      onClose()
     }
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('mousedown', onDown)
@@ -32,12 +67,14 @@ function useOutsideClose(open: boolean, onClose: () => void) {
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
+  }, [open, onClose, popoverRef])
   return ref
 }
 
+// position/top/left ficam de fora — quem usa aplica via usePopoverRect
+// (position: fixed, coordenadas calculadas do retângulo do campo).
 const popoverStyle: CSSProperties = {
-  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 40,
+  zIndex: 9999,
   background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)',
   borderRadius: 'var(--arvo-radius-lg)', boxShadow: 'var(--arvo-shadow-lg)',
   padding: 14,
@@ -206,7 +243,9 @@ export function DatePicker({ value, onChange, placeholder, style, min, max }: Da
   const [open, setOpen] = useState(false)
   const [text, setText] = useState(() => formatDisplay(value, locale))
   const [viewMonth, setViewMonth] = useState(() => parseISO(value) ?? new Date())
-  const ref = useOutsideClose(open, () => setOpen(false))
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const ref = useOutsideClose(open, () => setOpen(false), popoverRef)
+  const rect = usePopoverRect(open, ref)
 
   useEffect(() => { setText(formatDisplay(value, locale)) }, [value, locale])
 
@@ -255,8 +294,8 @@ export function DatePicker({ value, onChange, placeholder, style, min, max }: Da
           </svg>
         </button>
       </div>
-      {open && (
-        <div style={popoverStyle}>
+      {open && rect && createPortal(
+        <div ref={popoverRef} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left }}>
           <NavHeader monthDate={viewMonth} onChangeMonth={setViewMonth} onPrev={() => setViewMonth(m => addMonths(m, -1))} onNext={() => setViewMonth(m => addMonths(m, 1))} />
           <MonthGrid
             monthDate={viewMonth}
@@ -273,7 +312,8 @@ export function DatePicker({ value, onChange, placeholder, style, min, max }: Da
               setOpen(false)
             }}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -309,7 +349,9 @@ export function DateRangePicker({
   const [endText, setEndText] = useState(() => formatDisplay(endValue, locale))
   const [hoverEnd, setHoverEnd] = useState<Date | null>(null)
   const [viewMonth, setViewMonth] = useState(() => parseISO(startValue) ?? new Date())
-  const ref = useOutsideClose(open, () => setOpen(false))
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const ref = useOutsideClose(open, () => setOpen(false), popoverRef)
+  const rect = usePopoverRect(open, ref)
 
   useEffect(() => { setStartText(formatDisplay(startValue, locale)) }, [startValue, locale])
   useEffect(() => { setEndText(formatDisplay(endValue, locale)) }, [endValue, locale])
@@ -391,8 +433,8 @@ export function DateRangePicker({
           </label>
         </div>
       )}
-      {open && (
-        <div style={{ ...popoverStyle, display: 'flex', gap: 18 }}>
+      {open && rect && createPortal(
+        <div ref={popoverRef} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left, display: 'flex', gap: 18 }}>
           <div>
             <NavHeader monthDate={viewMonth} onChangeMonth={setViewMonth} onPrev={() => setViewMonth(m => addMonths(m, -1))} onNext={() => setViewMonth(m => addMonths(m, 1))} />
             <MonthGrid monthDate={viewMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} hideLabel />
@@ -405,7 +447,8 @@ export function DateRangePicker({
             </div>
             <MonthGrid monthDate={secondMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} hideLabel />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
