@@ -6,6 +6,7 @@ import { normalizeStorageUrl } from '../lib/storageUrl'
 import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { FormSection } from '../components/ui'
 
 // Painel de admin dos Recursos (lead magnets). Espelha CommunityAdminPage:
 // protegido no servidor (community_admins via isAdmin() em resources.ts),
@@ -398,10 +399,20 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   return (
     <div className="space-y-8">
       {editingId !== null ? (
-        <section style={{ ...card, padding: 20 }} className="space-y-4">
+        <section style={{ ...card, padding: 20 }}>
           <div className="flex items-center justify-between gap-3">
-            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
-              {editingId === 'new' ? (ra.newResource ?? '+ Novo recurso') : (ra.editResource ?? 'Editar recurso')}
+            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', whiteSpace: 'nowrap' }}>
+              {editingId === 'new' ? (
+                <>
+                  <span className="hidden sm:inline">{ra.newResource ?? '+ Novo recurso'}</span>
+                  <span className="sm:hidden">{ra.newResourceShort ?? 'Novo recurso'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">{ra.editResource ?? 'Editar recurso'}</span>
+                  <span className="sm:hidden">{ra.editResourceShort ?? 'Edição'}</span>
+                </>
+              )}
             </h2>
             <label className="flex items-center gap-2 shrink-0" style={{ cursor: 'pointer' }}>
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
@@ -413,149 +424,154 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
 
           {/* Imagem no topo — é assim que ela aparece no card da listagem,
               então faz sentido ver e ajustar a posição logo de cara. */}
-          <div>
-            <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa'}</label>
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
-            />
-            {form.preview_image_url ? (
-              <div>
-                <div
-                  ref={coverContainerRef}
-                  className="relative w-full h-40 rounded-xl overflow-hidden select-none"
-                  style={{ cursor: isDraggingCover ? 'grabbing' : 'grab' }}
-                  onMouseDown={onCoverDragStart}
-                  onTouchStart={onCoverDragStart}
-                >
-                  <img
-                    src={form.preview_image_url}
-                    alt=""
-                    draggable={false}
-                    className="w-full h-full object-cover pointer-events-none"
-                    style={{ objectPosition: form.cover_image_position }}
-                  />
-                  {!isDraggingCover && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
-                      <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
-                        {ra.dragHint ?? 'Arraste pra reposicionar'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-3 mt-1.5">
-                  <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
-                  >
-                    {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
-                  </button>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
-                  >
-                    {ra.delete ?? 'Excluir'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => coverInputRef.current?.click()}
-                disabled={uploadingCover}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
-              >
-                {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
-              </button>
-            )}
-          </div>
-
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          <FormSection title={ra.sectionCover ?? 'Capa'} first>
             <div>
-              <label style={label}>{ra.fieldTitle ?? 'Título'}</label>
               <input
-                style={input}
-                value={form.title}
-                onChange={e => {
-                  const title = e.target.value
-                  setForm(f => ({ ...f, title, slug: slugTouched.current ? f.slug : slugifyTitle(title) }))
-                }}
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
               />
-            </div>
-            <div>
-              <label style={label}>{ra.fieldSlug ?? 'Slug'}</label>
-              <input
-                style={input}
-                value={form.slug}
-                onChange={e => { slugTouched.current = true; setForm(f => ({ ...f, slug: e.target.value.toLowerCase() })) }}
-              />
-              <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>{(ra.fieldSlugHint ?? '').replace('{slug}', form.slug || 'seu-slug')}</p>
-            </div>
-          </div>
-
-          <div>
-            <label style={label}>{ra.fieldDescription ?? 'Descrição'}</label>
-            <textarea style={{ ...input, minHeight: 70, resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-          </div>
-
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <div>
-              <label style={label}>{ra.fieldType ?? 'Tipo de conteúdo'}</label>
-              <select style={input} value={form.resource_type} onChange={e => setForm(f => ({ ...f, resource_type: e.target.value as FormState['resource_type'] }))}>
-                <option value="file">{ra.typeFile ?? 'Arquivo (download)'}</option>
-                <option value="link">{ra.typeLink ?? 'Link externo'}</option>
-                <option value="content">{ra.typeContent ?? 'Texto liberado no gate'}</option>
-              </select>
-            </div>
-            <div>
-              <label style={label}>{ra.fieldVisibility ?? 'Visibilidade'}</label>
-              <select style={input} value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value as FormState['visibility'] }))}>
-                <option value="free">{ra.visibilityFree ?? 'Grátis'}</option>
-                <option value="plus">{ra.visibilityPlus ?? 'Plus (assinantes)'}</option>
-                <option value="beta">{ra.visibilityBeta ?? 'Beta (só testers)'}</option>
-              </select>
-            </div>
-          </div>
-
-          {form.resource_type === 'file' && (
-            <div>
-              <label style={label}>{ra.fieldFile ?? 'Arquivo'}</label>
-              <div className="flex items-center gap-3 flex-wrap">
+              {form.preview_image_url ? (
+                <div>
+                  <div
+                    ref={coverContainerRef}
+                    className="relative w-full h-40 rounded-xl overflow-hidden select-none"
+                    style={{ cursor: isDraggingCover ? 'grabbing' : 'grab' }}
+                    onMouseDown={onCoverDragStart}
+                    onTouchStart={onCoverDragStart}
+                  >
+                    <img
+                      src={form.preview_image_url}
+                      alt=""
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none"
+                      style={{ objectPosition: form.cover_image_position }}
+                    />
+                    {!isDraggingCover && (
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                        <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
+                          {ra.dragHint ?? 'Arraste pra reposicionar'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-3 mt-1.5">
+                    <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                    >
+                      {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
+                    </button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
+                    >
+                      {ra.delete ?? 'Excluir'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploading ? 0.6 : 1 }}
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
                 >
-                  {uploading ? (ra.uploading ?? 'Enviando...') : (ra.uploadFile ?? 'Escolher arquivo')}
+                  {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
                 </button>
+              )}
+            </div>
+          </FormSection>
+
+          <FormSection title={ra.sectionInfo ?? 'Informações'}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+              <div>
+                <label style={label}>{ra.fieldTitle ?? 'Título'}</label>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
+                  style={input}
+                  value={form.title}
+                  onChange={e => {
+                    const title = e.target.value
+                    setForm(f => ({ ...f, title, slug: slugTouched.current ? f.slug : slugifyTitle(title) }))
+                  }}
                 />
-                <span style={{ fontSize: 12, color: form.file_path ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)' }}>
-                  {form.file_path ? `${ra.uploaded ?? 'Arquivo enviado'}: ${form.file_path.split('/').pop()}` : (ra.noFileYet ?? 'Nenhum arquivo enviado ainda')}
-                </span>
+              </div>
+              <div>
+                <label style={label}>{ra.fieldSlug ?? 'Slug'}</label>
+                <input
+                  style={input}
+                  value={form.slug}
+                  onChange={e => { slugTouched.current = true; setForm(f => ({ ...f, slug: e.target.value.toLowerCase() })) }}
+                />
+                <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>{(ra.fieldSlugHint ?? '').replace('{slug}', form.slug || 'seu-slug')}</p>
               </div>
             </div>
-          )}
 
-          {form.resource_type === 'link' && (
             <div>
-              <label style={label}>{ra.fieldExternalUrl ?? 'URL externa'}</label>
-              <input style={input} value={form.external_url} onChange={e => setForm(f => ({ ...f, external_url: e.target.value }))} placeholder="https://..." />
+              <label style={label}>{ra.fieldDescription ?? 'Descrição'}</label>
+              <textarea style={{ ...input, minHeight: 110, resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
-          )}
+          </FormSection>
 
-          {form.resource_type === 'content' && (
-            <div>
-              <label style={label}>{ra.fieldContentMd ?? 'Conteúdo liberado'}</label>
-              <textarea style={{ ...input, minHeight: 140, resize: 'vertical', fontFamily: 'monospace' }} value={form.content_md} onChange={e => setForm(f => ({ ...f, content_md: e.target.value }))} />
+          <FormSection title={ra.sectionContent ?? 'Conteúdo'}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+              <div>
+                <label style={label}>{ra.fieldType ?? 'Tipo de conteúdo'}</label>
+                <select style={input} value={form.resource_type} onChange={e => setForm(f => ({ ...f, resource_type: e.target.value as FormState['resource_type'] }))}>
+                  <option value="file">{ra.typeFile ?? 'Arquivo (download)'}</option>
+                  <option value="link">{ra.typeLink ?? 'Link externo'}</option>
+                  <option value="content">{ra.typeContent ?? 'Texto liberado no gate'}</option>
+                </select>
+              </div>
+              <div>
+                <label style={label}>{ra.fieldVisibility ?? 'Visibilidade'}</label>
+                <select style={input} value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value as FormState['visibility'] }))}>
+                  <option value="free">{ra.visibilityFree ?? 'Grátis'}</option>
+                  <option value="plus">{ra.visibilityPlus ?? 'Plus (assinantes)'}</option>
+                  <option value="beta">{ra.visibilityBeta ?? 'Beta (só testers)'}</option>
+                </select>
+              </div>
             </div>
-          )}
+
+            {form.resource_type === 'file' && (
+              <div>
+                <label style={label}>{ra.fieldFile ?? 'Arquivo'}</label>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploading ? 0.6 : 1 }}
+                  >
+                    {uploading ? (ra.uploading ?? 'Enviando...') : (ra.uploadFile ?? 'Escolher arquivo')}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
+                  />
+                  <span style={{ fontSize: 12, color: form.file_path ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)' }}>
+                    {form.file_path ? `${ra.uploaded ?? 'Arquivo enviado'}: ${form.file_path.split('/').pop()}` : (ra.noFileYet ?? 'Nenhum arquivo enviado ainda')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {form.resource_type === 'link' && (
+              <div>
+                <label style={label}>{ra.fieldExternalUrl ?? 'URL externa'}</label>
+                <input style={input} value={form.external_url} onChange={e => setForm(f => ({ ...f, external_url: e.target.value }))} placeholder="https://..." />
+              </div>
+            )}
+
+            {form.resource_type === 'content' && (
+              <div>
+                <label style={label}>{ra.fieldContentMd ?? 'Conteúdo liberado'}</label>
+                <textarea style={{ ...input, minHeight: 140, resize: 'vertical', fontFamily: 'monospace' }} value={form.content_md} onChange={e => setForm(f => ({ ...f, content_md: e.target.value }))} />
+              </div>
+            )}
+          </FormSection>
 
           {/* Links também aqui dentro, não só na listagem — não precisa sair
               do formulário pra gerar/copiar um link enquanto edita. Só depois
@@ -563,16 +579,15 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
           {editingId !== 'new' && (() => {
             const editingItem = items.find(i => i.id === editingId)
             return editingItem ? (
-              <div>
-                <label style={label}>{ra.manageLinks ?? 'Links'}</label>
+              <FormSection title={ra.manageLinks ?? 'Links'}>
                 {renderLinksPanel(editingItem)}
-              </div>
+              </FormSection>
             ) : null
           })()}
 
-          {error && <p style={{ fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)' }}>{error}</p>}
+          {error && <p style={{ fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)', marginTop: 16 }}>{error}</p>}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 20, marginTop: 20 }}>
             <button
               onClick={save}
               disabled={saving}
