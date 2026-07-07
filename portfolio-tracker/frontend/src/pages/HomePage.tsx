@@ -102,7 +102,7 @@ function timeAgo(iso: string): string {
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
-const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
+const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5 }
 
 // Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
 // rótulo/título/data. Um componente só pros dois — sem duplicar.
@@ -128,7 +128,7 @@ function CoverCard({ to, coverUrl, accent, icon, label, title, subtitle, fallbac
       <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
         <p style={{ ...cardLabel, display: 'flex', alignItems: 'center', gap: 6 }}>{icon}{label}</p>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</p>
-        {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
+        {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
       </div>
     </Link>
   )
@@ -353,7 +353,7 @@ export default function HomePage() {
     <div className="space-y-5">
       {/* Saudação */}
       <div>
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 30, color: 'var(--arvo-fg)', marginTop: 4 }}>
           {greeting}{data?.first_name ? `, ${data.first_name}` : ''}
         </h1>
@@ -379,7 +379,7 @@ export default function HomePage() {
                     {wealth != null ? fmt(wealth, 0) : '…'}
                   </p>
                 </div>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
@@ -392,7 +392,7 @@ export default function HomePage() {
                 <div style={{ position: 'relative', marginTop: 18, paddingTop: 14, borderTop: `1px solid rgba(${GOLD_RGB},0.35)`, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 20px' }}>
                   <span style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)' }}>
-                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>{th.walletShort ?? 'Carteira'} </span>
+                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12 }}>{th.walletShort ?? 'Carteira'} </span>
                     <span className={cmp30.portfolio >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 700 }}>{cmp30.portfolio >= 0 ? '+' : ''}{cmp30.portfolio.toFixed(1)}%</span>
                   </span>
                   {[
@@ -403,10 +403,10 @@ export default function HomePage() {
                     const delta = it.v == null ? null : Math.round((cmp30.portfolio - it.v) * 10) / 10
                     return (
                       <span key={i} style={{ fontFamily: 'var(--arvo-font-body)' }}>
-                        <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>vs {it.label} </span>
+                        <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 12 }}>vs {it.label} </span>
                         {delta == null
-                          ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 13 }}>–</span>
-                          : <span className={delta >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 13, fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta}%</span>}
+                          ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 14 }}>–</span>
+                          : <span className={delta >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta}%</span>}
                       </span>
                     )
                   })}
@@ -421,7 +421,7 @@ export default function HomePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
                 {data.month_summary.budget > 0 && !hideValues && (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
                     {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
                   </span>
                 )}
@@ -429,7 +429,7 @@ export default function HomePage() {
               <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                 {fmtCur(data.month_summary.spent, data.month_summary.currency)}
                 {data.month_summary.budget > 0 && (
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+                  <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
                 )}
               </p>
               {data.month_summary.budget > 0 && (
@@ -479,7 +479,7 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
               {data.hot_topics.map(topic => (
                 <button
@@ -489,8 +489,8 @@ export default function HomePage() {
                   style={{ padding: '14px 20px', background: 'none', border: 'none', borderTop: '1px solid var(--arvo-border-soft)', cursor: 'pointer' }}
                 >
                   <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={15} /></span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
                 </button>
               ))}
             </div>
@@ -507,8 +507,8 @@ export default function HomePage() {
           {showGoals && plan === null && (
             <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '16px 18px', textDecoration: 'none' }}>
               <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
                 {th.goalCreate ?? 'Criar plano'}
               </span>
@@ -525,13 +525,13 @@ export default function HomePage() {
                 <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
                 <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                   {hideValues ? '•••' : `${Math.round(pct)}%`}
-                  <span style={{ fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}> {th.goalAchieved ?? 'conquistado'}</span>
+                  <span style={{ fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}> {th.goalAchieved ?? 'conquistado'}</span>
                 </p>
                 <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 12 }}>
                   <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: 'var(--arvo-gold)' }} />
                 </div>
                 {goalYear && (
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 9 }}>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 9 }}>
                     {th.goalForYear ?? 'meta para'} {goalYear}
                   </p>
                 )}
@@ -552,7 +552,7 @@ export default function HomePage() {
                   </span>
                   <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
                 </div>
-                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
               <div style={{ padding: '14px 20px 18px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -565,10 +565,10 @@ export default function HomePage() {
                         {entry.type === 'group' && (
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
                         )}
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
                       </span>
                       {entry.balance && (
-                        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
+                        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
                           {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
                         </span>
                       )}
@@ -585,7 +585,7 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, cursor: 'pointer' }}>
+                <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, cursor: 'pointer' }}>
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
                   {th.splitExpense ?? 'Dividir despesa'}
                 </button>
@@ -645,7 +645,7 @@ export default function HomePage() {
               </button>
             </div>
             {activeFriends.length === 0 && splitGroups.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
                 {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
                 <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
               </p>
@@ -657,10 +657,10 @@ export default function HomePage() {
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
-                    <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
+                    <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
                       {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
                     </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
                   </button>
                 ))}
                 {splitGroups.length > 0 && (
@@ -674,7 +674,7 @@ export default function HomePage() {
                         <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
                         </span>
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
                       </button>
                     ))}
                   </div>
@@ -728,8 +728,8 @@ function SetupCard({ setup, onNavigate }: {
           <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 700, fill: '#1B4FD8' }}>{setup.doneCount}</text>
         </svg>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg)' }}>{s.title}</p>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>{setup.doneCount}/{setup.total}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{s.title}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>{setup.doneCount}/{setup.total}</p>
         </div>
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={2} style={{ flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" /></svg>
       </button>
@@ -746,12 +746,12 @@ function SetupCard({ setup, onNavigate }: {
               <span style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${step.done ? '#22c55e' : '#1B4FD8'}`, background: step.done ? '#22c55e' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {step.done && <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
               </span>
-              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
               {!step.done && <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="rgba(27,79,216,0.5)" strokeWidth={2.2} style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
             </button>
           ))}
           <div style={{ padding: '4px 10px 6px' }}>
-            <button onClick={setup.hide} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{s.dismiss}</button>
+            <button onClick={setup.hide} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{s.dismiss}</button>
           </div>
         </div>
       )}

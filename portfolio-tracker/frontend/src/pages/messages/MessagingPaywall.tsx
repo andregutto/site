@@ -18,7 +18,7 @@ export default function MessagingPaywall() {
       <a
         href="/profile"
         style={{
-          fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
+          fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase',
           padding: '11px 22px', borderRadius: 10, background: GOLD, color: '#1a1200', textDecoration: 'none', marginTop: 8,
         }}
       >

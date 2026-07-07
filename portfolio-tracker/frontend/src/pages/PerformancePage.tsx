@@ -46,7 +46,7 @@ type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception
 
 const kpiLabelStyle: CSSProperties = {
   fontFamily: 'var(--arvo-font-body)',
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 600,
   letterSpacing: '0.10em',
   textTransform: 'uppercase',
@@ -364,7 +364,7 @@ export default function PerformancePage() {
                 className="px-3 py-1.5 transition-colors"
                 style={{
                   fontFamily: 'var(--arvo-font-body)',
-                  fontSize: 11,
+                  fontSize: 12,
                   letterSpacing: '0.04em',
                   borderRadius: 'var(--arvo-radius-xs)',
                   border: '1px solid var(--arvo-border)',
@@ -443,7 +443,7 @@ export default function PerformancePage() {
             }
             const portfolioDot = useDailyChart ? { r: 2, fill: 'var(--arvo-fg)' } : { r: 3, fill: 'var(--arvo-fg)' }
             const portfolioActiveDot = useDailyChart ? { r: 4 } : { r: 5 }
-            const legendStyle = { fontSize: 11, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }
+            const legendStyle = { fontSize: 12, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }
             return (
               <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
                 <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -484,7 +484,7 @@ export default function PerformancePage() {
                             className="arvo-num inline-flex items-center gap-1.5 px-2.5 py-1 transition-colors"
                             style={{
                               fontFamily: 'var(--arvo-font-body)',
-                              fontSize: 11,
+                              fontSize: 12,
                               letterSpacing: '0.04em',
                               borderRadius: 'var(--arvo-radius-xs)',
                               border: `1px solid ${active ? color : 'var(--arvo-border)'}`,

@@ -232,9 +232,9 @@ export default function ConversationPage() {
         <div>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{conversation.peer.name ?? conversation.peer.username}</p>
           {peerTyping ? (
-            <p style={{ fontSize: 12, color: GOLD, fontStyle: 'italic' }}>{tm.typing ?? 'digitando...'}</p>
+            <p style={{ fontSize: 13, color: GOLD, fontStyle: 'italic' }}>{tm.typing ?? 'digitando...'}</p>
           ) : conversation.peer.username && (
-            <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>@{conversation.peer.username}</p>
+            <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>@{conversation.peer.username}</p>
           )}
         </div>
       </div>
@@ -242,7 +242,7 @@ export default function ConversationPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4" style={{ padding: '16px 4px' }}>
         {hasMore && (
           <div className="flex justify-center">
-            <button onClick={loadEarlier} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '5px 14px', cursor: 'pointer' }}>
+            <button onClick={loadEarlier} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '5px 14px', cursor: 'pointer' }}>
               {tm.loadEarlier ?? 'Carregar mensagens anteriores'}
             </button>
           </div>
@@ -251,7 +251,7 @@ export default function ConversationPage() {
         {groups.map(group => (
           <div key={group.label} className="space-y-2">
             <div className="flex justify-center">
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-fg-faint)' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-fg-faint)' }}>
                 {group.label}
               </span>
             </div>
@@ -271,12 +271,12 @@ export default function ConversationPage() {
                       }}
                     >
                       {m.deleted_at ? (
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: 0 }}>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: 0 }}>
                           {tm.messageDeleted ?? 'Mensagem apagada'}
                           <span style={{ fontSize: 10, whiteSpace: 'nowrap', marginLeft: 8, fontStyle: 'normal' }}>{formatClock(m.created_at, locale)}</span>
                         </p>
                       ) : (
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
                           {linkifyText(m.body)}
                           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', marginLeft: 8 }}>
                             {formatClock(m.created_at, locale)}
@@ -296,13 +296,13 @@ export default function ConversationPage() {
                           <button
                             onClick={() => deleteMessage(m.id, 'me')}
                             className="w-full text-left"
-                            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
+                            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
                           >{tm.deleteForMe ?? 'Apagar pra mim'}</button>
                           {mine && (
                             <button
                               onClick={() => deleteMessage(m.id, 'everyone')}
                               className="w-full text-left"
-                              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', borderTop: '1px solid var(--arvo-border-soft)' }}
+                              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-red, #D63B2F)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', borderTop: '1px solid var(--arvo-border-soft)' }}
                             >{tm.deleteForEveryone ?? 'Apagar pra todos'}</button>
                           )}
                         </div>
@@ -322,7 +322,7 @@ export default function ConversationPage() {
       </div>
 
       {notFriendsAnymore ? (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '16px 0' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '16px 0' }}>
           {tm.notFriendsAnymore ?? 'Vocês não são mais amigos.'}
         </p>
       ) : (
@@ -334,7 +334,7 @@ export default function ConversationPage() {
             placeholder={tm.typePlaceholder ?? 'Escreva uma mensagem...'}
             rows={1}
             style={{
-              flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
+              flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)',
               background: 'var(--arvo-bg)', border: '1px solid var(--arvo-border)', borderRadius: 21,
               padding: '10px 16px', resize: 'none', lineHeight: 1.5, maxHeight: 120, boxSizing: 'border-box',
             }}

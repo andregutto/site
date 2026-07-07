@@ -58,7 +58,7 @@ export default function CommunityCategoryPage() {
   return (
     <PullToRefresh onRefresh={load}>
     <div className="space-y-5">
-      <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
+      <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
         ← {tc?.backToCommunity ?? 'Voltar para a comunidade'}
       </Link>
 
@@ -90,7 +90,7 @@ export default function CommunityCategoryPage() {
           <p style={{ fontFamily: 'var(--arvo-font-display)', fontStyle: 'italic', color: 'var(--arvo-gold)', fontSize: 15, marginBottom: 4 }}>
             {tc?.emptyTopics ?? 'Nenhum tópico nesta categoria ainda.'}
           </p>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>
             {tc?.emptyTopicsBody}
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function CommunityCategoryPage() {
                     {topic.title}
                   </span>
                 </div>
-                <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
+                <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
                   {topic.author.username ? `@${topic.author.username}` : topic.author.name} · {timeAgo(topic.last_post_at)}
                 </div>
               </div>

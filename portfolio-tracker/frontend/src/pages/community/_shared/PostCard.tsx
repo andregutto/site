@@ -48,7 +48,7 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
         <Avatar name={post.author.name} avatarUrl={post.author.avatar_url} size={32} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg)' }}>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>
               {post.author.name}
             </span>
             {post.author.is_admin && (
@@ -57,9 +57,9 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
               </span>
             )}
             {post.author.username && (
-              <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>@{post.author.username}</span>
+              <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>@{post.author.username}</span>
             )}
-            <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>
+            <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>
               {formatTimestamp(post.created_at, locale)}
               {post.edited_at ? ` · ${tc.edited ?? '(editado)'}` : ''}
             </span>
@@ -79,11 +79,11 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
             {friendshipStatus === 'none' && onInvite && post.author.username && (
               <button
                 onClick={() => onInvite(post.author.id)}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
               >{tc.addFriend ?? '+ Amizade'}</button>
             )}
             {friendshipStatus === 'pending' && (
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-faint)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-faint)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px' }}>
                 {tc.inviteSent ?? 'Convite enviado'}
               </span>
             )}
@@ -96,7 +96,7 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
                 onChange={e => setDraft(e.target.value)}
                 rows={4}
                 style={{
-                  width: '100%', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
+                  width: '100%', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)',
                   background: 'var(--arvo-bg)', border: '1px solid var(--arvo-border)', borderRadius: 10, padding: '10px 12px',
                   resize: 'vertical', lineHeight: 1.6,
                 }}
@@ -106,19 +106,19 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
                   onClick={save}
                   disabled={saving || !draft.trim()}
                   style={{
-                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
                     padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     background: GOLD, color: '#1a1200', opacity: saving || !draft.trim() ? 0.5 : 1,
                   }}
                 >{saving ? (tc.saving ?? 'Salvando...') : (tc.save ?? 'Salvar')}</button>
                 <button
                   onClick={() => { setEditing(false); setDraft(post.body) }}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'transparent', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'transparent', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
                 >{tc.cancel ?? 'Cancelar'}</button>
               </div>
             </div>
           ) : (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', lineHeight: 1.7, marginTop: 8, whiteSpace: 'pre-wrap' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', lineHeight: 1.7, marginTop: 8, whiteSpace: 'pre-wrap' }}>
               {linkifyText(post.body)}
             </p>
           )}
@@ -128,7 +128,7 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
               <button
                 onClick={() => onLike(post.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                  display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 13,
                   color: post.liked_by_me ? '#D63B2F' : 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
                 }}
               >

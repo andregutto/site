@@ -663,7 +663,7 @@ export default function ProfilePage() {
                   className="mt-1 text-xs rounded-full px-2.5 py-1 inline-flex items-center gap-1.5"
                   style={{ border: '1px dashed var(--arvo-border-secondary, var(--arvo-border))', color: 'var(--arvo-fg-soft)', background: 'none' }}
                 >
-                  <span style={{ fontSize: 12 }}>@</span>{t.profile.chooseUsername}
+                  <span style={{ fontSize: 13 }}>@</span>{t.profile.chooseUsername}
                 </button>
               )}
 

@@ -97,7 +97,7 @@ export default function AcceptInvitePage() {
                 </svg>
               </div>
               <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{s.inviteExpired}</p>
-              <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{error}</p>
+              <p style={{ fontSize: 14, color: 'var(--arvo-fg-soft)' }}>{error}</p>
             </div>
           ) : done ? (
             <div className="flex flex-col items-center gap-4 text-center">
@@ -107,7 +107,7 @@ export default function AcceptInvitePage() {
                 </svg>
               </div>
               <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{s.alreadyMember || 'Bem-vindo ao grupo!'}</p>
-              <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Redirecionando...</p>
+              <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>Redirecionando...</p>
             </div>
           ) : preview && (
             <div className="flex flex-col gap-5">
@@ -117,7 +117,7 @@ export default function AcceptInvitePage() {
                   <Icon name="users" size={24} style={{ color: 'var(--arvo-fg-soft)' }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
+                  <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
                     {s.inviteFrom} {preview.inviter_name}
                   </p>
                   <p style={{ fontSize: 20, fontFamily: "'Tenor Sans', 'Times New Roman', serif", letterSpacing: '0.04em', color: 'var(--arvo-black)' }}>
@@ -127,7 +127,7 @@ export default function AcceptInvitePage() {
               </div>
 
               {!user && (
-                <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
                   {s.loginToAccept}
                 </p>
               )}

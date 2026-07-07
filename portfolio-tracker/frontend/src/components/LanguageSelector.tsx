@@ -11,7 +11,7 @@ export default function LanguageSelector() {
       {LOCALES.map((l, i) => (
         <span key={l} className="flex items-center">
           {i > 0 && (
-            <span aria-hidden="true" style={{ color: 'var(--arvo-fg-faint)', fontSize: 11, padding: '0 7px' }}>·</span>
+            <span aria-hidden="true" style={{ color: 'var(--arvo-fg-faint)', fontSize: 12, padding: '0 7px' }}>·</span>
           )}
           <button
             onClick={() => setLocale(l)}
@@ -22,7 +22,7 @@ export default function LanguageSelector() {
               cursor: 'pointer',
               padding: '4px 1px 2px',
               fontFamily: 'var(--arvo-font-body)',
-              fontSize: 11,
+              fontSize: 12,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
               color: locale === l ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',

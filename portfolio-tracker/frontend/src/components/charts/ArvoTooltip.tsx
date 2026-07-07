@@ -28,7 +28,7 @@ export function ArvoTooltip({ active, payload, label, formatter, labelFormatter 
         borderRadius: 10,
         border: '1px solid var(--arvo-gold-line)',
         padding: '8px 12px',
-        fontSize: 12,
+        fontSize: 13,
         fontFamily: 'var(--arvo-font-body)',
         boxShadow: 'var(--arvo-shadow-md)',
       }}

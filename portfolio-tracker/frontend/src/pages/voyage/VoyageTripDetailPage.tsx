@@ -49,7 +49,7 @@ function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => v
           ))}
         </div>
       )}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
         {shown.length === 0 ? (
           <>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -59,7 +59,7 @@ function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => v
             Convidar
           </>
         ) : (
-          <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+          <span style={{ fontSize: 14, lineHeight: 1 }}>+</span>
         )}
       </span>
     </button>
@@ -218,7 +218,7 @@ export default function VoyageTripDetailPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <button
           onClick={() => navigate('/voyage')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0, flexShrink: 0 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 0, flexShrink: 0 }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" d="M9 2L4 7l5 5" />
@@ -229,7 +229,7 @@ export default function VoyageTripDetailPage() {
           {canEdit && (
             <button
               onClick={() => setShowEditPanel(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
@@ -240,7 +240,7 @@ export default function VoyageTripDetailPage() {
           {trip.user_id === user?.id && (
             <button
               onClick={() => setShowShare(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
             >
               <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="11" cy="3" r="1.5"/>
@@ -293,7 +293,7 @@ export default function VoyageTripDetailPage() {
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: 999, background: statusColor, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.85)' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.85)' }}>
                 {statusLabel}
               </span>
               {canEdit && (
@@ -312,7 +312,7 @@ export default function VoyageTripDetailPage() {
                     return (
                       <button
                         key={s} type="button" onClick={() => changeStatus(s)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '8px 12px', background: active ? 'var(--arvo-hover-bg)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '8px 12px', background: active ? 'var(--arvo-hover-bg)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}
                       >
                         <span style={{ width: 6, height: 6, borderRadius: 999, background: STATUS_COLOR[s] ?? GOLD, display: 'inline-block' }} />
                         {label}
@@ -343,12 +343,12 @@ export default function VoyageTripDetailPage() {
             </h1>
             <div className="flex flex-col" style={{ gap: 6 }}>
               {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'rgba(255,255,255,0.65)' }}>
                   {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
                 </span>
               )}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
                   {dateStr}
                 </span>
               )}
@@ -391,10 +391,10 @@ export default function VoyageTripDetailPage() {
             </svg>
           </span>
           <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
+            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>
               {tv.photoAlbumTitle ?? 'Álbum de fotos compartilhado'}
             </span>
-            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
               {tv.photoAlbumSubtitle ?? 'Abrir em uma nova aba'}
             </span>
           </span>
@@ -496,7 +496,7 @@ export default function VoyageTripDetailPage() {
             style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
           >
             <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
                 Colaboradores
               </p>
               <button

@@ -106,7 +106,7 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
   const fieldStyle: React.CSSProperties = {
     width: '100%', padding: '7px 10px', borderRadius: 3,
     border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
     outline: 'none',
   }
   const labelStyle: React.CSSProperties = {
@@ -175,11 +175,11 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
           )}
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCoverFile} style={{ display: 'none' }} id="cover-file-input" />
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingCover}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg)', cursor: uploadingCover ? 'default' : 'pointer' }}>
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '7px 14px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg)', cursor: uploadingCover ? 'default' : 'pointer' }}>
             {uploadingCover ? (tv.uploading ?? 'Enviando…') : coverUrl ? (tv.changePhoto ?? 'Trocar foto') : (tv.choosePhoto ?? 'Escolher foto')}
           </button>
           {coverUrl && (
-            <button type="button" onClick={() => setCoverUrl('')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button type="button" onClick={() => setCoverUrl('')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {tv.remove ?? 'Remover'}
             </button>
           )}
@@ -196,16 +196,16 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
         <input type="url" style={fieldStyle} value={photoAlbumUrl} onChange={e => setPhotoAlbumUrl(e.target.value)} placeholder={tv.photoAlbumPlaceholder ?? 'Link de álbum compartilhado'} />
       </label>
 
-      {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}>{error}</p>}
+      {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>{error}</p>}
 
       <div className="flex gap-3 justify-end pt-1">
         {isOwner && (
           <button type="button" onClick={deleteTrip} disabled={deleting || saving}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '7px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
           >{deleting ? (tv.deleting ?? 'Excluindo…') : (tv.deleteTrip ?? 'Excluir viagem')}</button>
         )}
         <button type="submit" disabled={saving || deleting || uploadingCover}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.04em', padding: '7px 18px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.04em', padding: '7px 18px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >{saving ? (tv.actions?.saving ?? 'Salvando…') : (tv.actions?.save ?? 'Salvar')}</button>
       </div>
     </form>

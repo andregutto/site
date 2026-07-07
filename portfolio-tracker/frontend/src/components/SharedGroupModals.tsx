@@ -198,7 +198,7 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
                       borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
-                      cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
+                      cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
                     }}
                   >
                     <VoyageAvatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
@@ -242,10 +242,10 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
                       }}
                     >
                       <VoyageAvatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
                         {sg.name || `@${sg.username}`}
                       </span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                         @{sg.username}
                       </span>
                     </button>

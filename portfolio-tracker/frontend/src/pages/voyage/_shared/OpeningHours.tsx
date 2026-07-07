@@ -18,7 +18,7 @@ export default function OpeningHoursBlock({ hours }: { hours: string[] | null | 
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
-        style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: '#444', fontFamily: 'inherit' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: '#444', fontFamily: 'inherit' }}
       >
         🕐 {today ?? 'Horário de funcionamento'}
         <span style={{ fontSize: 9 }}>{expanded ? '▴' : '▾'}</span>

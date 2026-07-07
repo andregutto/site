@@ -66,7 +66,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
   const fieldStyle: React.CSSProperties = {
     padding: '7px 10px', borderRadius: 3,
     border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
     outline: 'none',
   }
 
@@ -112,12 +112,12 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   <input
                     readOnly
                     value={shareUrl}
-                    style={{ ...fieldStyle, flex: 1, color: 'var(--arvo-fg-soft)', fontSize: 11 }}
+                    style={{ ...fieldStyle, flex: 1, color: 'var(--arvo-fg-soft)', fontSize: 12 }}
                   />
                   <button
                     type="button"
                     onClick={copyLink}
-                    style={{ padding: '6px 14px', borderRadius: 5, background: copied ? '#1F8A5B' : RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, flexShrink: 0, transition: 'background 200ms' }}
+                    style={{ padding: '6px 14px', borderRadius: 5, background: copied ? '#1F8A5B' : RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, flexShrink: 0, transition: 'background 200ms' }}
                   >
                     {copied ? '✓' : (tv.actions?.copy ?? 'Copiar')}
                   </button>
@@ -151,8 +151,8 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
                 <div>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.hideCost ?? 'Ocultar custos'}</p>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{sv.hideCostDesc ?? 'Seguidores não verão os valores gastos'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{sv.hideCost ?? 'Ocultar custos'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{sv.hideCostDesc ?? 'Seguidores não verão os valores gastos'}</p>
                 </div>
               </label>
 
@@ -173,8 +173,8 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
                 <div>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.showExpenses ?? 'Mostrar gastos por lugar'}</p>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{sv.showExpensesDesc ?? 'Exibe quanto você gastou em cada lugar no mapa'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{sv.showExpenses ?? 'Mostrar gastos por lugar'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{sv.showExpensesDesc ?? 'Exibe quanto você gastou em cada lugar no mapa'}</p>
                 </div>
               </label>
 
@@ -197,7 +197,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                       }}
                       style={{
                         padding: '4px 12px', borderRadius: 999,
-                        fontFamily: 'var(--arvo-font-body)', fontSize: 11,
+                        fontFamily: 'var(--arvo-font-body)', fontSize: 12,
                         border: `1px solid ${expiryDays === opt.value ? RED : 'var(--arvo-border)'}`,
                         background: expiryDays === opt.value ? RED_SOFT : 'transparent',
                         color: expiryDays === opt.value ? RED : 'var(--arvo-fg-muted)',
@@ -216,7 +216,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   type="button"
                   onClick={revoke}
                   disabled={revoking}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: revoking ? 0.5 : 1, padding: 0 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: revoking ? 0.5 : 1, padding: 0 }}
                 >
                   {revoking ? (sv.revoking ?? 'Revogando…') : (sv.revoke ?? 'Revogar link público')}
                 </button>
@@ -224,7 +224,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
             </>
           ) : (
             <>
-              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
                 {sv.intro ?? 'Gere um link para compartilhar o roteiro com seguidores: eles verão os lugares, notas e podem importar para o Google Maps.'}
               </p>
 
@@ -235,7 +235,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   onChange={e => setHideCost(e.target.checked)}
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.hideCostPublic ?? 'Ocultar custos na página pública'}</p>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{sv.hideCostPublic ?? 'Ocultar custos na página pública'}</p>
               </label>
 
               <div>
@@ -250,7 +250,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                       onClick={() => setExpiryDays(opt.value)}
                       style={{
                         padding: '4px 12px', borderRadius: 999,
-                        fontFamily: 'var(--arvo-font-body)', fontSize: 11,
+                        fontFamily: 'var(--arvo-font-body)', fontSize: 12,
                         border: `1px solid ${expiryDays === opt.value ? RED : 'var(--arvo-border)'}`,
                         background: expiryDays === opt.value ? RED_SOFT : 'transparent',
                         color: expiryDays === opt.value ? RED : 'var(--arvo-fg-muted)',
@@ -267,7 +267,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                 type="button"
                 onClick={generate}
                 disabled={loading}
-                style={{ padding: '9px 0', borderRadius: 8, background: loading ? 'var(--arvo-hover-bg)' : RED, color: loading ? 'var(--arvo-fg-muted)' : '#fff', border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, transition: 'all 160ms' }}
+                style={{ padding: '9px 0', borderRadius: 8, background: loading ? 'var(--arvo-hover-bg)' : RED, color: loading ? 'var(--arvo-fg-muted)' : '#fff', border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 14, transition: 'all 160ms' }}
               >
                 {loading ? (sv.generating ?? 'Gerando…') : (sv.generate ?? 'Gerar link público')}
               </button>

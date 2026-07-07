@@ -423,7 +423,7 @@ export default function AppLayout() {
             <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
               {inVoyage ? 'Voyage' : inAprender ? 'Aprender' : 'Capital'}
             </span>
           </div>
@@ -700,7 +700,7 @@ export default function AppLayout() {
                   key={to} to={to} end={end}
                   className="whitespace-nowrap transition-colors"
                   style={({ isActive }) => ({
-                    fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.06em',
+                    fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.06em',
                     padding: '9px 1px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
                     color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
                     transition: 'color 160ms ease, border-color 160ms ease',
@@ -815,7 +815,7 @@ export default function AppLayout() {
                   key={to} to={to} end={end}
                   className="whitespace-nowrap shrink-0 transition-colors"
                   style={({ isActive }) => ({
-                    fontFamily: "var(--arvo-font-body)", fontSize: 12.5, letterSpacing: '0.04em',
+                    fontFamily: "var(--arvo-font-body)", fontSize: 13.5, letterSpacing: '0.04em',
                     padding: '2px 1px 7px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
                     color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
                     transition: 'color 160ms ease, border-color 160ms ease',

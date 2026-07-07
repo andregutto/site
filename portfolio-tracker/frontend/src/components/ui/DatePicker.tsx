@@ -14,7 +14,7 @@ import {
 const fieldStyle: CSSProperties = {
   width: '100%', padding: '8px 12px', borderRadius: 'var(--arvo-radius-xs)',
   border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-  fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
+  fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)',
   outline: 'none', transition: 'border-color 160ms ease', boxSizing: 'border-box',
 }
 
@@ -65,7 +65,7 @@ function DayCell({ day, isStart, isEnd, inRange, isToday, disabled, onClick, onH
       onMouseEnter={() => onHover?.(day)}
       style={{
         width: 32, height: 32, borderRadius: 999, border: 'none', cursor: disabled ? 'default' : 'pointer',
-        fontFamily: 'var(--arvo-font-body)', fontSize: 12.5,
+        fontFamily: 'var(--arvo-font-body)', fontSize: 13.5,
         background: isEdge ? 'var(--arvo-fg)' : inRange ? 'var(--arvo-gold-tint)' : 'transparent',
         color: disabled ? 'var(--arvo-fg-faint, var(--arvo-fg-soft))' : isEdge ? 'var(--arvo-surface)' : 'var(--arvo-fg)',
         opacity: disabled ? 0.35 : 1,
@@ -107,7 +107,7 @@ function MonthGrid({ monthDate, start, end, hoverEnd, onSelectDay, onHoverDay, h
     <div>
       {!hideLabel && (
         <p style={{
-          fontFamily: 'var(--arvo-font-display)', fontSize: 13, textAlign: 'center',
+          fontFamily: 'var(--arvo-font-display)', fontSize: 14, textAlign: 'center',
           color: 'var(--arvo-fg)', marginBottom: 10,
         }}>
           {monthLabel(monthDate, locale)}
@@ -158,7 +158,7 @@ function MonthYearSelect({ monthDate, onChange }: { monthDate: Date; onChange: (
   const nowY = new Date().getFullYear()
   const years = Array.from({ length: 106 }, (_, i) => nowY + 5 - i)
   const selectStyle: CSSProperties = {
-    border: 'none', background: 'none', fontFamily: 'var(--arvo-font-display)', fontSize: 12.5,
+    border: 'none', background: 'none', fontFamily: 'var(--arvo-font-display)', fontSize: 13.5,
     color: 'var(--arvo-fg)', cursor: 'pointer', textAlign: 'center', textAlignLast: 'center',
   }
   return (
@@ -376,7 +376,7 @@ export function DateRangePicker({
       {layout === 'inline' ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {startInput}
-          <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>→</span>
+          <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>→</span>
           {endInput}
         </div>
       ) : (
@@ -399,7 +399,7 @@ export function DateRangePicker({
           </div>
           <div className="hidden sm:block" style={{ borderLeft: '1px solid var(--arvo-border-soft)', paddingLeft: 18 }}>
             <div style={{ height: 26, marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
                 {monthLabel(secondMonth, locale)}
               </span>
             </div>

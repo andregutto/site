@@ -140,7 +140,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
   const fieldStyle: React.CSSProperties = {
     padding: '7px 10px', borderRadius: 3,
     border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
     outline: 'none',
   }
 
@@ -155,7 +155,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {m.display.name}
                 </p>
               </div>
@@ -189,7 +189,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
             <select
               value={inviteRole}
               onChange={e => setInviteRole(e.target.value as 'editor' | 'viewer')}
-              style={{ ...fieldStyle, padding: '4px 8px', fontSize: 11.5, minWidth: 76 }}
+              style={{ ...fieldStyle, padding: '4px 8px', fontSize: 12.5, minWidth: 76 }}
             >
               <option value="editor">{tv.roles?.editor ?? 'Editor'}</option>
               <option value="viewer">{tv.roles?.viewer ?? 'Leitor'}</option>
@@ -208,7 +208,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
                     borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
-                    cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
+                    cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
                   }}
                 >
                   <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
@@ -238,7 +238,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   background: inviting ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)',
                   color: inviting ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)',
                   border: 'none', cursor: inviting ? 'default' : 'pointer',
-                  fontFamily: 'var(--arvo-font-body)', fontSize: 12, transition: 'all 160ms',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 13, transition: 'all 160ms',
                 }}
               >
                 {inviting ? '…' : (mv.invite ?? 'Convidar')}
@@ -261,10 +261,10 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                     }}
                   >
                     <Avatar name={s.name} avatarUrl={s.avatar_url} size={26} />
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
                       {s.name || `@${s.username}`}
                     </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                       @{s.username}
                     </span>
                   </button>
@@ -273,10 +273,10 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
             )}
           </form>
 
-          {inviteError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, marginTop: 8 }}>{inviteError}</p>}
+          {inviteError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, marginTop: 8 }}>{inviteError}</p>}
 
           {inviteDirectOk && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B', marginTop: 10 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: '#1F8A5B', marginTop: 10 }}>
               {mv.directOk ?? '✓ Adicionado direto: já é um membro ativo da viagem.'}
             </p>
           )}
@@ -291,12 +291,12 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                 <input
                   readOnly
                   value={inviteResult.url}
-                  style={{ ...fieldStyle, flex: 1, fontSize: 11, color: 'var(--arvo-fg-soft)' }}
+                  style={{ ...fieldStyle, flex: 1, fontSize: 12, color: 'var(--arvo-fg-soft)' }}
                 />
                 <button
                   type="button"
                   onClick={() => copyLink(inviteResult.url)}
-                  style={{ padding: '6px 12px', borderRadius: 5, background: copied ? '#1F8A5B' : 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, flexShrink: 0, transition: 'background 200ms' }}
+                  style={{ padding: '6px 12px', borderRadius: 5, background: copied ? '#1F8A5B' : 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, flexShrink: 0, transition: 'background 200ms' }}
                 >
                   {copied ? '✓' : (tv.actions?.copy ?? 'Copiar')}
                 </button>

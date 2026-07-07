@@ -43,7 +43,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
+        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
           {(t as any).admin?.eyebrow ?? 'ADMINISTRAÇÃO'}
         </div>
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 26, color: 'var(--arvo-fg)' }}>{(t as any).admin?.title ?? 'Painel de administração'}</h1>
@@ -70,7 +70,7 @@ export default function AdminPage() {
         {tab === 'resources' && !resourcesEditing && (
           <button
             onClick={() => newResourceRef.current()}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             {(t as any).resources?.admin?.newResource ?? '+ Novo recurso'}
           </button>

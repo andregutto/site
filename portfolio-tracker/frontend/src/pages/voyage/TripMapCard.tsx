@@ -207,7 +207,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
             <a
               href={`/api/voyage/trips/${tripId}/kml`}
               download
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.03em' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.03em' }}
               title={tv.downloadKmlTitle ?? 'Baixar KML para Google Maps'}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -219,7 +219,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
           <button
             type="button"
             onClick={() => navigate(`/voyage/map?trip=${tripId}`)}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.04em', padding: 0 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.04em', padding: 0 }}
           >
             {tv.viewFullMap ?? 'Ver mapa completo →'}
           </button>
@@ -303,13 +303,13 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 28l8-14 10 8 9-14 10 8"/>
               <path strokeLinecap="round" d="M3 34h34"/>
             </svg>
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: '#C8B89A' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: '#C8B89A' }}>
               {tv.mapEmpty ?? 'Adicione lugares à viagem para ver o mapa'}
             </p>
           </div>
         ) : visibleCoords.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }}>
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: '#C8B89A' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: '#C8B89A' }}>
               {selectedDay === 'none'
                 ? (tv.mapEmptyNoDay ?? 'Nenhum lugar sem dia com coordenadas')
                 : (tv.mapEmptyDay ?? 'Nenhum lugar com coordenadas no Dia {n}').replace('{n}', String(selectedDay))}
@@ -364,22 +364,22 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
                     <button
                       type="button"
                       onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
-                      style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 13 }}
+                      style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 14 }}
                     >✕</button>
                     {p.day_number != null && (
                       <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(p.day_number))}</span>
                     )}
-                    <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{p.name}</p>
                     {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
-                    {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                    {p.address && <p style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                     <OpeningHoursBlock hours={p.opening_hours} />
-                    {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
+                    {p.trip_note && <p style={{ fontSize: 12, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
                     {(p.expense_total ?? 0) > 0 && (
-                      <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.spentHere ?? 'Gasto aqui:'} <strong>{fmtEur(p.expense_total!)}</strong></p>
+                      <p style={{ fontSize: 12, color: '#444', marginBottom: 4 }}>{tv.spentHere ?? 'Gasto aqui:'} <strong>{fmtEur(p.expense_total!)}</strong></p>
                     )}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
+                        style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
                         {tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
                       </a>
                     )}

@@ -27,7 +27,7 @@ export default function TermsOfUsePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
             <img src="/brand/logo/arvo-symbol-black.svg" width="16" height="16" alt="" style={{ opacity: 0.55 }} />
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.20em', color: 'var(--arvo-fg-soft)' }}>arvo</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.20em', color: 'var(--arvo-fg-soft)' }}>arvo</span>
           </Link>
           <LanguageSelector />
         </div>
@@ -35,13 +35,13 @@ export default function TermsOfUsePage() {
         <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '36px 36px', border: '1px solid var(--arvo-border)', boxShadow: '0 1px 4px rgba(13,13,13,0.05)' }}>
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 28, letterSpacing: '0.06em', color: 'var(--arvo-black)', marginBottom: 8 }}>{tp.title}</h1>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)' }}>{tp.updated}</p>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)' }}>{tp.updated}</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
             {sections.map(({ title, body }) => (
               <div key={title}>
-                <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg)', marginBottom: 6 }}>{title}</h2>
+                <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg)', marginBottom: 6 }}>{title}</h2>
                 <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg-muted)', lineHeight: 1.80 }}>{body}</p>
               </div>
             ))}

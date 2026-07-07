@@ -79,12 +79,12 @@ function MetricCard({ label, value, sub, badge, badgeColor }: {
 }) {
   return (
     <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-      <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>{label}</div>
       <div className="arvo-num" style={{ fontSize: 26, fontWeight: 600, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
       {badge && (
-        <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: badgeColor, background: severityTint(badgeColor ?? ''), padding: '3px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 10 }}>{badge}</span>
+        <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: badgeColor, background: severityTint(badgeColor ?? ''), padding: '3px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 10 }}>{badge}</span>
       )}
-      {sub && <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{sub}</div>}
     </div>
   )
 }
@@ -102,7 +102,7 @@ function VerdictCard({ eyebrow, headline, severityColor, description, barValue, 
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor, flexShrink: 0 }} />
         <span style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(20px, 2.4vw, 26px)', letterSpacing: 'var(--arvo-track-normal)', color: 'var(--arvo-fg)' }}>{headline}</span>
       </div>
-      {description && <p className="mt-2 mb-0" style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', lineHeight: 1.5 }}>{description}</p>}
+      {description && <p className="mt-2 mb-0" style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', lineHeight: 1.5 }}>{description}</p>}
       {barValue != null && (
         <div className="mt-4" style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${Math.round(barValue * 100)}%`, background: severityColor, borderRadius: 'var(--arvo-radius-pill)' }} />
@@ -111,7 +111,7 @@ function VerdictCard({ eyebrow, headline, severityColor, description, barValue, 
       {stat && (
         <div className="mt-4 pt-4 flex items-baseline gap-2" style={{ borderTop: '1px solid var(--arvo-border)' }}>
           <span className="arvo-num" style={{ fontSize: 20, fontWeight: 600, color: 'var(--arvo-fg)' }}>{stat}</span>
-          {statLabel && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{statLabel}</span>}
+          {statLabel && <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{statLabel}</span>}
         </div>
       )}
     </div>
@@ -126,14 +126,14 @@ function CollapsibleInfoCard({ title, children }: { title: string; children: Rea
         type="button"
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-2.5 px-4 py-3 text-left"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
       >
         <Icon name="info" size={14} style={{ flexShrink: 0 }} />
         <span className="flex-1">{title}</span>
         <Icon name="plus" size={12} style={{ flexShrink: 0, transform: expanded ? 'rotate(45deg)' : 'none', transition: 'transform var(--arvo-dur-fast) var(--arvo-ease)' }} />
       </button>
       {expanded && (
-        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 12, lineHeight: 1.6 }}>
+        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 13, lineHeight: 1.6 }}>
           {children}
         </div>
       )}
@@ -291,7 +291,7 @@ export default function DiversificationPage() {
     if (!active || !payload?.length) return null
     const entry = payload[0]
     return (
-      <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px var(--arvo-border)', fontSize: 12 }}>
+      <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px var(--arvo-border)', fontSize: 13 }}>
         <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.name}</div>
         <div>{fmtVal(entry.value)}</div>
         <div style={{ color: 'var(--arvo-fg-soft)' }}>{fmtPct(entry.payload?.pct ?? 0)}</div>
@@ -362,14 +362,14 @@ export default function DiversificationPage() {
                     <CountryBadge code={g.key} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="flex justify-between mb-1">
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
-                        <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
+                        <span className="arvo-num" style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
                       <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)' }}>
                         <div style={{ height: '100%', width: `${g.pct * 100}%`, background: g.color, borderRadius: 'var(--arvo-radius-pill)' }} />
                       </div>
                     </div>
-                    <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
+                    <span className="arvo-num" style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
                   </div>
                 ))}
               </div>
@@ -411,7 +411,7 @@ export default function DiversificationPage() {
               )}
             </div>
             {!hasBrapiSectors && sectorData !== null && !sectorLoading && (
-              <p className="mb-4" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', fontStyle: 'italic' }}>{d.sectorFallbackNote}</p>
+              <p className="mb-4" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', fontStyle: 'italic' }}>{d.sectorFallbackNote}</p>
             )}
             <div className="flex gap-6 items-center justify-center flex-wrap">
               <div style={{ flex: '0 0 180px', height: 180 }}>
@@ -430,14 +430,14 @@ export default function DiversificationPage() {
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="flex justify-between mb-1">
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
-                        <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
+                        <span className="arvo-num" style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
                       <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)' }}>
                         <div style={{ height: '100%', width: `${g.pct * 100}%`, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], borderRadius: 'var(--arvo-radius-pill)' }} />
                       </div>
                     </div>
-                    <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
+                    <span className="arvo-num" style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
                   </div>
                 ))}
               </div>
@@ -470,19 +470,19 @@ export default function DiversificationPage() {
           {/* Risk by class chart */}
           <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
             <h2 className="font-semibold mb-1" style={{ color: 'var(--arvo-fg)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
-            <p className="mb-5" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{d.riskBarNote}</p>
+            <p className="mb-5" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{d.riskBarNote}</p>
             <ResponsiveContainer width="100%" height={Math.max(160, riskMetrics.byClass.length * 44)}>
               <BarChart data={riskMetrics.byClass} layout="vertical" margin={{ left: 12, right: 36, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--arvo-border)" />
-                <XAxis type="number" domain={[0, riskMetrics.xAxisMax]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: 'var(--arvo-fg)' }} />
+                <XAxis type="number" domain={[0, riskMetrics.xAxisMax]} tickFormatter={v => `${v}%`} tick={{ fontSize: 12, fill: 'var(--arvo-fg-soft)' }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 13, fill: 'var(--arvo-fg)' }} />
                 <Tooltip
                   formatter={(v: unknown, _name: unknown, props: { payload?: { risk?: number } }) => {
                     const riskLevel = props.payload?.risk ?? 0
                     const riskLabel = [d.riskLevelVeryLow, d.riskLevelLow, d.riskLevelMedium, d.riskLevelHigh, d.riskLevelVeryHigh][riskLevel - 1] ?? ''
                     return [`${v}% · ${riskLabel}`, d.allocationPct]
                   }}
-                  contentStyle={{ fontSize: 12, border: '1px solid var(--arvo-border)', borderRadius: 8 }}
+                  contentStyle={{ fontSize: 13, border: '1px solid var(--arvo-border)', borderRadius: 8 }}
                 />
                 <Bar dataKey="pct" radius={[0, 4, 4, 0]}>
                   {riskMetrics.byClass.map((entry, i) => (
@@ -501,7 +501,7 @@ export default function DiversificationPage() {
                 { level: 4, label: d.riskLevelHigh,     color: RISK_COLORS[3] },
                 { level: 5, label: d.riskLevelVeryHigh, color: RISK_COLORS[4] },
               ].map(r => (
-                <span key={r.level} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                <span key={r.level} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: r.color, display: 'inline-block' }} />
                   {r.level} · {r.label}
                 </span>
@@ -558,7 +558,7 @@ export default function DiversificationPage() {
 
           {/* HHI comparison panel */}
           <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-            <h3 className="font-semibold mb-4" style={{ fontSize: 13, color: 'var(--arvo-fg)' }}>{d.hhi}</h3>
+            <h3 className="font-semibold mb-4" style={{ fontSize: 14, color: 'var(--arvo-fg)' }}>{d.hhi}</h3>
             <div className="grid grid-cols-3 gap-4">
               {[
                 { label: d.assetHhi,  val: riskMetrics.assetHHI,  n: assets.length },
@@ -568,9 +568,9 @@ export default function DiversificationPage() {
                 const { text, color } = hhiBadge(m.val, m.n)
                 return (
                   <div key={m.label} className="text-center">
-                    <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>{m.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>{m.label}</div>
                     <div className="arvo-num" style={{ fontSize: 20, fontWeight: 600, color: 'var(--arvo-fg)' }}>{m.val.toFixed(3)}</div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color, background: severityTint(color), padding: '2px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 4, display: 'inline-block' }}>{text}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color, background: severityTint(color), padding: '2px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 4, display: 'inline-block' }}>{text}</span>
                   </div>
                 )
               })}

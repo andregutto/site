@@ -98,7 +98,7 @@ export default function AcceptTripInvitePage() {
                 </svg>
               </div>
               <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{iv.invalidTitle}</p>
-              <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{error}</p>
+              <p style={{ fontSize: 14, color: 'var(--arvo-fg-soft)' }}>{error}</p>
             </div>
           ) : done ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
@@ -108,7 +108,7 @@ export default function AcceptTripInvitePage() {
                 </svg>
               </div>
               <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{iv.welcomeTrip}</p>
-              <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{iv.redirecting}</p>
+              <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{iv.redirecting}</p>
             </div>
           ) : preview && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -120,7 +120,7 @@ export default function AcceptTripInvitePage() {
                   </svg>
                 </div>
                 <div>
-                  <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
+                  <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
                     {iv.invitedBy.replace('{name}', preview.inviter_name)}
                   </p>
                   <p style={{ fontSize: 20, fontFamily: "'Tenor Sans', 'Times New Roman', serif", letterSpacing: '0.04em', color: 'var(--arvo-black)' }}>
@@ -130,7 +130,7 @@ export default function AcceptTripInvitePage() {
               </div>
 
               {!user && (
-                <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
                   {iv.loginToAccept}
                 </p>
               )}
@@ -138,14 +138,14 @@ export default function AcceptTripInvitePage() {
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                style={{ width: '100%', padding: '10px 0', borderRadius: 8, background: GREEN, color: '#fff', border: 'none', cursor: accepting ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, opacity: accepting ? 0.7 : 1, transition: 'opacity 160ms' }}
+                style={{ width: '100%', padding: '10px 0', borderRadius: 8, background: GREEN, color: '#fff', border: 'none', cursor: accepting ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, opacity: accepting ? 0.7 : 1, transition: 'opacity 160ms' }}
               >
                 {accepting ? '...' : iv.acceptTrip}
               </button>
 
               <button
                 onClick={() => navigate('/')}
-                style={{ width: '100%', padding: '8px 0', borderRadius: 8, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
+                style={{ width: '100%', padding: '8px 0', borderRadius: 8, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}
               >
                 {iv.cancel}
               </button>

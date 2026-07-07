@@ -230,7 +230,7 @@ export default function PublicPortfolioPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 44 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/brand/logo/arvo-symbol-offwhite.svg" width={20} height={20} alt="" />
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(255,255,255,0.9)', lineHeight: 1 }}>arvo</span>
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(255,255,255,0.9)', lineHeight: 1 }}>arvo</span>
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 8, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Capital</span>
           </div>
           <div className="arvo-pdf-hide">
@@ -239,14 +239,14 @@ export default function PublicPortfolioPage() {
         </div>
 
         {data.owner_name && (
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 12 }}>
             {data.owner_name}
           </div>
         )}
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 'clamp(26px, 5vw, 40px)', color: '#fff', margin: '0 0 6px', fontWeight: 400, letterSpacing: '0.02em' }}>
           {s.reportTitle}
         </h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '0 0 36px' }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', margin: '0 0 36px' }}>
           {data.label || s.reportSubtitle}
         </p>
 
@@ -262,13 +262,13 @@ export default function PublicPortfolioPage() {
       <div className="arvo-pdf-body" style={{ maxWidth: 880, margin: '0 auto', padding: '28px 16px 64px' }}>
 
         {!showVal && (
-          <div className="arvo-pdf-nobreak" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(13,13,13,0.08)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 12, color: '#6B7280' }}>
+          <div className="arvo-pdf-nobreak" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(13,13,13,0.08)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#6B7280' }}>
             <Icon name="info" size={14} />
             {s.valuesHidden}
           </div>
         )}
         {data.hide_holdings && (
-          <div className="arvo-pdf-nobreak" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(13,13,13,0.08)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 12, color: '#6B7280' }}>
+          <div className="arvo-pdf-nobreak" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(13,13,13,0.08)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#6B7280' }}>
             <Icon name="info" size={14} />
             {s.holdingsHidden}
           </div>
@@ -302,7 +302,7 @@ export default function PublicPortfolioPage() {
           color: '#fff',
           border: 'none',
           borderRadius: 24,
-          fontSize: 12,
+          fontSize: 13,
           fontFamily: 'var(--arvo-font-body)',
           fontWeight: 500,
           letterSpacing: '0.04em',
@@ -331,7 +331,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>{label}</div>
-      <div className="arvo-num" style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{value}</div>
+      <div className="arvo-num" style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>{value}</div>
     </div>
   )
 }
@@ -340,8 +340,8 @@ function ReportSection({ title, subtitle, children, style, className }: { title:
   return (
     <section className={`arvo-pdf-nobreak${className ? ' ' + className : ''}`} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(13,13,13,0.07)', padding: '22px 24px', marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.03)', ...style }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
-        <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#9CA3AF', margin: 0 }}>{title}</h2>
-        {subtitle && <span className="arvo-num" style={{ fontSize: 11, color: '#9CA3AF' }}>{subtitle}</span>}
+        <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#9CA3AF', margin: 0 }}>{title}</h2>
+        {subtitle && <span className="arvo-num" style={{ fontSize: 12, color: '#9CA3AF' }}>{subtitle}</span>}
       </div>
       {children}
     </section>
@@ -349,7 +349,7 @@ function ReportSection({ title, subtitle, children, style, className }: { title:
 }
 
 function EmptyNote({ text }: { text: string }) {
-  return <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0, fontStyle: 'italic' }}>{text}</p>
+  return <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0, fontStyle: 'italic' }}>{text}</p>
 }
 
 function KpiBlock({ label, value, sub, deltaPct }: { label: string; value: string; sub?: string; deltaPct?: number | null }) {
@@ -360,11 +360,11 @@ function KpiBlock({ label, value, sub, deltaPct }: { label: string; value: strin
       {(sub != null || deltaPct != null) && (
         <div style={{ marginTop: 4, display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
           {deltaPct != null && (
-            <span className="arvo-num" style={{ fontSize: 12, fontWeight: 600, color: deltaPct >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+            <span className="arvo-num" style={{ fontSize: 13, fontWeight: 600, color: deltaPct >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
               {fmtSignedPct(deltaPct)}
             </span>
           )}
-          {sub != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{sub}</span>}
+          {sub != null && <span style={{ fontSize: 12, color: '#9CA3AF' }}>{sub}</span>}
         </div>
       )}
     </div>
@@ -376,9 +376,9 @@ function MetricCard({ label, value, sub, badge, badgeColor }: { label: string; v
     <div>
       <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 6 }}>{label}</div>
       <div className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 'clamp(19px, 3vw, 26px)', color: '#0D0D0D', fontWeight: 400, lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
       {badge && (
-        <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: badgeColor, background: severityTint(badgeColor ?? ''), padding: '2px 10px', borderRadius: 999, marginTop: 8 }}>
+        <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: badgeColor, background: severityTint(badgeColor ?? ''), padding: '2px 10px', borderRadius: 999, marginTop: 8 }}>
           {badge}
         </span>
       )}
@@ -392,7 +392,7 @@ function ChartLegend({ items }: { items: Array<{ color: string; label: string; d
       {items.map(it => (
         <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 14, height: it.dashed ? 0 : 2, borderTop: it.dashed ? `2px dashed ${it.color}` : `2px solid ${it.color}` }} />
-          <span style={{ fontSize: 11, color: '#6B7280' }}>{it.label}</span>
+          <span style={{ fontSize: 12, color: '#6B7280' }}>{it.label}</span>
         </div>
       ))}
     </div>
@@ -421,12 +421,12 @@ function AllocBarRow({ icon, color, label, pct, value, target, currency, dateLoc
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {icon ?? <span style={{ width: 9, height: 9, borderRadius: 2, background: color, flexShrink: 0 }} />}
-          <span style={{ fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+          <span style={{ fontSize: 14, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
         </div>
         <div className="arvo-num" style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexShrink: 0 }}>
-          {showVal && value != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{fmtCurr(value, currency, dateLocale)}</span>}
-          {target != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{s.target} {target.toFixed(0)}%</span>}
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827', minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+          {showVal && value != null && <span style={{ fontSize: 12, color: '#9CA3AF' }}>{fmtCurr(value, currency, dateLocale)}</span>}
+          {target != null && <span style={{ fontSize: 12, color: '#9CA3AF' }}>{s.target} {target.toFixed(0)}%</span>}
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#111827', minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
         </div>
       </div>
       <div style={{ position: 'relative', height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 2 }}>
@@ -564,7 +564,7 @@ function BenchmarksSection({ data, s, dateLocale, className }: { data: PublicDat
 
   return (
     <ReportSection title={s.benchmarksTitle} className={className}>
-      <table className="arvo-num" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 20 }}>
+      <table className="arvo-num" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, marginBottom: 20 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(13,13,13,0.10)' }}>
             <th style={th('left')} />
@@ -734,7 +734,7 @@ function TopPositionsSection({ data, t, s, currency, dateLocale, showVal, classN
 
   return (
     <ReportSection title={s.topPositions} className={className}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(13,13,13,0.10)' }}>
             <th style={th('left')}>{s.rank}</th>
@@ -751,10 +751,10 @@ function TopPositionsSection({ data, t, s, currency, dateLocale, showVal, classN
               <td style={{ ...td('left'), color: '#9CA3AF' }}>{i + 1}</td>
               <td style={td('left')}>
                 <div style={{ fontWeight: 600 }}>{a.code}</div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{a.name}</div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{a.name}</div>
               </td>
               <td style={td('left')}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#374151' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#374151' }}>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: a.class_color, flexShrink: 0 }} />
                   {resolveClassName({ name: a.class_name, name_key: a.class_name_key }, t)}
                 </span>
@@ -805,12 +805,12 @@ function MoversList({ title, items, color }: { title: string; items: SnapshotAss
   const maxAbs = Math.max(1, ...items.map(a => Math.abs(a.return_pct ?? 0)))
   return (
     <div>
-      <h3 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9CA3AF', margin: '0 0 12px' }}>{title}</h3>
+      <h3 style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9CA3AF', margin: '0 0 12px' }}>{title}</h3>
       {items.map(a => (
         <div key={a.id} style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3, gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.code}</span>
-            <span className="arvo-num" style={{ fontSize: 13, fontWeight: 600, color, flexShrink: 0 }}>{fmtSignedPct(a.return_pct)}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#0D0D0D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.code}</span>
+            <span className="arvo-num" style={{ fontSize: 14, fontWeight: 600, color, flexShrink: 0 }}>{fmtSignedPct(a.return_pct)}</span>
           </div>
           <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 2 }}>
             <div style={{ height: '100%', width: `${Math.min((Math.abs(a.return_pct ?? 0) / maxAbs) * 100, 100)}%`, background: color, borderRadius: 2 }} />
@@ -856,13 +856,13 @@ function PassiveIncomeSection({ data, s, currency, dateLocale, showVal }: { data
 
       {div.top_payers.length > 0 && (
         <div>
-          <h3 style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9CA3AF', margin: '0 0 10px' }}>{s.topPayers}</h3>
+          <h3 style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9CA3AF', margin: '0 0 10px' }}>{s.topPayers}</h3>
           {div.top_payers.map(p => (
             <div key={p.asset_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: '1px solid rgba(13,13,13,0.04)', gap: 12 }}>
-              <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <strong>{p.code}</strong> <span style={{ color: '#9CA3AF' }}>· {p.name}</span>
               </span>
-              {showVal && <span className="arvo-num" style={{ fontSize: 13, fontWeight: 600, flexShrink: 0 }}>{fmtCurr(p.total, currency, dateLocale)}</span>}
+              {showVal && <span className="arvo-num" style={{ fontSize: 14, fontWeight: 600, flexShrink: 0 }}>{fmtCurr(p.total, currency, dateLocale)}</span>}
             </div>
           ))}
         </div>
@@ -880,16 +880,16 @@ function FooterSection({ data, s, currency, dateLocale }: { data: PublicData; s:
     <div className="arvo-pdf-nobreak" style={{ textAlign: 'center', paddingTop: 32, marginTop: 8, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
         <img src="/brand/logo/arvo-symbol-black.svg" width={16} height={16} alt="" style={{ opacity: 0.35 }} />
-        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.25em', color: '#9CA3AF' }}>arvo</span>
+        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.25em', color: '#9CA3AF' }}>arvo</span>
       </div>
-      <p style={{ fontSize: 11, color: '#9CA3AF', maxWidth: 560, margin: '0 auto 8px', lineHeight: 1.6 }}>{s.disclaimer}</p>
-      <p style={{ fontSize: 11, color: '#9CA3AF', maxWidth: 560, margin: '0 auto 16px', lineHeight: 1.6 }}>
+      <p style={{ fontSize: 12, color: '#9CA3AF', maxWidth: 560, margin: '0 auto 8px', lineHeight: 1.6 }}>{s.disclaimer}</p>
+      <p style={{ fontSize: 12, color: '#9CA3AF', maxWidth: 560, margin: '0 auto 16px', lineHeight: 1.6 }}>
         <strong>{s.methodology}:</strong> {s.methodologyNote.replace('{currency}', currency)}
       </p>
-      <p style={{ fontSize: 11, color: '#9CA3AF', margin: '0 0 12px' }}>
+      <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 12px' }}>
         {s.generatedBy} Arvo Capital · {fmtDate(data.generated_at, dateLocale)}
       </p>
-      <Link to="/" className="arvo-pdf-hide" style={{ fontSize: 12, fontWeight: 600, color: '#0D0D0D', textDecoration: 'none', letterSpacing: '0.04em' }}>
+      <Link to="/" className="arvo-pdf-hide" style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D', textDecoration: 'none', letterSpacing: '0.04em' }}>
         {s.ctaCreateYours} →
       </Link>
     </div>

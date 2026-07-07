@@ -80,7 +80,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
           key={n}
           type="button"
           onClick={() => onChange?.(n === value ? 0 : n)}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: onChange ? 'pointer' : 'default', fontSize: 13, opacity: (value ?? 0) >= n ? 1 : 0.25 }}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: onChange ? 'pointer' : 'default', fontSize: 14, opacity: (value ?? 0) >= n ? 1 : 0.25 }}
         >★</button>
       ))}
     </div>
@@ -224,7 +224,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
 
   const btnBase: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 5,
-    fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
     padding: '5px 11px', borderRadius: 6, border: 'none', cursor: 'pointer',
     transition: 'opacity 160ms',
   }
@@ -255,7 +255,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
       <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: GOLD, marginBottom: 6 }}>
         Esse lugar não tem nome no Google Maps
       </p>
-      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
         Só veio o endereço ({pendingRename.address ?? pendingRename.name}). Como você quer chamar esse lugar? (ex: Airbnb, casa da Maria…)
       </p>
       <div style={{ display: 'flex', gap: 6 }}>
@@ -265,15 +265,15 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
           onChange={e => setRenameValue(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') confirmRename() }}
           placeholder="Nome do lugar…"
-          style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
+          style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
         />
         <button type="button" onClick={confirmRename} disabled={renaming}
-          style={{ padding: '7px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: renaming ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}>
+          style={{ padding: '7px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: renaming ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}>
           {renaming ? '…' : (tv.actions?.save ?? 'Salvar')}
         </button>
       </div>
       <button type="button" onClick={() => { onAdded(pendingRename); setPendingRename(null); setOpen(false); onClose?.() }}
-        style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}>
+        style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}>
         {tv.places?.keepAddressAsName ?? 'Manter o endereço como nome'}
       </button>
     </div>
@@ -322,12 +322,12 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             {tv.places?.mapsTab ?? 'Link Maps'}
           </button>
         </div>
-        <button type="button" onClick={() => { setOpen(false); onClose?.() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12 }}>✕</button>
+        <button type="button" onClick={() => { setOpen(false); onClose?.() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 13 }}>✕</button>
       </div>
 
       {mode === 'url' ? (
         <form onSubmit={importFromUrl} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
             {tv.places?.urlIntro ?? 'Cole o link do Google Maps: o lugar será salvo na biblioteca e adicionado à viagem.'}
           </p>
           <input
@@ -336,15 +336,15 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             placeholder="https://maps.google.com/maps/place/…"
             value={urlInput}
             onChange={e => { setUrlInput(e.target.value); setUrlError(null) }}
-            style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: `1px solid ${urlError ? RED : 'var(--arvo-border)'}`, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: `1px solid ${urlError ? RED : 'var(--arvo-border)'}`, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', boxSizing: 'border-box' }}
           />
           {urlError && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED }}>{urlError}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}>{urlError}</p>
           )}
           <button
             type="submit"
             disabled={urlLoading || !urlInput.trim()}
-            style={{ padding: '7px 0', borderRadius: 6, background: urlLoading || !urlInput.trim() ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: urlLoading || !urlInput.trim() ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: urlLoading || !urlInput.trim() ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, transition: 'all 160ms' }}
+            style={{ padding: '7px 0', borderRadius: 6, background: urlLoading || !urlInput.trim() ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: urlLoading || !urlInput.trim() ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: urlLoading || !urlInput.trim() ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, transition: 'all 160ms' }}
           >
             {urlLoading ? (tv.places?.importing ?? 'Importando…') : (tv.places?.addToTrip ?? 'Adicionar à viagem')}
           </button>
@@ -370,29 +370,29 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             placeholder={tv.places?.search ?? 'Buscar…'}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '6px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '6px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
             autoFocus
           />
           {loading ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.places?.loading ?? 'Carregando…'}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{tv.places?.loading ?? 'Carregando…'}</p>
           ) : library.length === 0 && hasDestination && totalCount !== 0 ? (
             // Biblioteca tem lugares, só não nesse destino — oferece ver tudo
             // em vez de parecer que a biblioteca inteira está vazia.
             <div>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
                 {(tv.places?.noPlacesInDestination ?? 'Nenhum lugar de {dest} na biblioteca.').replace('{dest}', String(filterCity ?? filterCountry))}
               </p>
               <button type="button" onClick={() => setShowAll(true)}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 {(tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(totalCount ?? library.length))}
               </button>
             </div>
           ) : library.length === 0 ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
               {tv.places?.libraryEmpty ?? 'Biblioteca vazia: importe do Google Takeout ou cole um link do Maps.'}
             </p>
           ) : filtered.length === 0 && search ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
               {tv.places?.noSearchResults ?? 'Nenhum resultado para a busca.'}
             </p>
           ) : (
@@ -407,7 +407,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
                     style={{
                       textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
                       border: '1px solid transparent', background: 'transparent',
-                      fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
                       display: 'flex', alignItems: 'center', gap: 8, opacity: adding === p.id ? 0.5 : 1,
                       transition: 'background 120ms',
                     }}
@@ -416,13 +416,13 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
                   >
                     <span style={{ fontSize: 16 }}>{catIcon(p.category)}</span>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                    {p.city && <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{p.city}</span>}
+                    {p.city && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{p.city}</span>}
                   </button>
                 ))}
               </div>
               {hasDestination && !search && (
                 <button type="button" onClick={() => setShowAll(v => !v)}
-                  style={{ marginTop: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  style={{ marginTop: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   {showAll
                     ? `${tv.places?.showOnly ?? 'Mostrar só'} ${filterCity ?? filterCountry}`
                     : (tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(totalCount ?? library.length))}
@@ -497,7 +497,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
         <span style={{ fontSize: 18, flexShrink: 0 }}>{catIcon(place.category)}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: place.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: place.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: place.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: place.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {place.name}
             </p>
             {place.is_highlight && (
@@ -505,13 +505,13 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
             )}
           </div>
           {place.address && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {place.address}
             </p>
           )}
           {place.rating != null && <StarRating value={place.rating} />}
           {place.trip_note && !editing && (
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12, color: GOLD, marginTop: 4 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 4 }}>
               {place.trip_note}
             </p>
           )}
@@ -519,7 +519,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
             <button
               type="button"
               onClick={() => canEdit && setShowExpenses(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 5, padding: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 5, padding: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
@@ -535,14 +535,14 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Nota sobre este lugar…"
-                style={{ flex: 1, padding: '5px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none' }}
+                style={{ flex: 1, padding: '5px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, outline: 'none' }}
               />
               <button type="button" onClick={saveNote} disabled={saving}
-                style={{ padding: '5px 10px', borderRadius: 4, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 11 }}>
+                style={{ padding: '5px 10px', borderRadius: 4, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 12 }}>
                 {saving ? '…' : 'Salvar'}
               </button>
               <button type="button" onClick={() => { setEditing(false); setNote(place.trip_note ?? '') }}
-                style={{ padding: '5px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', fontSize: 11, color: 'var(--arvo-fg-muted)' }}>
+                style={{ padding: '5px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
                 ✕
               </button>
             </div>
@@ -624,7 +624,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
           {tv.places?.title ?? 'Lugares'}
         </p>
         {places.length > 0 && (
-          <a href="/voyage/places" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
+          <a href="/voyage/places" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
             {tv.actions?.library ?? 'Biblioteca →'}
           </a>
         )}
@@ -640,7 +640,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 3C11 3 7 7 7 12c0 7 9 16 9 16s9-9 9-16c0-5-4-9-9-9z"/>
             <circle cx="16" cy="12" r="2.5"/>
           </svg>
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 8 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, marginTop: 8 }}>
             Nenhum lugar adicionado ainda
           </p>
         </div>

@@ -129,7 +129,7 @@ export default function ResourceDetailPage() {
     return (
       <div className="py-6" style={{ textAlign: 'center' }}>
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{r.notFound}</p>
-        <button onClick={() => navigate('/resources')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/resources')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
           ← {r.title}
         </button>
       </div>
@@ -139,7 +139,7 @@ export default function ResourceDetailPage() {
   const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14 }
   const btnSmall: React.CSSProperties = {
     padding: '9px 20px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.08em', whiteSpace: 'nowrap',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em', whiteSpace: 'nowrap',
     border: 'none', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   }
 
@@ -150,7 +150,7 @@ export default function ResourceDetailPage() {
     <div className="py-6 space-y-4" style={{ maxWidth: 640, margin: '0 auto' }}>
       <button
         onClick={() => navigate('/resources')}
-        style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 0 }}
       >
         {r.title} <span style={{ opacity: 0.5 }}>/</span> <span style={{ color: 'var(--arvo-fg)' }}>{resource.title}</span>
       </button>
@@ -201,10 +201,10 @@ export default function ResourceDetailPage() {
               <TypeIcon type={resource.resource_type} />
             </div>
             <div style={{ flex: 1, minWidth: 0, marginTop: 12 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {resource.title}
               </p>
-              {unlockError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red)', margin: '2px 0 0' }}>{unlockError}</p>}
+              {unlockError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-red)', margin: '2px 0 0' }}>{unlockError}</p>}
             </div>
             <div style={{ marginTop: 12 }}>
               {result ? (
@@ -214,10 +214,10 @@ export default function ResourceDetailPage() {
                 ) : result.type === 'file' ? (
                   <a href={result.download_url} style={btnSmall}>{r.downloadAgain}</a>
                 ) : (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
                 )
               ) : resource.visibility !== 'free' ? (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
               ) : (
                 <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnSmall, opacity: unlocking ? 0.6 : 1 }}>{actionLabel}</button>
               )}
