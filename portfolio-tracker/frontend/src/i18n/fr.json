@@ -1169,6 +1169,7 @@
     "expenseSplitCustomValue": "Montant",
     "expenseSplitCustomPercent": "%",
     "expenseBalances": "Soldes de ce Moment",
+    "expenseHistorySummary": "{count} dépenses · voir soldes et historique",
     "expenseBalancesSettled": "Tout est réglé: aucun solde en attente.",
     "expenseSettleConfirm": "Marquer comme réglé avec {name} ? Cela remet à zéro le solde entre vous deux dans ce Moment seulement.",
     "expenseEdit": "Modifier la dépense",

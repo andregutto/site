@@ -1169,6 +1169,7 @@
     "expenseSplitCustomValue": "Amount",
     "expenseSplitCustomPercent": "%",
     "expenseBalances": "This Moment's balances",
+    "expenseHistorySummary": "{count} expenses · see balances and history",
     "expenseBalancesSettled": "All settled: no pending balance.",
     "expenseSettleConfirm": "Mark as settled with {name}? This zeroes the balance between you two in this Moment only.",
     "expenseEdit": "Edit expense",

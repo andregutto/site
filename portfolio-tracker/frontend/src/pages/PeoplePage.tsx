@@ -171,12 +171,17 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   return createPortal(
     // O portal renderiza direto em document.body, fora do wrapper com a classe
     // .dark do AppLayout — sem isso, o modal caía sempre no tema claro (fundo branco).
-    <div className={resolvedTheme === 'dark' ? 'dark' : undefined} style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
-        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
-      }}>
+    // Bottom-sheet no mobile (colado embaixo, cantos só em cima) — igual ao padrão
+    // já usado em outros modais do app (ex: ModalOverlay de SharedGroupModals) —
+    // aproveita mais a tela num formulário que já é comprido (saldos + despesas +
+    // form de nova despesa), em vez do card centralizado com sobra de espaço nas
+    // bordas.
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${resolvedTheme === 'dark' ? 'dark' : ''}`} style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {friendName}
@@ -818,12 +823,13 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
   }, [groupId, initialMomentId])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
-        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
-      }}>
+    // Bottom-sheet no mobile, mesmo padrão do PairMomentModal (ver comentário lá).
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {groupName}

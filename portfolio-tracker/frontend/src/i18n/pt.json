@@ -1169,6 +1169,7 @@
     "expenseSplitCustomValue": "Valor",
     "expenseSplitCustomPercent": "%",
     "expenseBalances": "Saldos deste Momento",
+    "expenseHistorySummary": "{count} despesas · ver saldos e histórico",
     "expenseBalancesSettled": "Tudo certo por aqui: sem saldo pendente.",
     "expenseSettleConfirm": "Marcar como acertado com {name}? Isso zera o saldo entre vocês só neste Momento.",
     "expenseEdit": "Editar despesa",
