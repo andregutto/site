@@ -192,6 +192,8 @@
   },
   "common": {
     "loading": "Loading...",
+    "degradedTotal": "Value may be outdated",
+    "degradedTotalDetail": "A price source failed temporarily. Affected: {assets}. It recovers on its own within a few minutes.",
     "all": "All",
     "thisYear": "This year",
     "search": "Search...",

@@ -192,6 +192,8 @@
   },
   "common": {
     "loading": "Chargement...",
+    "degradedTotal": "Valeur possiblement obsolète",
+    "degradedTotalDetail": "Une source de prix a échoué temporairement. Concernés : {assets}. Se rétablit tout seul en quelques minutes.",
     "all": "Tous",
     "thisYear": "Cette année",
     "search": "Rechercher...",

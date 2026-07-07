@@ -192,6 +192,8 @@
   },
   "common": {
     "loading": "Carregando...",
+    "degradedTotal": "Valor pode estar desatualizado",
+    "degradedTotalDetail": "Uma fonte de preços falhou temporariamente. Afetados: {assets}. Atualiza sozinho em alguns minutos.",
     "all": "Todos",
     "thisYear": "Este ano",
     "search": "Buscar...",

@@ -6,6 +6,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
@@ -162,6 +163,7 @@ export default function HomePage() {
   const [data, setData] = useState<TodayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [wealth, setWealth] = useState<number | null>(null)
+  const [wealthDegraded, setWealthDegraded] = useState<string[] | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
@@ -193,7 +195,11 @@ export default function HomePage() {
         .then(setData)
         .finally(() => setLoading(false)),
       apiFetch<PortfolioValue>('/portfolio/value')
-        .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
+        .then(v => {
+          setWealth(v.total_brl)
+          setHasAssets((v.by_asset?.length ?? 0) > 0)
+          setWealthDegraded(v.degraded ? (v.degraded_assets ?? []) : null)
+        })
         .catch(() => setHasAssets(false)),
       // Só balancesByMomentMap importa aqui — o resumo pro card "Entre amigos"
       // agora vem pronto (e junto com o resto) em data.top_friends/top_groups.
@@ -379,6 +385,7 @@ export default function HomePage() {
                   <p className="arvo-num text-[34px] sm:text-[46px]" style={{ fontFamily: 'var(--arvo-font-display)', lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 10 }}>
                     {wealth != null ? fmt(wealth, 0) : '…'}
                   </p>
+                  {wealthDegraded && <DegradedTotalNote degraded assets={wealthDegraded} style={{ marginTop: 8 }} />}
                 </div>
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {th.openDashboard ?? 'Ver dashboard'}

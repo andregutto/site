@@ -351,6 +351,8 @@ export default function DashboardPage() {
                 chartLoading={periodLoading}
                 period_pct={hasInvested ? periodReturnPct : null}
                 period_label={periodLabel}
+                degraded={data.degraded}
+                degraded_assets={data.degraded_assets}
               />
             )
           })()}

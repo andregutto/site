@@ -8,6 +8,7 @@ import { useI18n } from '../contexts/I18nContext'
 import AssetTable from '../components/AssetTable'
 import ArchivedAssetsList from '../components/ArchivedAssetsList'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 import type { PortfolioAsset } from '../lib/types'
 
 type AssetView = 'all' | 'favorites' | 'archived'
@@ -53,9 +54,12 @@ export default function AssetsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
-          {t.nav.assets}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
+            {t.nav.assets}
+          </h1>
+          <DegradedTotalNote degraded={data?.degraded} assets={data?.degraded_assets} />
+        </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/portfolio/classes')}>
             {t.nav.classes} →

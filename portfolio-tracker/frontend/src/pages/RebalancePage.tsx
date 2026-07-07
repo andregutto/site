@@ -5,6 +5,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { PageLoader } from '../components/ArvoLoader'
 import { Icon } from '../components/icons'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 
 export default function RebalancePage() {
   const { data, loading: portfolioLoading } = usePortfolioValue()
@@ -73,6 +74,7 @@ export default function RebalancePage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--arvo-fg)]">{r.title}</h1>
           <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">{r.subtitle}</p>
+          <DegradedTotalNote degraded={data?.degraded} assets={data?.degraded_assets} style={{ marginTop: 6 }} />
         </div>
         <div className="flex items-center gap-3">
           {saveOk && <span className="text-xs text-green-600">{r.saved}</span>}

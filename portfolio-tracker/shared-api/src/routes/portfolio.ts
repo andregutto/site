@@ -38,6 +38,11 @@ export interface PortfolioValueResult {
   by_class: ByClassValue[]
   by_asset: ByAssetValue[]
   generated_at?: string
+  // true quando algum ativo caiu num fallback de cálculo (fonte de preço fora
+  // do ar, valor congelado do price_history, ou erro) — o front usa isso pra
+  // avisar que o total pode estar temporariamente desatualizado.
+  degraded?: boolean
+  degraded_assets?: string[]
 }
 
 // Fonte única de verdade do valor do portfólio: usada por GET /portfolio/value
@@ -286,6 +291,14 @@ export async function computePortfolioValue(userId: string): Promise<PortfolioVa
     getFxRate('EUR').then((r) => 1 / r).catch(() => null),
   ])
 
+  // Ativos que caíram em algum fallback: 'error' (nada calculável, entrou zerado),
+  // 'fixed_income_fallback' (principal sem juros do período) e 'stale' (último
+  // price_history porque as fontes ao vivo falharam). needs_manual de ativo manual
+  // sem valor NÃO conta — é falta de input do usuário, não falha de cálculo.
+  const degradedAssets = byAsset
+    .filter(a => a.source === 'error' || a.source === 'fixed_income_fallback' || a.source === 'stale')
+    .map(a => a.code)
+
   return {
     total_brl: Math.round(total_brl * 100) / 100,
     total_usd: fx_usd ? Math.round(total_brl * fx_usd * 100) / 100 : null,
@@ -293,6 +306,8 @@ export async function computePortfolioValue(userId: string): Promise<PortfolioVa
     by_class,
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
+    degraded: degradedAssets.length > 0,
+    degraded_assets: degradedAssets,
   }
 }
 

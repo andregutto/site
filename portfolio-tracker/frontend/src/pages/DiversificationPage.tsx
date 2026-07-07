@@ -9,6 +9,7 @@ import { apiFetch } from '../lib/api'
 import { PageTitle, Segmented } from '../components/ui'
 import { Icon } from '../components/icons'
 import type { PortfolioAsset } from '../lib/types'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 
 type Tab = 'geo' | 'sector' | 'risk'
 
@@ -320,6 +321,8 @@ export default function DiversificationPage() {
           />
         }
       />
+
+      <DegradedTotalNote degraded={data?.degraded} assets={data?.degraded_assets} />
 
       {/* ── GEO TAB ── */}
       {tab === 'geo' && (

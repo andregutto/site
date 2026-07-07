@@ -4,6 +4,7 @@ import { PageLoader } from '../components/ArvoLoader'
 import { apiFetch } from '../lib/api'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import InstitutionLogo from '../components/InstitutionLogo'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 import { DatePicker } from '../components/ui'
 import { useI18n } from '../contexts/I18nContext'
 
@@ -411,6 +412,7 @@ export default function InstitutionsPage() {
         <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">
           {t.institutions.subtitle}
         </p>
+        <DegradedTotalNote degraded={portfolio?.degraded} assets={portfolio?.degraded_assets} style={{ marginTop: 8 }} />
       </div>
 
       {allInstitutions.length === 0 ? (

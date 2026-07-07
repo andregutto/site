@@ -10,6 +10,7 @@ import { apiFetch } from '../lib/api'
 import { PageTitle, Segmented, StatDelta } from '../components/ui'
 import { Icon } from '../components/icons'
 import FxRateNote from '../components/FxRateNote'
+import DegradedTotalNote from '../components/DegradedTotalNote'
 import { ArvoTooltip, CHART_AXIS_TICK, CHART_GRID_STROKE, CHART_SERIES } from '../components/charts'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
@@ -414,6 +415,7 @@ export default function PerformancePage() {
                   <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>
                     {fmt(displayValueEnd)}
                   </span>
+                  {endsAtCurrentMonth && <DegradedTotalNote degraded={livePortfolio?.degraded} assets={livePortfolio?.degraded_assets} />}
                 </div>
                 <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
                   <span style={kpiLabelStyle}>{t.performance.absoluteReturn}</span>

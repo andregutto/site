@@ -2,6 +2,7 @@ import type React from 'react'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import FxRateNote from './FxRateNote'
+import DegradedTotalNote from './DegradedTotalNote'
 
 interface Props {
   total_brl: number
@@ -13,9 +14,11 @@ interface Props {
   chartLoading?: boolean
   period_pct?: number | null
   period_label?: string
+  degraded?: boolean
+  degraded_assets?: string[]
 }
 
-export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
+export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label, degraded, degraded_assets }: Props) {
   const { currency, fmt, hideValues } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
@@ -67,8 +70,9 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             {fmt(total_brl, 0)}
           </p>
           {/* Mobile: FX note under the total (the right column below is sm-only) */}
-          <div className="sm:hidden" style={{ marginTop: 6 }}>
+          <div className="sm:hidden" style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             <FxRateNote style={{ display: 'inline-block' }} />
+            <DegradedTotalNote degraded={degraded} assets={degraded_assets} />
           </div>
         </div>
         <div className="hidden sm:flex" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 3, marginTop: 4 }}>
@@ -76,6 +80,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             {t.dashboard.updatedAt.replace('{time}', ts)}
           </p>
           <FxRateNote />
+          <DegradedTotalNote degraded={degraded} assets={degraded_assets} />
         </div>
       </div>
 

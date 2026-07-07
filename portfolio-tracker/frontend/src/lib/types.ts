@@ -69,6 +69,10 @@ export interface PortfolioValue {
   by_class: PortfolioClass[]
   by_asset: PortfolioAsset[]
   generated_at: string
+  // Algum ativo caiu em fallback de cálculo (fonte fora do ar etc.) — o total
+  // está completo mas pode estar temporariamente desatualizado.
+  degraded?: boolean
+  degraded_assets?: string[]
 }
 
 export interface PerformanceSummary {
