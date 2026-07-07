@@ -3,10 +3,7 @@ import { useI18n } from '../contexts/I18nContext'
 export function PageLoader() {
   const { t } = useI18n()
   return (
-    <div
-      className="flex flex-col items-center justify-center gap-3"
-      style={{ position: 'fixed', inset: 0, background: 'var(--arvo-bg)', zIndex: 30 }}
-    >
+    <div className="flex flex-col items-center justify-center gap-3 py-16">
       <ArvoLoader size={52} style={{ color: 'var(--arvo-gold)' }} />
       <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.common.loading}</span>
     </div>
