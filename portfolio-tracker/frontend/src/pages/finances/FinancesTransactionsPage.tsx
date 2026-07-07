@@ -219,8 +219,8 @@ export default function FinancesTransactionsPage() {
   const [showAccountAssign, setShowAccountAssign] = useState(false)
   const [assigningAccount, setAssigningAccount]   = useState(false)
 
-  // Import modal
-  const [showImportModal, setShowImportModal] = useState(false)
+  // Import modal — abre já ao carregar quando vem do atalho da Hoje (?import=1)
+  const [showImportModal, setShowImportModal] = useState(() => searchParams.get('import') === '1')
   // Search
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Array<{id: number; date: string; description: string; amount: number; currency: string; finance_categories: {name: string; icon: string; color: string} | null}>>([])
@@ -2125,14 +2125,15 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Import modal */}
+      {/* Import modal — bottom sheet no mobile, card centralizado no desktop */}
       {showImportModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4"
           onClick={() => setShowImportModal(false)}
         >
           <div
-            className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6"
+            className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6"
+            style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
             onClick={e => e.stopPropagation()}
           >
             <h3 className="font-semibold text-[var(--arvo-fg)] mb-5">{t.finances.importStatement}</h3>

@@ -250,6 +250,7 @@ export default function HomePage() {
     { to: '/people', label: t.nav.people, icon: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></> },
     { to: '/finances/moments', label: th.quickMoments ?? 'Momentos', icon: <><circle cx="12" cy="12" r="8.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v4.7l3 1.8" /></> },
     { to: '/dividends', label: (t as any).nav?.dividends ?? 'Renda passiva', icon: <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></> },
+    { to: '/finances/transactions?import=1', label: th.quickImport ?? 'Importar transações', icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 15.5V4M12 4l-4 4M12 4l4 4" /><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.5v2a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-2" /></> },
   ]
 
   // Viagem, Momento e Recursos — mesmo formato de capa (CoverCard), coleção
