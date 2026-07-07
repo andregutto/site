@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
+import { Skeleton } from '../../components/Skeleton'
 import { SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
 import PullToRefresh from '../../components/PullToRefresh'
@@ -126,7 +127,30 @@ export default function CommunityHomePage() {
       .finally(() => setLoadingMine(false))
   }
 
-  if (loading) return <PageLoader />
+  if (loading) return (
+    <div className="space-y-7">
+      <div>
+        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
+          {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
+        </div>
+        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
+          {tc?.subtitle}
+        </p>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} style={{ width: 100 + (i % 2) * 30, height: 36, borderRadius: 999 }} />)}
+      </div>
+      <div>
+        <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', marginBottom: 10 }}>
+          {tc?.recentTitle ?? 'Conversas recentes'}
+        </h2>
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} style={{ height: 56, borderRadius: 12 }} />)}
+        </div>
+      </div>
+    </div>
+  )
 
   // Ações (meus tópicos / admin / busca) — ficam alinhadas com o título da
   // seção (ex: "Conversas recentes"), não numa linha própria acima dos pills.

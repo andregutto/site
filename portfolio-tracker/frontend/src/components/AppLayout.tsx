@@ -214,10 +214,18 @@ export default function AppLayout() {
 
   // Um flag só (community_admins) libera as duas abas do painel consolidado
   // em /admin (Comunidade e Recursos) — ver GET /community/is-admin.
-  const [isAdmin, setIsAdmin] = useState(false)
+  // Cacheado em localStorage por usuário: evita o "salto" do item Admin
+  // aparecendo no menu um instante depois de aberto, em visitas seguintes.
+  const isAdminCacheKey = user?.id ? `arvo_is_admin_${user.id}` : null
+  const [isAdmin, setIsAdmin] = useState(() => isAdminCacheKey ? localStorage.getItem(isAdminCacheKey) === '1' : false)
   useEffect(() => {
     if (!user?.id) { setIsAdmin(false); return }
-    apiFetch<{ is_admin: boolean }>('/community/is-admin').then(d => setIsAdmin(d.is_admin)).catch(() => {})
+    const key = `arvo_is_admin_${user.id}`
+    setIsAdmin(localStorage.getItem(key) === '1')
+    apiFetch<{ is_admin: boolean }>('/community/is-admin').then(d => {
+      setIsAdmin(d.is_admin)
+      localStorage.setItem(key, d.is_admin ? '1' : '0')
+    }).catch(() => {})
   }, [user?.id])
 
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||

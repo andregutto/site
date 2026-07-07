@@ -4,7 +4,7 @@ import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
-import { PageLoader } from '../components/ArvoLoader'
+import { Skeleton } from '../components/Skeleton'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
@@ -189,7 +189,28 @@ export default function HomePage() {
     { to: '/dividends', label: (t as any).nav?.dividends ?? 'Renda passiva', icon: <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></> },
   ]
 
-  if (loading) return <PageLoader />
+  if (loading) return (
+    <div className="space-y-5">
+      <div>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
+        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 30, color: 'var(--arvo-fg)', marginTop: 4 }}>{greeting}</h1>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
+          <Skeleton style={{ height: 148 }} />
+          <Skeleton style={{ height: 140 }} />
+          <Skeleton style={{ height: 96 }} />
+        </div>
+        <div className="space-y-5">
+          <Skeleton style={{ height: 110 }} />
+          <Skeleton style={{ height: 150 }} />
+        </div>
+      </div>
+      <div className="flex gap-3 flex-wrap">
+        {[1, 2, 3].map(i => <Skeleton key={i} style={{ width: 130, height: 42, borderRadius: 999 }} />)}
+      </div>
+    </div>
+  )
 
   const showWealth = hasAssets !== false
 

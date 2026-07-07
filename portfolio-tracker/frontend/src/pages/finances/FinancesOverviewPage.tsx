@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { PageLoader } from '../../components/ArvoLoader'
+import { Skeleton } from '../../components/Skeleton'
 import { Icon } from '../../components/icons'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
@@ -352,9 +352,11 @@ export default function FinancesOverviewPage() {
         </div>
         <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
       </div>
-      <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm">
-        <PageLoader />
+      <Skeleton style={{ height: 220 }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} style={{ height: 64 }} />)}
       </div>
+      <Skeleton style={{ height: 260 }} />
     </div>
   )
 
