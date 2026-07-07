@@ -251,13 +251,23 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
   if (error) { res.status(500).json({ error: error.message }); return }
 
   const { data: events } = await supabaseAdmin
-    .from('resource_events').select('resource_id, event_type')
+    .from('resource_events').select('resource_id, event_type, utm_source')
 
   const counts = new Map<number, Record<string, number>>()
+  // Origem do lead (qual vídeo/campanha) — só olha 'unlock', que é o evento
+  // que vale like "gerou lead", não 'view' (curioso que só passou de raspão).
+  const bySource = new Map<number, Record<string, number>>()
   for (const e of events ?? []) {
     const c = counts.get(e.resource_id) ?? {}
     c[e.event_type] = (c[e.event_type] ?? 0) + 1
     counts.set(e.resource_id, c)
+
+    if (e.event_type === 'unlock') {
+      const source = e.utm_source || 'sem_origem'
+      const s = bySource.get(e.resource_id) ?? {}
+      s[source] = (s[source] ?? 0) + 1
+      bySource.set(e.resource_id, s)
+    }
   }
 
   const result = []
@@ -273,6 +283,7 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
         unlocks:   c.unlock ?? 0,
         downloads: c.download ?? 0,
         signups:   signups ?? 0,
+        by_source: bySource.get(r.id) ?? {},
       },
     })
   }

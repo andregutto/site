@@ -16,7 +16,7 @@ import { PageLoader } from '../components/ArvoLoader'
 const SLUG_RE = /^[a-z0-9-]{3,80}$/
 const OCRE = '#E8A020'
 
-interface ResourceStats { views: number; unlocks: number; downloads: number; signups: number }
+interface ResourceStats { views: number; unlocks: number; downloads: number; signups: number; by_source: Record<string, number> }
 interface ResourceRow {
   id: number
   slug: string
@@ -481,6 +481,14 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                 <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}
                 </p>
+                {Object.keys(item.stats.by_source ?? {}).length > 0 && (
+                  <p className="truncate" style={{ fontSize: 10.5, color: 'var(--arvo-fg-faint, var(--arvo-fg-soft))', margin: '3px 0 0' }}>
+                    {(ra.bySource ?? 'Origem:')} {Object.entries(item.stats.by_source)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([source, count]) => `${source} (${count})`)
+                      .join(' · ')}
+                  </p>
+                )}
 
                 <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
                   <button onClick={() => copyLink(item.slug)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>

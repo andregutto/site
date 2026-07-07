@@ -167,6 +167,8 @@ const CSS = `
   .lv3 .vis{display:flex;justify-content:center}
   .lv3 .stage{background:#F1EDE5;border-radius:20px;padding:clamp(20px,3.2vw,36px);box-shadow:0 30px 70px -28px rgba(13,13,13,.28);width:100%;display:flex;justify-content:center}
   .lv3 .band .stage{background:#FAF8F4}
+  .lv3 .stage.photo{background-size:cover;background-position:center}
+  .lv3 .stage.photo .shot{box-shadow:0 18px 40px rgba(0,0,0,.30)}
   .lv3 .shot{background:#F7F5F1;border:1px solid rgba(13,13,13,.09);border-radius:16px;overflow:hidden;width:100%;max-width:350px;box-shadow:0 18px 56px rgba(0,0,0,.10)}
   .lv3 .shot-nav{height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid rgba(13,13,13,.09);background:#fff}
   .lv3 .shot-nav span{font-family:'Tenor Sans',serif;font-size:11.5px;letter-spacing:.28em;color:#0D0D0D}
@@ -819,7 +821,7 @@ export default function LandingPage() {
               <ul><li>{l.a1b1}</li><li>{l.a1b2}</li><li>{l.a1b3}</li></ul>
             </div>
             <div className="vis">
-              <div className="stage"><div className="shot">
+              <div className="stage photo" style={{ backgroundImage: 'url(/brand/imagery/arvo-hero-capital.jpg)' }}><div className="shot">
                 <ShotNav />
                 <div className="shot-body">
                   <div className="mcard" style={{ borderColor: 'rgba(200,184,154,.4)' }}>
@@ -854,7 +856,7 @@ export default function LandingPage() {
                 <ul><li>{l.a2b1}</li><li>{l.a2b2}</li><li>{l.a2b3}</li></ul>
               </div>
               <div className="vis">
-                <div className="stage"><div className="shot">
+                <div className="stage photo" style={{ backgroundImage: 'url(/brand/imagery/arvo-hero-voyage.jpg)' }}><div className="shot">
                   <ShotNav />
                   <div className="shot-body">
                     <div className="mcard">
@@ -980,7 +982,7 @@ export default function LandingPage() {
                 <ul><li>{l.a5b1}</li><li>{l.a5b2}</li><li>{l.a5b3}</li></ul>
               </div>
               <div className="vis">
-                <div className="stage" style={{ background: '#F1EDE5' }}><div className="shot">
+                <div className="stage photo" style={{ backgroundImage: 'url(/brand/imagery/arvo-hero-aprender.jpg)' }}><div className="shot">
                   <ShotNav />
                   <div className="shot-body">
                     {[
