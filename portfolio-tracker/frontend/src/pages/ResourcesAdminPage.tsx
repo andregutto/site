@@ -75,7 +75,7 @@ function slugifyTitle(name: string): string {
     .slice(0, 80)
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange, activeColor = 'var(--arvo-fg)' }: { checked: boolean; onChange: (v: boolean) => void; activeColor?: string }) {
   return (
     <button
       type="button"
@@ -84,7 +84,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       style={{
         position: 'relative', width: 36, height: 21, borderRadius: 999, border: 'none', padding: 0,
-        background: checked ? 'var(--arvo-fg)' : 'var(--arvo-border)', transition: 'background 180ms ease',
+        background: checked ? activeColor : 'var(--arvo-border)', transition: 'background 180ms ease',
         cursor: 'pointer', flexShrink: 0,
       }}
     >
@@ -371,7 +371,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
                 {form.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
               </span>
-              <Toggle checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} />
+              <Toggle checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} activeColor="var(--arvo-green, #1F8A5B)" />
             </label>
           </div>
 
@@ -571,7 +571,31 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
               </div>
 
               <div style={{ padding: '14px 16px' }}>
-                <span className="block truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => startEdit(item)}
+                      title={ra.editResource ?? 'Editar'}
+                      className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => remove(item)}
+                      disabled={busyId === item.id}
+                      title={ra.delete ?? 'Excluir'}
+                      className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                      style={{ opacity: busyId === item.id ? 0.5 : 1 }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
                 <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/resources/{item.slug}</p>
                 <p className="truncate" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}
@@ -586,17 +610,11 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
-                  <button onClick={() => startEdit(item)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-                    {ra.editResource ?? 'Editar'}
-                  </button>
                   <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
                     {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
                   </button>
                   <button onClick={() => { setLinksOpenId(linksOpenId === item.id ? null : item.id); setNewLinkLabel('') }} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${linksOpenId === item.id ? OCRE : 'var(--arvo-border)'}`, background: linksOpenId === item.id ? 'rgba(232,160,32,0.08)' : 'none', color: linksOpenId === item.id ? OCRE : 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
                     {ra.manageLinks ?? 'Links'} {item.links.length > 0 ? `(${item.links.length})` : ''}
-                  </button>
-                  <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1, marginLeft: 'auto' }}>
-                    {ra.delete ?? 'Excluir'}
                   </button>
                 </div>
 
