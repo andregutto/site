@@ -106,24 +106,30 @@ const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'ce
 
 // Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
 // rótulo/título/data. Um componente só pros dois — sem duplicar.
-function CoverCard({ to, coverUrl, accent, icon, label, title, subtitle, fallbackIcon }: {
+function CoverCard({ to, coverUrl, icon, label, title, subtitle }: {
   to: string
   coverUrl: string | null
-  accent: string // "r,g,b" pro gradiente de fallback
   icon?: React.ReactNode // selo colorido ao lado do rótulo — identifica a vertical mesmo quando há capa
   label: string
   title: string
   subtitle?: string
-  fallbackIcon: React.ReactNode
 }) {
   return (
     <Link to={to} style={{ ...card, overflow: 'hidden', textDecoration: 'none', display: 'flex', alignItems: 'stretch' }}>
       <div style={{
         width: 92, flexShrink: 0,
-        background: coverUrl ? `center/cover no-repeat url(${coverUrl})` : `linear-gradient(150deg, rgba(${accent},0.16), var(--arvo-surface-2))`,
+        background: coverUrl ? `center/cover no-repeat url(${coverUrl})` : '#0D0D0D',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {!coverUrl && fallbackIcon}
+        {/* Preto sólido + logo/wordmark — mesmo fallback de "sem foto" usado em
+            Viagens e Momentos (VoyageTripsPage/FinancesMomentsPage), pra não
+            parecer foto real do usuário quando não é. */}
+        {!coverUrl && (
+          <div className="flex flex-col items-center gap-1">
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="18" height="19" alt="" />
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.26em', textIndent: '0.26em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
+          </div>
+        )}
       </div>
       <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
         <p style={{ ...cardLabel, display: 'flex', alignItems: 'center', gap: 6 }}>{icon}{label}</p>
@@ -259,12 +265,10 @@ export default function HomePage() {
         <CoverCard
           to={`/voyage/${data.next_trip.id}`}
           coverUrl={data.next_trip.cover_image_url}
-          accent="214,59,47"
           icon={<svg width="13" height="13" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
           label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
           title={data.next_trip.title}
           subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
-          fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
         />
       ),
     })
@@ -276,7 +280,6 @@ export default function HomePage() {
         <CoverCard
           to="/finances/moments"
           coverUrl={data.active_moment.cover_image_url}
-          accent="200,184,154"
           icon={<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#1B4FD8" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.8L12 3Z" /></svg>}
           label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
           title={data.active_moment.name}
@@ -285,7 +288,6 @@ export default function HomePage() {
                 ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
                 : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
             : undefined}
-          fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
         />
       ),
     })
@@ -299,12 +301,10 @@ export default function HomePage() {
         <CoverCard
           to={`/resources/${res.slug}`}
           coverUrl={res.preview_image_url}
-          accent="232,160,32"
           icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-ocre)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
           label={t.resources.title}
           title={res.title}
           subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
-          fallbackIcon={<img src="/brand/logo/arvo-symbol-gold.svg" width="22" height="24" alt="" />}
         />
       ),
     })
