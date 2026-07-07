@@ -307,7 +307,7 @@ export default function CommunityAdminPage() {
               key={p.id}
               onClick={() => navigate(`/community/${p.category_slug}/${p.topic_id}`)}
               className="w-full text-left"
-              style={{ display: 'block', padding: '10px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', background: 'none', border: 'none', borderBottomStyle: 'solid', cursor: 'pointer' }}
+              style={{ display: 'block', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', cursor: 'pointer' }}
             >
               <div className="flex items-center gap-2">
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>{p.author_name}</span>
