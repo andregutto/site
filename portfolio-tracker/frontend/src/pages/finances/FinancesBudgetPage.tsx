@@ -1002,8 +1002,8 @@ export default function FinancesBudgetPage() {
           popover, built entirely from existing translated envelope name/description keys
           so it stays translatable across pt/en/fr. */}
       {showRefInfo && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setShowRefInfo(false)}>
-          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowRefInfo(false)}>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6 pb-4">
               <h3 className="font-semibold text-[var(--arvo-fg)] text-base mb-1.5">{t.finances.referenceSplitTitle}</h3>
               <p className="text-sm text-[var(--arvo-fg-muted)] leading-relaxed">{t.finances.referenceSplitBody}</p>
@@ -1027,7 +1027,7 @@ export default function FinancesBudgetPage() {
                 </div>
               ))}
             </div>
-            <div className="px-6 pt-3 pb-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+            <div className="px-6 pt-3 pb-6">
               <p className="text-xs text-[var(--arvo-fg-soft)] italic leading-relaxed">{t.finances.referenceSplitFooter}</p>
               <button
                 onClick={() => setShowRefInfo(false)}
