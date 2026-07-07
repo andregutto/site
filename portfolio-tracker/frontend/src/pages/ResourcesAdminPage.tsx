@@ -6,6 +6,7 @@ import { normalizeStorageUrl } from '../lib/storageUrl'
 import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { FormSection } from '../components/ui'
 
 // Painel de admin dos Recursos (lead magnets). Espelha CommunityAdminPage:
 // protegido no servidor (community_admins via isAdmin() em resources.ts),
@@ -99,20 +100,6 @@ function Toggle({ checked, onChange, activeColor = 'var(--arvo-fg)' }: { checked
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12 }
 const label: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }
 const input: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: '100%', boxSizing: 'border-box' }
-const sectionEyebrow: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', display: 'block', marginBottom: 14 }
-
-// Seções do form separadas por divisor + eyebrow (em vez de tudo solto num
-// space-y-4 só) — o form tinha texto/labels muito juntos das caixas sem
-// nenhum agrupamento visual, ficava embolado. Primeira seção não tem borda
-// de cima (já vem logo abaixo do header do card).
-function FormSection({ title, first, children }: { title: string; first?: boolean; children: React.ReactNode }) {
-  return (
-    <div style={first ? { paddingTop: 4 } : { borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 20, marginTop: 20 }} className="space-y-4">
-      <span style={sectionEyebrow}>{title}</span>
-      {children}
-    </div>
-  )
-}
 
 interface Props {
   onRegisterNew?: (fn: () => void) => void
@@ -414,8 +401,18 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
       {editingId !== null ? (
         <section style={{ ...card, padding: 20 }}>
           <div className="flex items-center justify-between gap-3">
-            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
-              {editingId === 'new' ? (ra.newResource ?? '+ Novo recurso') : (ra.editResource ?? 'Editar recurso')}
+            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', whiteSpace: 'nowrap' }}>
+              {editingId === 'new' ? (
+                <>
+                  <span className="hidden sm:inline">{ra.newResource ?? '+ Novo recurso'}</span>
+                  <span className="sm:hidden">{ra.newResourceShort ?? 'Novo recurso'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">{ra.editResource ?? 'Editar recurso'}</span>
+                  <span className="sm:hidden">{ra.editResourceShort ?? 'Edição'}</span>
+                </>
+              )}
             </h2>
             <label className="flex items-center gap-2 shrink-0" style={{ cursor: 'pointer' }}>
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
@@ -512,7 +509,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
 
             <div>
               <label style={label}>{ra.fieldDescription ?? 'Descrição'}</label>
-              <textarea style={{ ...input, minHeight: 70, resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              <textarea style={{ ...input, minHeight: 110, resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
           </FormSection>
 

@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
-import { SearchBox } from '../../components/ui'
+import { SearchBox, FormSection } from '../../components/ui'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from '../voyage/_shared/Avatar'
@@ -254,19 +254,79 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
   const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+    <form onSubmit={handleSubmit}>
+      <FormSection title={t.finances.momentSectionCover} first>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+        {photoPreview ? (
+          <div className="space-y-1">
+            <div
+              ref={photoContainerRef}
+              className="relative w-full h-36 rounded-xl overflow-hidden select-none"
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={onDragStart}
+              onTouchStart={onDragStart}
+            >
+              <img
+                src={photoPreview}
+                alt="Capa"
+                draggable={false}
+                className="w-full h-full object-cover pointer-events-none"
+                style={{ objectPosition: `${photoPos.x}% ${photoPos.y}%` }}
+              />
+              {/* Overlay with action buttons — hide while dragging */}
+              {!isDragging && (
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-end justify-end gap-2 p-2">
+                  <button type="button" onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                    onMouseDown={e => e.stopPropagation()}
+                    className="text-xs text-white bg-black/50 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                    {t.finances.momentPhotoChange}
+                  </button>
+                  <button type="button"
+                    onClick={e => { e.stopPropagation(); setPhotoPreview(null); setPhotoFile(null) }}
+                    onMouseDown={e => e.stopPropagation()}
+                    className="text-xs text-white bg-red-500/70 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                    {t.finances.momentPhotoRemove}
+                  </button>
+                </div>
+              )}
+              {/* Drag hint */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
+                  {t.finances.momentPhotoDragHint}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-0.5">
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors">{t.finances.momentPhotoChangeLabel}</button>
+              <span className="text-[var(--arvo-fg-faint)]">·</span>
+              <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
+                className="text-xs text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors">{t.finances.momentPhotoRemove}</button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => fileInputRef.current?.click()}
+            className="w-full h-20 border-2 border-dashed border-[var(--arvo-border)] rounded-xl flex flex-col items-center justify-center gap-1 text-[var(--arvo-fg-soft)] hover:border-[var(--arvo-fg)]/40 hover:text-[var(--arvo-fg)] transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+            <span className="text-xs">{t.finances.momentPhotoAdd}</span>
+          </button>
+        )}
+      </FormSection>
+
+      <FormSection title={t.finances.momentSectionInfo}>
+        <div>
           <label className={labelCls}>{t.common.name}</label>
           <input required value={name} onChange={e => setName(e.target.value)} className={fieldCls} placeholder="Viagem Paris, Aniversário João…" />
         </div>
 
-        <div className="col-span-2">
+        <div>
           <label className={labelCls}>{t.common.description} (opcional)</label>
           <input value={description} onChange={e => setDescription(e.target.value)} className={fieldCls} />
         </div>
 
-        <div className="col-span-2">
+        <div>
           <label className={labelCls}>{t.finances.momentKindLabel}</label>
           <div className="flex flex-wrap gap-1.5">
             {(['trip', 'party', 'dinner', 'other'] as MomentKind[]).map(k => (
@@ -282,7 +342,7 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
         </div>
 
         {!initial && momentKind === 'trip' && (
-          <div className="col-span-2 flex items-center justify-between gap-3 py-1">
+          <div className="flex items-center justify-between gap-3 py-1">
             <div>
               <p className="text-sm text-[var(--arvo-fg)]">{t.finances.momentAutoCreateTrip}</p>
               <p className="text-xs text-[var(--arvo-fg-muted)] mt-0.5">{t.finances.momentAutoCreateTripHint}</p>
@@ -304,70 +364,10 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
             </button>
           </div>
         )}
+      </FormSection>
 
-        {/* Photo */}
-        <div className="col-span-2">
-          <label className={labelCls}>{t.finances.momentPhotoLabel}</label>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
-          {photoPreview ? (
-            <div className="space-y-1">
-              <div
-                ref={photoContainerRef}
-                className="relative w-full h-36 rounded-xl overflow-hidden select-none"
-                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-                onMouseDown={onDragStart}
-                onTouchStart={onDragStart}
-              >
-                <img
-                  src={photoPreview}
-                  alt="Capa"
-                  draggable={false}
-                  className="w-full h-full object-cover pointer-events-none"
-                  style={{ objectPosition: `${photoPos.x}% ${photoPos.y}%` }}
-                />
-                {/* Overlay with action buttons — hide while dragging */}
-                {!isDragging && (
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-end justify-end gap-2 p-2">
-                    <button type="button" onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
-                      onMouseDown={e => e.stopPropagation()}
-                      className="text-xs text-white bg-black/50 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                      {t.finances.momentPhotoChange}
-                    </button>
-                    <button type="button"
-                      onClick={e => { e.stopPropagation(); setPhotoPreview(null); setPhotoFile(null) }}
-                      onMouseDown={e => e.stopPropagation()}
-                      className="text-xs text-white bg-red-500/70 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                      {t.finances.momentPhotoRemove}
-                    </button>
-                  </div>
-                )}
-                {/* Drag hint */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
-                  <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
-                    {t.finances.momentPhotoDragHint}
-                  </span>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 px-0.5">
-                <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors">{t.finances.momentPhotoChangeLabel}</button>
-                <span className="text-[var(--arvo-fg-faint)]">·</span>
-                <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
-                  className="text-xs text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors">{t.finances.momentPhotoRemove}</button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="w-full h-20 border-2 border-dashed border-[var(--arvo-border)] rounded-xl flex flex-col items-center justify-center gap-1 text-[var(--arvo-fg-soft)] hover:border-[var(--arvo-fg)]/40 hover:text-[var(--arvo-fg)] transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-              <span className="text-xs">{t.finances.momentPhotoAdd}</span>
-            </button>
-          )}
-        </div>
-
-        <div className="col-span-2">
+      <FormSection title={t.finances.momentSectionStyle}>
+        <div>
           <label className={labelCls}>{t.finances.momentIcon}</label>
           <div className="flex flex-wrap gap-1.5">
             {MOMENT_ICON_KEYS.map(ic => (
@@ -380,7 +380,7 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
           </div>
         </div>
 
-        <div className="col-span-2">
+        <div>
           <label className={labelCls}>{t.finances.momentColor}</label>
           <div className="flex gap-2">
             {COLORS.map(c => (
@@ -393,17 +393,21 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
             ))}
           </div>
         </div>
+      </FormSection>
+
+      <FormSection title={t.finances.momentSectionDetails}>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>{t.finances.momentStartDate}</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
+          </div>
+          <div>
+            <label className={labelCls}>{t.finances.momentEndDate}</label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={fieldCls} />
+          </div>
+        </div>
 
         <div>
-          <label className={labelCls}>{t.finances.momentStartDate}</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
-        </div>
-        <div>
-          <label className={labelCls}>{t.finances.momentEndDate}</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={fieldCls} />
-        </div>
-
-        <div className="col-span-2">
           <label className={labelCls}>{t.finances.momentBudget} (opcional)</label>
           <input
             type="number"
@@ -415,10 +419,10 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
             placeholder="0,00"
           />
         </div>
-      </div>
+      </FormSection>
 
       {photoError && (
-        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
           {photoError === 'unsupported-format' ? t.finances.momentPhotoUnsupportedFormat : (
             <>
               {t.finances.momentPhotoUploadError}
@@ -427,7 +431,7 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
           )}
         </p>
       )}
-      <div className="flex gap-2">
+      <div className="flex gap-2" style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 20, marginTop: 20 }}>
         <button type="submit" disabled={saving || uploading}
           className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
           {uploading ? t.finances.uploadingPhoto : saving ? '…' : t.common.save}
