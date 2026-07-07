@@ -270,6 +270,17 @@ export default function HomePage() {
     const ia = cardOrder.indexOf(a.id), ib = cardOrder.indexOf(b.id)
     return (ia === -1 ? sidebarCards.length : ia) - (ib === -1 ? sidebarCards.length : ib)
   })
+
+  // Metas (Liberdade financeira) só aparece quando falta conteúdo pra
+  // preencher a coluna — se já tem Viagem + Momento + Recursos + Entre
+  // amigos, a página já está cheia e Metas (algo que não muda todo dia)
+  // só empilha mais um card sem necessidade.
+  const hasAllFillers =
+    sidebarCards.some(c => c.id === 'trip') &&
+    sidebarCards.some(c => c.id === 'moment') &&
+    sidebarCards.some(c => c.id === 'resource') &&
+    !!(balances || activeFriends.length > 0)
+  const showGoals = !hasAllFillers
   const reorder = useLongPressReorder(
     orderedSidebarCards.map(c => ({ id: c.id })),
     async (newList) => {
@@ -439,9 +450,11 @@ export default function HomePage() {
 
         {/* Coluna lateral */}
         <div className="space-y-5">
-          {/* Metas — progresso rumo à liberdade financeira. Só no desktop: era pra preencher
-              o espaço largo; no mobile some pra não empurrar Viagem/Comunidade pra baixo. */}
-          {plan === null && (
+          {/* Metas — progresso rumo à liberdade financeira. Só no desktop (senão empurra
+              Viagem/Comunidade pra baixo no mobile) e só quando falta conteúdo pra
+              preencher a coluna (ver showGoals) — não é algo que muda todo dia, então
+              some quando já tem Viagem+Momento+Recursos+Entre amigos preenchendo. */}
+          {showGoals && plan === null && (
             <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '16px 18px', textDecoration: 'none' }}>
               <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
@@ -451,7 +464,7 @@ export default function HomePage() {
               </span>
             </Link>
           )}
-          {plan && (() => {
+          {showGoals && plan && (() => {
             const cur = plan.currency as 'USD' | 'EUR'
             const targetBrl = plan.currency === 'BRL' ? plan.target_amount : plan.target_amount * (fxRates[cur] ?? 1)
             const pct = wealth != null && targetBrl > 0 ? Math.min(100, (wealth / targetBrl) * 100) : 0
