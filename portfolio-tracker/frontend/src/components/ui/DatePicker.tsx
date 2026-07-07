@@ -398,8 +398,12 @@ export function DateRangePicker({
             <MonthGrid monthDate={viewMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} hideLabel />
           </div>
           <div className="hidden sm:block" style={{ borderLeft: '1px solid var(--arvo-border-soft)', paddingLeft: 18 }}>
-            <div style={{ height: 26, marginBottom: 6 }} />
-            <MonthGrid monthDate={secondMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} />
+            <div style={{ height: 26, marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                {monthLabel(secondMonth, locale)}
+              </span>
+            </div>
+            <MonthGrid monthDate={secondMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} hideLabel />
           </div>
         </div>
       )}
