@@ -167,8 +167,12 @@ export default function ResourceDetailPage() {
             />
           </div>
         ) : (
-          <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-black)' }}>
-            <img src="/brand/logo/arvo-symbol-gold.svg" width="28" height="30" alt="" />
+          // Recursos hoje sempre vivem sob o pilar Aprender (é onde a
+          // navegação vai listá-los quando a área de educação existir), daí
+          // usar sempre essa imagem como fallback em vez de precisar de um
+          // seletor de pilar por recurso.
+          <div style={{ height: 120 }}>
+            <img src="/brand/imagery/arvo-fallback-recurso.jpg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 30%', display: 'block' }} />
           </div>
         )}
 

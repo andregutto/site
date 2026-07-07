@@ -94,13 +94,11 @@ export default function ResourcesPage() {
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {items.map(item => (
             <Link key={item.slug} to={`/resources/${item.slug}`} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}>
-              {item.preview_image_url ? (
-                <img src={item.preview_image_url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', objectPosition: item.cover_image_position ?? '50% 50%', display: 'block' }} />
-              ) : (
-                <div className="h-[140px] flex items-center justify-center" style={{ background: 'var(--arvo-black)' }}>
-                  <img src="/brand/logo/arvo-symbol-gold.svg" width="28" height="30" alt="" />
-                </div>
-              )}
+              <img
+                src={item.preview_image_url || '/brand/imagery/arvo-fallback-recurso.jpg'}
+                alt=""
+                style={{ width: '100%', height: 140, objectFit: 'cover', objectPosition: item.preview_image_url ? (item.cover_image_position ?? '50% 50%') : '50% 30%', display: 'block' }}
+              />
               <div className="p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-center gap-2" style={{ color: 'var(--arvo-fg-soft)' }}>
                   <TypeIcon type={item.resource_type} />
