@@ -356,6 +356,42 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
     }
   }
 
+  function renderLinksPanel(item: ResourceRow) {
+    return (
+      <div>
+        <div className="space-y-2">
+          {[directLink(), ...item.links].map(link => (
+            <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
+              <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: link.id === -1 ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontStyle: link.id === -1 ? 'italic' : 'normal', flex: '0 1 auto', maxWidth: 170 }}>{link.label}</span>
+              <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
+              <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {copiedLinkId === link.id ? (ra.linkCopied ?? 'Copiado!') : (ra.copy ?? 'Copiar')}
+              </button>
+              {link.id !== -1 && (
+                <button onClick={() => deleteLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer' }}>
+                  {ra.delete ?? 'Excluir'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 10 }}>
+          <input
+            value={newLinkLabel}
+            onChange={e => setNewLinkLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') createLink(item) }}
+            placeholder={ra.linkLabelPlaceholder ?? 'Onde vai usar esse link? Ex: Vídeo custo de vida Paris'}
+            style={{ ...input, flex: 1, minWidth: 160, fontSize: 12.5, padding: '6px 10px' }}
+          />
+          <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+            {ra.generateLink ?? 'Gerar link'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) return <PageLoader />
   if (forbidden) { navigate('/resources'); return null }
 
@@ -521,6 +557,19 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
             </div>
           )}
 
+          {/* Links também aqui dentro, não só na listagem — não precisa sair
+              do formulário pra gerar/copiar um link enquanto edita. Só depois
+              que o recurso já existe (precisa de slug salvo no servidor). */}
+          {editingId !== 'new' && (() => {
+            const editingItem = items.find(i => i.id === editingId)
+            return editingItem ? (
+              <div>
+                <label style={label}>{ra.manageLinks ?? 'Links'}</label>
+                {renderLinksPanel(editingItem)}
+              </div>
+            ) : null
+          })()}
+
           {error && <p style={{ fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)' }}>{error}</p>}
 
           <div className="flex items-center gap-3">
@@ -620,38 +669,11 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
 
                 {/* Um só lugar pra links: a 1ª linha é sempre a URL crua (sem
                     UTM, "pública"), as seguintes são as geradas com rótulo —
-                    resolve a confusão de ter dois botões parecidos. */}
+                    resolve a confusão de ter dois botões parecidos. Reaparece
+                    dentro do formulário de edição (renderLinksPanel) também. */}
                 {linksOpenId === item.id && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--arvo-border)' }}>
-                    <div className="space-y-2">
-                      {[directLink(), ...item.links].map(link => (
-                        <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
-                          <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: link.id === -1 ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontStyle: link.id === -1 ? 'italic' : 'normal', flex: '0 1 auto', maxWidth: 170 }}>{link.label}</span>
-                          <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
-                          <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                            {copiedLinkId === link.id ? (ra.linkCopied ?? 'Copiado!') : (ra.copy ?? 'Copiar')}
-                          </button>
-                          {link.id !== -1 && (
-                            <button onClick={() => deleteLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer' }}>
-                              {ra.delete ?? 'Excluir'}
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 10 }}>
-                      <input
-                        value={newLinkLabel}
-                        onChange={e => setNewLinkLabel(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') createLink(item) }}
-                        placeholder={ra.linkLabelPlaceholder ?? 'Onde vai usar esse link? Ex: Vídeo custo de vida Paris'}
-                        style={{ ...input, flex: 1, minWidth: 160, fontSize: 12.5, padding: '6px 10px' }}
-                      />
-                      <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
-                        {ra.generateLink ?? 'Gerar link'}
-                      </button>
-                    </div>
+                    {renderLinksPanel(item)}
                   </div>
                 )}
               </div>
