@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
-import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
+import { useActiveFriends, useActiveFriendsReady, type ActiveFriend } from '../hooks/useActiveFriends'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useLongPressReorder } from '../hooks/useLongPressReorder'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
@@ -108,6 +108,7 @@ export default function HomePage() {
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: NamedBalance[]; toPay: NamedBalance[] } | null>(null)
   const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
+  const [peopleLoaded, setPeopleLoaded] = useState(false)
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -116,6 +117,7 @@ export default function HomePage() {
   const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
   const [resources, setResources] = useState<ResourceItem[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
+  const activeFriendsReady = useActiveFriendsReady()
 
   // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
   // Performance (lib/performanceComparison), só reusado aqui numa linha compacta.
@@ -158,7 +160,8 @@ export default function HomePage() {
           setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
           setBalancesByMomentMap(bbmMap)
         })
-        .catch(() => {}),
+        .catch(() => {})
+        .finally(() => setPeopleLoaded(true)),
       apiFetch<FreedomPlan[]>('/finances/freedom-plans')
         .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
         .catch(() => setPlan(null)),
@@ -275,12 +278,21 @@ export default function HomePage() {
   // preencher a coluna — se já tem Viagem + Momento + Recursos + Entre
   // amigos, a página já está cheia e Metas (algo que não muda todo dia)
   // só empilha mais um card sem necessidade.
+  //
+  // "Entre amigos" depende de dois carregamentos assíncronos independentes
+  // (balances vem do /people dentro de loadHome, activeFriends vem de um
+  // hook com cache próprio) que não terminam juntos — decidir hasAllFillers
+  // antes dos dois resolverem fazia Metas aparecer (achando que não tinha
+  // amigo) e sumir um instante depois (quando o amigo finalmente chegava).
+  // Só decide depois que os dois sinais confirmarem, pra não piscar.
+  const sidebarDataReady = peopleLoaded && activeFriendsReady
   const hasAllFillers =
+    sidebarDataReady &&
     sidebarCards.some(c => c.id === 'trip') &&
     sidebarCards.some(c => c.id === 'moment') &&
     sidebarCards.some(c => c.id === 'resource') &&
     !!(balances || activeFriends.length > 0)
-  const showGoals = !hasAllFillers
+  const showGoals = sidebarDataReady && !hasAllFillers
   const reorder = useLongPressReorder(
     orderedSidebarCards.map(c => ({ id: c.id })),
     async (newList) => {
