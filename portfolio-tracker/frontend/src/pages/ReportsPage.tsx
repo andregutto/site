@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import ExcelJS from 'exceljs'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
-import { InfoBox } from '../components/ui'
+import { InfoBox, DatePicker } from '../components/ui'
 
 // ─── Brazil Tax Interfaces ────────────────────────────────────────────────────
 
@@ -1112,8 +1112,7 @@ function FrReport({ year }: { year: number }) {
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDate}</label>
-                          <input type="date" value={incDate} onChange={e => setIncDate(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40" />
+                          <DatePicker value={incDate} onChange={setIncDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
                         </div>
 
                         <div>

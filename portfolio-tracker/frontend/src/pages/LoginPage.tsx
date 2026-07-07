@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import LoginFooter from '../components/LoginFooter'
 import LanguageSelector from '../components/LanguageSelector'
 import GoogleLogo from '../components/GoogleLogo'
+import { DatePicker } from '../components/ui'
 
 type Mode = 'login' | 'register' | 'forgot'
 type Currency = 'BRL' | 'USD' | 'EUR'
@@ -433,10 +434,7 @@ export default function LoginPage() {
 
                   <div>
                     <label style={labelStyle}>{l.birthdate}</label>
-                    <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={inputBase}
-                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
-                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
-                    />
+                    <DatePicker value={birthdate} onChange={setBirthdate} max={new Date().toISOString().slice(0, 10)} style={inputBase} />
                   </div>
 
                   <div>

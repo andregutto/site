@@ -4,6 +4,7 @@ import { parseLocaleNum, inputCls } from '../lib/numparse'
 import { useI18n } from '../contexts/I18nContext'
 import type { PortfolioAsset } from '../lib/types'
 import InstitutionSelect from './InstitutionSelect'
+import { DatePicker } from './ui'
 
 
 interface Props {
@@ -203,23 +204,11 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.startDate}</label>
-              <input
-                type="date"
-                value={startDate}
-                max={today}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              />
+              <DatePicker value={startDate} max={today} onChange={setStartDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
             </div>
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.maturityOpt}</label>
-              <input
-                type="date"
-                value={maturity}
-                min={today}
-                onChange={e => setMaturity(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              />
+              <DatePicker value={maturity} min={today} onChange={setMaturity} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
             </div>
           </div>
 
@@ -274,13 +263,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
                 </div>
                 <div>
                   <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.portDate}</label>
-                  <input
-                    type="date"
-                    value={portDate}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={e => setPortDate(e.target.value)}
-                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                  />
+                  <DatePicker value={portDate} max={new Date().toISOString().split('T')[0]} onChange={setPortDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
                 </div>
                 {portError && <p className="text-xs text-red-600">{portError}</p>}
                 <button

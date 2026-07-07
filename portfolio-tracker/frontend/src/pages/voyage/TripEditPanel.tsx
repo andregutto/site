@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { normalizeStorageUrl } from '../../lib/storageUrl'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
+import { DateRangePicker } from '../../components/ui'
 import DestinationsEditor from './DestinationsEditor'
 import type { Trip, TripDestination } from './types'
 
@@ -144,16 +145,12 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
           dias de cada destino (abaixo) são relativos a essa data de início. */}
       <div style={sectionStyle}>
         <p style={{ ...labelStyle, marginBottom: 8 }}>{tv.tripDatesLabel ?? 'Datas da viagem'}</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label>
-            <span style={{ ...labelStyle, fontSize: 8 }}>{tv.startLabel ?? 'Início'}</span>
-            <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
-          </label>
-          <label>
-            <span style={{ ...labelStyle, fontSize: 8 }}>{tv.endLabel ?? 'Fim'}</span>
-            <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
-          </label>
-        </div>
+        <DateRangePicker
+          startValue={startDate} endValue={endDate}
+          onChangeStart={setStartDate} onChangeEnd={setEndDate}
+          startLabel={tv.startLabel ?? 'Início'} endLabel={tv.endLabel ?? 'Fim'}
+          labelStyle={{ ...labelStyle, fontSize: 8, marginBottom: 4 }}
+        />
       </div>
 
       {/* Destinos — bloco separado das datas da viagem; cada destino usa

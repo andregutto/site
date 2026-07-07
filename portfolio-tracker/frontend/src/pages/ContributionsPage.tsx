@@ -9,6 +9,7 @@ import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from '../components/InstitutionSelect'
 import AssetCatalogSearch, { type CatalogCandidate } from '../components/AssetCatalogSearch'
+import { DatePicker } from '../components/ui'
 
 function fmtDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -814,12 +815,11 @@ export default function ContributionsPage() {
                       </div>
                       <div>
                         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.refDate}</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={newManualDate || today}
                           max={today}
-                          onChange={e => setNewManualDate(e.target.value)}
-                          className={SMALL_INPUT}
+                          onChange={setNewManualDate}
+                          style={{ borderRadius: 8, padding: '6px 10px', fontSize: 14 }}
                         />
                       </div>
                       <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300">
@@ -836,12 +836,11 @@ export default function ContributionsPage() {
                       </div>
                       <div>
                         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.purchaseDate}</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={newImvPurchaseDate}
                           max={today}
-                          onChange={e => setNewImvPurchaseDate(e.target.value)}
-                          className={SMALL_INPUT}
+                          onChange={setNewImvPurchaseDate}
+                          style={{ borderRadius: 8, padding: '6px 10px', fontSize: 14 }}
                         />
                       </div>
                       <div>
@@ -915,23 +914,21 @@ export default function ContributionsPage() {
                       {/* fi_start_date */}
                       <div>
                         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.startDate}</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={newFiStartDate}
                           max={today}
-                          onChange={e => setNewFiStartDate(e.target.value)}
-                          className={SMALL_INPUT}
+                          onChange={setNewFiStartDate}
+                          style={{ borderRadius: 8, padding: '6px 10px', fontSize: 14 }}
                         />
                       </div>
 
                       {/* fi_maturity */}
                       <div>
                         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.maturityOpt}</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={newFiMaturity}
-                          onChange={e => setNewFiMaturity(e.target.value)}
-                          className={SMALL_INPUT}
+                          onChange={setNewFiMaturity}
+                          style={{ borderRadius: 8, padding: '6px 10px', fontSize: 14 }}
                         />
                       </div>
 
@@ -969,13 +966,7 @@ export default function ContributionsPage() {
             {/* Date + Type */}
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.date}</label>
-              <input
-                type="date"
-                value={date}
-                max={today}
-                onChange={e => setDate(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              />
+              <DatePicker value={date} max={today} onChange={setDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
             </div>
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.opType}</label>

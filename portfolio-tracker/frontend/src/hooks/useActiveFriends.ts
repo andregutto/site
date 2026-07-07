@@ -52,3 +52,16 @@ export function useActiveFriends(): ActiveFriend[] {
 
   return friends
 }
+
+// Pra telas que decidem o que mostrar com base em "tem amigo ou não" (ex: Hoje
+// escondendo/mostrando outro card) — sem isso, o valor inicial [] de
+// useActiveFriends() antes do cache esquentar é indistinguível de "usuário não
+// tem amigos", causando decisões erradas por um instante (flash).
+export function useActiveFriendsReady(): boolean {
+  const [ready, setReady] = useState(cached != null)
+  useEffect(() => {
+    if (cached) { setReady(true); return }
+    fetchActiveFriends().then(() => setReady(true))
+  }, [])
+  return ready
+}

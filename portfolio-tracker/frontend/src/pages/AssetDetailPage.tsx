@@ -10,7 +10,7 @@ import InstitutionSelect from '../components/InstitutionSelect'
 import MigrateToFIModal from '../components/MigrateToFIModal'
 import ManualValueModal from '../components/ManualValueModal'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
-import { StatDelta, Banner } from '../components/ui'
+import { StatDelta, Banner, DatePicker } from '../components/ui'
 import { ArvoTooltip, CHART_GRID_STROKE, CHART_AXIS_TICK, CHART_SERIES } from '../components/charts'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -469,9 +469,9 @@ export default function AssetDetailPage() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-[var(--arvo-fg-muted)] uppercase tracking-wide">{d.splitDate}</label>
-                    <input type="date" value={splitModalData.date}
-                      onChange={e => setSplitModalData(p => p && { ...p, date: e.target.value })}
-                      className="mt-1 w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30" />
+                    <DatePicker value={splitModalData.date}
+                      onChange={iso => setSplitModalData(p => p && { ...p, date: iso })}
+                      style={{ marginTop: 4, borderRadius: 12, padding: '8px 12px', fontSize: 14 }} />
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">

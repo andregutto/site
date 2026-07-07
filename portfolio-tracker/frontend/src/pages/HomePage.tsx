@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
-import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
+import { useActiveFriends, useActiveFriendsReady, type ActiveFriend } from '../hooks/useActiveFriends'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { useLongPressReorder } from '../hooks/useLongPressReorder'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
 import type { ResourceItem } from './ResourcesPage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
@@ -87,6 +90,17 @@ export default function HomePage() {
   const { user } = useAuth()
   const { fmt, hideValues, fxRates } = useCurrency()
   const setup = useSetupChecklist(user?.id)
+  const isMobile = useIsMobile()
+
+  // Ordem dos cards Viagem/Momento/Recursos — reordenável só no mobile
+  // (pressionar e segurar), salva no perfil pra acompanhar o usuário em
+  // qualquer aparelho. `cardOrder` começa a partir da preferência salva e só
+  // é atualizado localmente pra feedback imediato; a fonte da verdade
+  // continua sendo user_metadata.home_card_order depois do refreshSession.
+  const [cardOrder, setCardOrder] = useState<string[]>(() => (user?.user_metadata?.home_card_order as string[] | undefined) ?? [])
+  useEffect(() => {
+    setCardOrder((user?.user_metadata?.home_card_order as string[] | undefined) ?? [])
+  }, [user?.user_metadata?.home_card_order])
 
   const [data, setData] = useState<TodayData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -94,6 +108,7 @@ export default function HomePage() {
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: NamedBalance[]; toPay: NamedBalance[] } | null>(null)
   const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
+  const [peopleLoaded, setPeopleLoaded] = useState(false)
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -102,6 +117,7 @@ export default function HomePage() {
   const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
   const [resources, setResources] = useState<ResourceItem[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
+  const activeFriendsReady = useActiveFriendsReady()
 
   // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
   // Performance (lib/performanceComparison), só reusado aqui numa linha compacta.
@@ -144,7 +160,8 @@ export default function HomePage() {
           setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
           setBalancesByMomentMap(bbmMap)
         })
-        .catch(() => {}),
+        .catch(() => {})
+        .finally(() => setPeopleLoaded(true)),
       apiFetch<FreedomPlan[]>('/finances/freedom-plans')
         .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
         .catch(() => setPlan(null)),
@@ -188,6 +205,106 @@ export default function HomePage() {
     { to: '/finances/moments', label: th.quickMoments ?? 'Momentos', icon: <><circle cx="12" cy="12" r="8.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v4.7l3 1.8" /></> },
     { to: '/dividends', label: (t as any).nav?.dividends ?? 'Renda passiva', icon: <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></> },
   ]
+
+  // Viagem, Momento e Recursos — mesmo formato de capa (CoverCard), coleção
+  // em vez de blocos fixos pra dar suporte a reordenar no mobile. Só entra na
+  // lista quem tem dado pra mostrar; a ordem obedece a preferência salva
+  // (cardOrder) e cai pra ordem de cadastro (trip, moment, resource) pro que
+  // não estiver nela ainda.
+  const sidebarCards: { id: string; node: React.ReactNode }[] = []
+  if (data?.next_trip) {
+    sidebarCards.push({
+      id: 'trip',
+      node: (
+        <CoverCard
+          to={`/voyage/${data.next_trip.id}`}
+          coverUrl={data.next_trip.cover_image_url}
+          accent="214,59,47"
+          icon={<svg width="13" height="13" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
+          label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
+          title={data.next_trip.title}
+          subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
+          fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
+        />
+      ),
+    })
+  }
+  if (data?.active_moment) {
+    sidebarCards.push({
+      id: 'moment',
+      node: (
+        <CoverCard
+          to="/finances/moments"
+          coverUrl={data.active_moment.cover_image_url}
+          accent="200,184,154"
+          icon={<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#1B4FD8" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.8L12 3Z" /></svg>}
+          label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
+          title={data.active_moment.name}
+          subtitle={data.active_moment.start_date
+            ? (data.active_moment.ongoing && data.active_moment.end_date
+                ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
+                : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
+            : undefined}
+          fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
+        />
+      ),
+    })
+  }
+  if (resources[0]) {
+    const res = resources[0]
+    const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
+    sidebarCards.push({
+      id: 'resource',
+      node: (
+        <CoverCard
+          to={`/resources/${res.slug}`}
+          coverUrl={res.preview_image_url}
+          accent="232,160,32"
+          icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-ocre)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
+          label={t.resources.title}
+          title={res.title}
+          subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
+          fallbackIcon={<img src="/brand/logo/arvo-symbol-gold.svg" width="22" height="24" alt="" />}
+        />
+      ),
+    })
+  }
+  const orderedSidebarCards = [...sidebarCards].sort((a, b) => {
+    const ia = cardOrder.indexOf(a.id), ib = cardOrder.indexOf(b.id)
+    return (ia === -1 ? sidebarCards.length : ia) - (ib === -1 ? sidebarCards.length : ib)
+  })
+
+  // Metas (Liberdade financeira) só aparece quando falta conteúdo pra
+  // preencher a coluna — se já tem Viagem + Momento + Recursos + Entre
+  // amigos, a página já está cheia e Metas (algo que não muda todo dia)
+  // só empilha mais um card sem necessidade.
+  //
+  // "Entre amigos" depende de dois carregamentos assíncronos independentes
+  // (balances vem do /people dentro de loadHome, activeFriends vem de um
+  // hook com cache próprio) que não terminam juntos — decidir hasAllFillers
+  // antes dos dois resolverem fazia Metas aparecer (achando que não tinha
+  // amigo) e sumir um instante depois (quando o amigo finalmente chegava).
+  // Só decide depois que os dois sinais confirmarem, pra não piscar.
+  const sidebarDataReady = peopleLoaded && activeFriendsReady
+  const hasAllFillers =
+    sidebarDataReady &&
+    sidebarCards.some(c => c.id === 'trip') &&
+    sidebarCards.some(c => c.id === 'moment') &&
+    sidebarCards.some(c => c.id === 'resource') &&
+    !!(balances || activeFriends.length > 0)
+  const showGoals = sidebarDataReady && !hasAllFillers
+  const reorder = useLongPressReorder(
+    orderedSidebarCards.map(c => ({ id: c.id })),
+    async (newList) => {
+      const newOrder = newList.map(c => c.id)
+      setCardOrder(newOrder)
+      try {
+        await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ home_card_order: newOrder }) })
+        await supabase.auth.refreshSession()
+      } catch { /* mantém a ordem local mesmo se o PATCH falhar */ }
+    },
+    isMobile,
+  )
 
   if (loading) return <PageLoader />
 
@@ -345,9 +462,11 @@ export default function HomePage() {
 
         {/* Coluna lateral */}
         <div className="space-y-5">
-          {/* Metas — progresso rumo à liberdade financeira. Só no desktop: era pra preencher
-              o espaço largo; no mobile some pra não empurrar Viagem/Comunidade pra baixo. */}
-          {plan === null && (
+          {/* Metas — progresso rumo à liberdade financeira. Só no desktop (senão empurra
+              Viagem/Comunidade pra baixo no mobile) e só quando falta conteúdo pra
+              preencher a coluna (ver showGoals) — não é algo que muda todo dia, então
+              some quando já tem Viagem+Momento+Recursos+Entre amigos preenchendo. */}
+          {showGoals && plan === null && (
             <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '16px 18px', textDecoration: 'none' }}>
               <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
@@ -357,7 +476,7 @@ export default function HomePage() {
               </span>
             </Link>
           )}
-          {plan && (() => {
+          {showGoals && plan && (() => {
             const cur = plan.currency as 'USD' | 'EUR'
             const targetBrl = plan.currency === 'BRL' ? plan.target_amount : plan.target_amount * (fxRates[cur] ?? 1)
             const pct = wealth != null && targetBrl > 0 ? Math.min(100, (wealth / targetBrl) * 100) : 0
@@ -424,58 +543,28 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Viagem — capa + linka pro detalhe (onde ficam as despesas) */}
-          {data?.next_trip && (
-            <CoverCard
-              to={`/voyage/${data.next_trip.id}`}
-              coverUrl={data.next_trip.cover_image_url}
-              accent="214,59,47"
-              icon={<svg width="13" height="13" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
-              label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
-              title={data.next_trip.title}
-              subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
-              fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
-            />
-          )}
-
-          {/* Momento avulso (sem viagem associada — essa fica oculta) */}
-          {data?.active_moment && (
-            <CoverCard
-              to="/finances/moments"
-              coverUrl={data.active_moment.cover_image_url}
-              accent="200,184,154"
-              label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
-              title={data.active_moment.name}
-              subtitle={data.active_moment.start_date
-                ? (data.active_moment.ongoing && data.active_moment.end_date
-                    ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
-                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
-                : undefined}
-              fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
-            />
-          )}
-
-          {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
-              endpoint/tipo da página /resources. Mesmo formato de capa da Viagem/Momento,
-              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta.
-              Cor ocre da Comunidade (não terracota): Recursos e Comunidade foram agrupados
-              na mesma vertente "Aprender" no menu, então dividem a mesma cor. */}
-          {resources[0] && (() => {
-            const res = resources[0]
-            const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
-            return (
-              <CoverCard
-                to={`/resources/${res.slug}`}
-                coverUrl={res.preview_image_url}
-                accent="232,160,32"
-                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-ocre)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
-                label={t.resources.title}
-                title={res.title}
-                subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
-                fallbackIcon={<img src="/brand/logo/arvo-symbol-gold.svg" width="22" height="24" alt="" />}
-              />
-            )
-          })()}
+          {/* Viagem, Momento, Recursos — mesmo formato de capa, ordem
+              reordenável no mobile (pressionar e segurar). No desktop o
+              reorder fica desligado; a ordem salva ainda se aplica. */}
+          {orderedSidebarCards.map(c => (
+            <div
+              key={c.id}
+              {...reorder.getHandleProps(c.id)}
+              style={{
+                opacity: reorder.isDragging(c.id) ? 0.88 : 1,
+                transform: reorder.isDragging(c.id) ? 'scale(1.02)' : 'none',
+                boxShadow: reorder.isDragging(c.id) ? 'var(--arvo-shadow-lg)' : 'none',
+                outline: reorder.isDropTarget(c.id) ? '1px dashed var(--arvo-gold)' : 'none',
+                outlineOffset: 2,
+                borderRadius: 16,
+                transition: 'opacity 120ms, transform 120ms, box-shadow 120ms',
+                touchAction: isMobile ? 'none' : 'auto',
+                ...(isMobile && { userSelect: 'none' as const, WebkitUserSelect: 'none' as const, WebkitTouchCallout: 'none' as const }),
+              }}
+            >
+              {c.node}
+            </div>
+          ))}
         </div>
       </div>
 

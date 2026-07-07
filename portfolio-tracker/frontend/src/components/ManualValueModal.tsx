@@ -3,6 +3,7 @@ import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import { useI18n } from '../contexts/I18nContext'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
+import { DatePicker } from './ui'
 
 interface Props {
   asset: PortfolioAsset
@@ -182,13 +183,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.refDate}</label>
-                  <input
-                    type="date"
-                    value={refDate}
-                    max={today}
-                    onChange={e => setRefDate(e.target.value)}
-                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                  />
+                  <DatePicker value={refDate} max={today} onChange={setRefDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
                 </div>
                 <div>
                   <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.currency}</label>
@@ -265,13 +260,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
 
               <div>
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.contributionDate}</label>
-                <input
-                  type="date"
-                  value={aportDate}
-                  max={today}
-                  onChange={e => setAportDate(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                />
+                <DatePicker value={aportDate} max={today} onChange={setAportDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
               </div>
 
               <div>
