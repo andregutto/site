@@ -20,6 +20,18 @@ const BOT_UA_RE = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|Link
 const FALLBACK_IMAGE = '/brand/imagery/arvo-fallback-recurso.jpg'
 const FALLBACK_DESCRIPTION = 'Recurso gratuito do arvo — consolide seus investimentos, controle gastos e organize suas viagens, tudo num só lugar.'
 
+// Capas de recurso sobem em tamanho grande (uploads reais chegam a passar de
+// 2MB) — WhatsApp/a maioria dos crawlers rejeita og:image acima de ~300KB
+// silenciosamente (o preview simplesmente não aparece, sem erro nenhum).
+// Reescreve pro endpoint de transformação de imagem do Supabase Storage
+// (troca /object/public/ por /render/image/public/ + query de resize), que
+// devolve uma versão ~90KB já no tamanho padrão de OG image (1200x630).
+function ogImageUrl(rawUrl: string): string {
+  const transformed = rawUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+  if (transformed === rawUrl) return rawUrl // não é uma URL do Supabase Storage — usa como está
+  return `${transformed}?width=1200&height=630&resize=cover&quality=75`
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -49,7 +61,7 @@ export default async function middleware(request: Request) {
     const title = escapeHtml(`${resource.title} — arvo`)
     const description = escapeHtml(resource.description || FALLBACK_DESCRIPTION)
     const image = resource.preview_image_url
-      ? (resource.preview_image_url.startsWith('http') ? resource.preview_image_url : `${url.origin}${resource.preview_image_url}`)
+      ? ogImageUrl(resource.preview_image_url.startsWith('http') ? resource.preview_image_url : `${url.origin}${resource.preview_image_url}`)
       : `${url.origin}${FALLBACK_IMAGE}`
 
     const html = `<!doctype html>
@@ -63,6 +75,7 @@ export default async function middleware(request: Request) {
 <meta property="og:description" content="${description}" />
 <meta property="og:image" content="${image}" />
 <meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="${escapeHtml(url.href)}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${title}" />
