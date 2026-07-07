@@ -1,10 +1,9 @@
 import { Router, Response } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { getRates, SERIES } from '../services/bcbService.js'
+import { getYf } from '../services/yahooService.js'
 import { cache, TTL } from '../lib/cache.js'
-import YahooFinance from 'yahoo-finance2'
 
-const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 const router = Router()
 
 function localDate(d: Date) {
@@ -49,7 +48,7 @@ async function fetchYahooMonthly(ticker: string, fromYM: string): Promise<Monthl
   const currentYM = localYM(new Date())
   const p1 = fromYM + '-01'
 
-  const rows = await yf.historical(ticker, { period1: p1, period2: today, interval: '1mo' })
+  const rows = await (await getYf()).historical(ticker, { period1: p1, period2: today, interval: '1mo' })
   const raw = rows
     .map(r => ({ month: localYM(r.date), close: r.close ?? r.adjClose ?? 0 }))
     .filter(r => r.month >= fromYM)
@@ -58,7 +57,7 @@ async function fetchYahooMonthly(ticker: string, fromYM: string): Promise<Monthl
   // Override current month with latest daily close for intraday accuracy
   try {
     const d2ago = localDate(new Date(Date.now() - 2 * 86400000))
-    const daily = await yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' })
+    const daily = await (await getYf()).historical(ticker, { period1: d2ago, period2: today, interval: '1d' })
     if (daily.length > 0) {
       const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose
       if (latestClose) {
@@ -158,7 +157,7 @@ async function fetchYahooPctForRange(ticker: string, fromDateStr: string, toDate
   try {
     const bufferStart = new Date(fromDateStr + 'T12:00:00')
     bufferStart.setDate(bufferStart.getDate() - 10)
-    const rows = await yf.historical(ticker, { period1: localDate(bufferStart), period2: toDateStr, interval: '1d' })
+    const rows = await (await getYf()).historical(ticker, { period1: localDate(bufferStart), period2: toDateStr, interval: '1d' })
     if (!rows.length) return null
     const sorted = [...rows].sort((a, b) => a.date.getTime() - b.date.getTime())
     const pick = (targetStr: string) => {

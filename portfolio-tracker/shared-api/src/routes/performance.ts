@@ -4,10 +4,9 @@ import { supabaseAdmin } from '../lib/supabase.js'
 import { getFxRate } from '../lib/fx.js'
 import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../services/bcbService.js'
 import { getCurrentPrice, Asset, FITranche } from '../services/priceService.js'
+import { getYf } from '../services/yahooService.js'
 import { cache, TTL } from '../lib/cache.js'
-import YahooFinance from 'yahoo-finance2'
 
-const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
 const router = Router()
 
@@ -1139,7 +1138,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
     const rows = await cache.getOrFetch(
       `benchmark:monthly:${ticker}:${p1}:${p2}`,
       TTL.PRICE_HISTORICAL,
-      () => yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
+      async () => (await getYf()).historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
     )
     const pts = rows.map(r => ({
       ym:    localYM(r.date),
@@ -1152,7 +1151,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
         const daily = await cache.getOrFetch(
           `benchmark:daily:${ticker}:${d2ago}:${today}`,
           TTL.PRICE_CURRENT,
-          () => yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
+          async () => (await getYf()).historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
         )
         if (daily.length > 0) {
           const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose
@@ -1390,7 +1389,7 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
       const p2Str = p2.toISOString().split('T')[0]
       await Promise.all(assetsNeedingStart.map(async a => {
         try {
-          const rows = await yf.historical(a.ticker_yahoo!, {
+          const rows = await (await getYf()).historical(a.ticker_yahoo!, {
             period1: p1Str, period2: p2Str, interval: '1d',
           }) as Array<{ date: Date; close?: number; adjClose?: number }>
           if (!rows.length) return
