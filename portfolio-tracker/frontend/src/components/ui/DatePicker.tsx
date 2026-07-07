@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../contexts/I18nContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import {
   addMonths, daysInMonth, firstWeekdayMon, formatDisplay, isSameDay,
   monthLabel, parseDisplay, parseISO, stripTime, toISO, weekdayLabels,
@@ -73,6 +74,12 @@ function useOutsideClose(open: boolean, onClose: () => void, popoverRef?: React.
 
 // position/top/left ficam de fora — quem usa aplica via usePopoverRect
 // (position: fixed, coordenadas calculadas do retângulo do campo).
+//
+// O dark mode é aplicado via classe `.dark` na raiz do AppLayout (ver
+// colors_and_type.css) — como o popover agora vive em <body>, fora dessa
+// raiz, ele não herda as variáveis de dark mode e sempre renderizava claro.
+// Por isso quem usa aplica `resolvedTheme === 'dark' ? 'dark' : undefined`
+// como className no próprio elemento portado.
 const popoverStyle: CSSProperties = {
   zIndex: 9999,
   background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)',
@@ -103,15 +110,15 @@ function DayCell({ day, isStart, isEnd, inRange, isToday, disabled, onClick, onH
       style={{
         width: 32, height: 32, borderRadius: 999, border: 'none', cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'var(--arvo-font-body)', fontSize: 13.5,
-        background: isEdge ? 'var(--arvo-fg)' : inRange ? 'var(--arvo-gold-tint)' : 'transparent',
+        background: isEdge ? 'var(--arvo-fg)' : inRange ? 'var(--arvo-range-tint)' : 'transparent',
         color: disabled ? 'var(--arvo-fg-faint, var(--arvo-fg-soft))' : isEdge ? 'var(--arvo-surface)' : 'var(--arvo-fg)',
         opacity: disabled ? 0.35 : 1,
         outline: isToday && !isEdge ? '1px solid var(--arvo-gold)' : 'none',
         outlineOffset: -1,
         transition: 'background 120ms ease',
       }}
-      onMouseOver={e => { if (!isEdge && !disabled) e.currentTarget.style.background = inRange ? 'var(--arvo-gold-tint)' : 'var(--arvo-hover-bg)' }}
-      onMouseOut={e => { if (!isEdge && !disabled) e.currentTarget.style.background = inRange ? 'var(--arvo-gold-tint)' : 'transparent' }}
+      onMouseOver={e => { if (!isEdge && !disabled) e.currentTarget.style.background = inRange ? 'var(--arvo-range-tint)' : 'var(--arvo-hover-bg)' }}
+      onMouseOut={e => { if (!isEdge && !disabled) e.currentTarget.style.background = inRange ? 'var(--arvo-range-tint)' : 'transparent' }}
     >
       {day.getDate()}
     </button>
@@ -240,6 +247,7 @@ interface DatePickerProps {
 
 export function DatePicker({ value, onChange, placeholder, style, min, max }: DatePickerProps) {
   const { locale } = useI18n()
+  const { resolvedTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const [text, setText] = useState(() => formatDisplay(value, locale))
   const [viewMonth, setViewMonth] = useState(() => parseISO(value) ?? new Date())
@@ -295,7 +303,7 @@ export function DatePicker({ value, onChange, placeholder, style, min, max }: Da
         </button>
       </div>
       {open && rect && createPortal(
-        <div ref={popoverRef} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left }}>
+        <div ref={popoverRef} className={resolvedTheme === 'dark' ? 'dark' : undefined} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left }}>
           <NavHeader monthDate={viewMonth} onChangeMonth={setViewMonth} onPrev={() => setViewMonth(m => addMonths(m, -1))} onNext={() => setViewMonth(m => addMonths(m, 1))} />
           <MonthGrid
             monthDate={viewMonth}
@@ -344,6 +352,7 @@ export function DateRangePicker({
   layout = 'grid',
 }: DateRangePickerProps) {
   const { locale } = useI18n()
+  const { resolvedTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const [startText, setStartText] = useState(() => formatDisplay(startValue, locale))
   const [endText, setEndText] = useState(() => formatDisplay(endValue, locale))
@@ -434,7 +443,7 @@ export function DateRangePicker({
         </div>
       )}
       {open && rect && createPortal(
-        <div ref={popoverRef} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left, display: 'flex', gap: 18 }}>
+        <div ref={popoverRef} className={resolvedTheme === 'dark' ? 'dark' : undefined} style={{ ...popoverStyle, position: 'fixed', top: rect.top, left: rect.left, display: 'flex', gap: 18 }}>
           <div>
             <NavHeader monthDate={viewMonth} onChangeMonth={setViewMonth} onPrev={() => setViewMonth(m => addMonths(m, -1))} onNext={() => setViewMonth(m => addMonths(m, 1))} />
             <MonthGrid monthDate={viewMonth} start={start} end={end} hoverEnd={hoverEnd} onSelectDay={selectDay} onHoverDay={setHoverEnd} hideLabel />

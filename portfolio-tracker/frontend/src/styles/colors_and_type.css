@@ -75,6 +75,9 @@
   --arvo-green-tint:       rgba(31, 138, 91, 0.10);
   --arvo-gold-tint:        rgba(200, 184, 154, 0.12);
   --arvo-gold-line:        rgba(200, 184, 154, 0.15);
+  /* range highlight (DatePicker): needs more contrast than --arvo-gold-tint
+     on a white surface, where 12% opacity is nearly invisible */
+  --arvo-range-tint:       rgba(184, 156, 108, 0.28);
 
   /* ── INTERACTION TOKENS ────────────────────────────────────────────── */
   --arvo-black-hover:  #2A2620;                  /* primary button hover */
