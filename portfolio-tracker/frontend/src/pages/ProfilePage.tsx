@@ -438,6 +438,10 @@ export default function ProfilePage() {
         method: 'PATCH',
         body: JSON.stringify({ password: newPassword }),
       })
+      // Se essa era a primeira senha (conta só com Google), o usuário agora
+      // tem uma identity 'email' nova — refresca a sessão pra "Definir senha"
+      // virar "Alterar senha" sem precisar recarregar a página.
+      await supabase.auth.refreshSession()
       setPwdOk(true)
       setNewPassword(''); setConfirmPwd('')
       setTimeout(() => setPwdOk(false), 3000)
@@ -590,6 +594,10 @@ export default function ProfilePage() {
 
   const emailForDisplay = email || user?.email || ''
   const linkedWithGoogle = user?.identities?.some(i => i.provider === 'google') ?? false
+  // identities só reflete o que o Supabase tem salvo — se o acesso foi revogado
+  // direto no Google, não tem como saber por aqui (Google não avisa terceiros
+  // quando revoga, só na próxima tentativa de usar o token). Por isso o hint.
+  const hasEmailIdentity = user?.identities?.some(i => i.provider === 'email') ?? false
   const avatarInitials  = initials(firstName, lastName, emailForDisplay)
   const displayName     = [firstName, lastName].filter(Boolean).join(' ') || t.profile.noName
 
@@ -776,9 +784,12 @@ export default function ProfilePage() {
                 className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
               />
               {linkedWithGoogle && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs text-[var(--arvo-fg-muted)]">
-                  <GoogleLogo size={13} />
-                  <span>{t.profile.connectedWithGoogle}</span>
+                <div className="mt-2">
+                  <div className="flex items-center gap-1.5 text-xs text-[var(--arvo-fg-muted)]">
+                    <GoogleLogo size={13} />
+                    <span>{t.profile.connectedWithGoogle}</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1 leading-relaxed">{t.profile.connectedWithGoogleHint}</p>
                 </div>
               )}
             </div>
@@ -862,9 +873,11 @@ export default function ProfilePage() {
           </form>
 
         <div className="flex flex-col gap-6">
-          {/* Alterar senha */}
+          {/* Alterar/definir senha — título e dica mudam se a conta só tem
+              login via Google ainda (sem identity 'email' == nunca teve senha). */}
           <form onSubmit={handleChangePassword} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.changePassword}</h2>
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{hasEmailIdentity ? t.profile.changePassword : t.profile.setPassword}</h2>
+            {!hasEmailIdentity && <p className="text-xs text-[var(--arvo-fg-soft)] -mt-2 leading-relaxed">{t.profile.setPasswordHint}</p>}
 
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.newPassword}</label>
@@ -889,14 +902,16 @@ export default function ProfilePage() {
             </div>
 
             {pwdError && <p className="text-xs text-red-600">{pwdError}</p>}
-            {pwdOk    && <p className="text-xs text-green-600">{t.profile.passwordSaved}</p>}
+            {pwdOk    && <p className="text-xs text-green-600">{hasEmailIdentity ? t.profile.passwordSaved : t.profile.passwordSet}</p>}
 
             <button
               type="submit"
               disabled={savingPwd}
               className="w-full border border-[var(--arvo-fg)] text-[var(--arvo-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 disabled:opacity-50 transition-colors"
             >
-              {savingPwd ? t.profile.changing : t.profile.changePassword}
+              {savingPwd
+                ? (hasEmailIdentity ? t.profile.changing : t.profile.settingPassword)
+                : (hasEmailIdentity ? t.profile.changePassword : t.profile.setPassword)}
             </button>
           </form>
 
