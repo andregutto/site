@@ -172,10 +172,21 @@ export async function computePortfolioValue(userId: string): Promise<PortfolioVa
             byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
             return
           }
-          const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
-          value_orig = result.price
-          currency   = result.currency
-          source     = result.source
+          try {
+            const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
+            value_orig = result.price
+            currency   = result.currency
+            source     = result.source
+          } catch (err) {
+            // Renda fixa é calculada ao vivo a partir de séries do BCB — uma falha ali
+            // (ex: API fora do ar, série ainda não publicada hoje) não pode fazer o
+            // ativo sumir do total silenciosamente. Fallback: soma das tranches (ou
+            // fi_principal) sem os juros do período, melhor que apagar o ativo inteiro.
+            console.warn(`[portfolio] getCurrentPrice falhou pra ${a.code} (renda fixa), usando principal como fallback:`, err)
+            value_orig = hasTranches ? tranches.reduce((s, t) => s + t.principal, 0) : Number(a.fi_principal)
+            currency   = a.currency || 'BRL'
+            source     = 'fixed_income_fallback'
+          }
           value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
 
         } else {

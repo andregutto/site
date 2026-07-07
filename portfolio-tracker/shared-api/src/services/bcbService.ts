@@ -35,11 +35,24 @@ export async function getRates(
   // Each caller receives only the rates up to its requested endDate.
   const key = `bcb:${series}:${fmtDate(startDate)}`
   const allRates = await cache.getOrFetch(key, TTL.BCB_RATES, async () => {
-    const url = `${BASE}/bcdata.sgs.${series}/dados?formato=json` +
-                `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(today)}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
-    if (!res.ok) throw new Error(`BCB API ${res.status} para série ${series}`)
-    const data = await res.json() as Array<{ data: string; valor: string }>
+    const fetchUpTo = async (dataFinal: Date) => {
+      const url = `${BASE}/bcdata.sgs.${series}/dados?formato=json` +
+                  `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(dataFinal)}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+      if (!res.ok) throw new Error(`BCB API ${res.status} para série ${series}`)
+      // BCB retorna HTTP 200 com um corpo XML de erro ("Requisição inválida!") quando
+      // dataFinal é uma data que a série ainda não publicou (comum pedir "hoje" antes
+      // do BCB soltar o valor do dia) — res.ok não pega isso, só o parse falha.
+      return res.json() as Promise<Array<{ data: string; valor: string }>>
+    }
+    let data: Array<{ data: string; valor: string }>
+    try {
+      data = await fetchUpTo(today)
+    } catch {
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      data = await fetchUpTo(yesterday)
+    }
     return data.map((row) => ({
       date:  parseDate(row.data),
       value: parseFloat(row.valor.replace(',', '.')),
