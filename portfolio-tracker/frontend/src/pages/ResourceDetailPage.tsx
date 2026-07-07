@@ -31,7 +31,20 @@ interface UnlockResult {
   content_md?: string
 }
 
+// Quem já tem conta nunca passa pela ResourcePublicPage (é ela quem grava
+// sessionStorage['resource_utm'], só rodada pra usuário deslogado — ver
+// roteamento condicional em App.tsx). Sem isso, todo clique de um usuário já
+// logado num link com UTM perdia a atribuição no unlock. Por isso lê a URL
+// desta própria página primeiro; sessionStorage só sobra como fallback do
+// fluxo pós-redirect do Google (ver AuthContext.bootstrapResourceSignupSource).
 function getStoredUtm(): Record<string, string> {
+  const params = new URLSearchParams(window.location.search)
+  const fromUrl: Record<string, string> = {}
+  for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
+    const v = params.get(k)
+    if (v) fromUrl[k] = v
+  }
+  if (Object.keys(fromUrl).length) return fromUrl
   try { return JSON.parse(sessionStorage.getItem('resource_utm') ?? '{}') } catch { return {} }
 }
 

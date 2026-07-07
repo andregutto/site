@@ -890,7 +890,7 @@ export default function LandingPage() {
               <ul><li>{l.a3b1}</li><li>{l.a3b2}</li><li>{l.a3b3}</li></ul>
             </div>
             <div className="vis">
-              <div className="stage"><div className="shot">
+              <div className="stage photo" style={{ backgroundImage: 'url(/brand/imagery/arvo-hero-roteiros.jpg)' }}><div className="shot">
                 <ShotNav />
                 <div className="shot-body">
                   <div className="day-chips">
@@ -939,7 +939,7 @@ export default function LandingPage() {
                 <ul><li>{l.a4b1}</li><li>{l.a4b2}</li><li>{l.a4b3}</li></ul>
               </div>
               <div className="vis">
-                <div className="stage"><div className="shot">
+                <div className="stage photo" style={{ backgroundImage: 'url(/brand/imagery/arvo-hero-amigos.jpg)' }}><div className="shot">
                   <ShotNav />
                   <div className="shot-body">
                     <div className="mcard">
