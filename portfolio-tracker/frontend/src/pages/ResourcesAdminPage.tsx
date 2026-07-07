@@ -17,6 +17,7 @@ const SLUG_RE = /^[a-z0-9-]{3,80}$/
 const OCRE = '#E8A020'
 
 interface ResourceStats { views: number; unlocks: number; downloads: number; signups: number; by_source: Record<string, number> }
+interface ResourceLink { id: number; label: string; utm_campaign: string; created_at: string }
 interface ResourceRow {
   id: number
   slug: string
@@ -32,6 +33,7 @@ interface ResourceRow {
   kit_tag: string | null
   is_published: boolean
   stats: ResourceStats
+  links: ResourceLink[]
 }
 
 type FormState = {
@@ -91,6 +93,10 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+  const [linksOpenId, setLinksOpenId] = useState<number | null>(null)
+  const [newLinkLabel, setNewLinkLabel] = useState('')
+  const [creatingLink, setCreatingLink] = useState(false)
+  const [copiedLinkId, setCopiedLinkId] = useState<number | null>(null)
 
   async function load() {
     setLoading(true)
@@ -275,6 +281,42 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
       setCopiedSlug(slug)
       setTimeout(() => setCopiedSlug(null), 1800)
     })
+  }
+
+  function linkUrl(item: ResourceRow, link: ResourceLink): string {
+    return `${window.location.origin}/resources/${item.slug}?utm_source=youtube&utm_campaign=${encodeURIComponent(link.utm_campaign)}`
+  }
+
+  function copyGeneratedLink(item: ResourceRow, link: ResourceLink) {
+    navigator.clipboard.writeText(linkUrl(item, link)).then(() => {
+      setCopiedLinkId(link.id)
+      setTimeout(() => setCopiedLinkId(null), 1800)
+    })
+  }
+
+  async function createLink(item: ResourceRow) {
+    if (creatingLink || !newLinkLabel.trim()) return
+    setCreatingLink(true)
+    try {
+      const link = await apiFetch<ResourceLink>(`/resources/admin/${item.slug}/links`, {
+        method: 'POST', body: JSON.stringify({ label: newLinkLabel.trim() }),
+      })
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, links: [link, ...i.links] } : i))
+      setNewLinkLabel('')
+    } catch (err: any) {
+      alert(err?.message ?? ra.saveError)
+    } finally {
+      setCreatingLink(false)
+    }
+  }
+
+  async function deleteLink(item: ResourceRow, link: ResourceLink) {
+    try {
+      await apiFetch(`/resources/admin/${item.slug}/links/${link.id}`, { method: 'DELETE' })
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, links: i.links.filter(l => l.id !== link.id) } : i))
+    } catch (err: any) {
+      alert(err?.message ?? ra.saveError)
+    }
   }
 
   if (loading) return <PageLoader />
@@ -503,7 +545,46 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
                   <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
                     {ra.delete ?? 'Excluir'}
                   </button>
+                  <button onClick={() => { setLinksOpenId(linksOpenId === item.id ? null : item.id); setNewLinkLabel('') }} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${linksOpenId === item.id ? OCRE : 'var(--arvo-border)'}`, background: linksOpenId === item.id ? 'rgba(232,160,32,0.08)' : 'none', color: linksOpenId === item.id ? OCRE : 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                    {ra.manageLinks ?? 'Links de divulgação'} {item.links.length > 0 ? `(${item.links.length})` : ''}
+                  </button>
                 </div>
+
+                {linksOpenId === item.id && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--arvo-border)' }}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        value={newLinkLabel}
+                        onChange={e => setNewLinkLabel(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') createLink(item) }}
+                        placeholder={ra.linkLabelPlaceholder ?? 'Onde vai usar esse link? Ex: Vídeo custo de vida Paris'}
+                        style={{ ...input, flex: 1, minWidth: 200, fontSize: 12.5, padding: '6px 10px' }}
+                      />
+                      <button onClick={() => createLink(item)} disabled={creatingLink || !newLinkLabel.trim()} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '6px 14px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                        {ra.generateLink ?? 'Gerar link'}
+                      </button>
+                    </div>
+
+                    {item.links.length > 0 ? (
+                      <div className="space-y-2" style={{ marginTop: 10 }}>
+                        {item.links.map(link => (
+                          <div key={link.id} className="flex items-center gap-2 flex-wrap" style={{ fontSize: 11.5 }}>
+                            <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)', flex: '0 1 auto', maxWidth: 180 }}>{link.label}</span>
+                            <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1 }}>{linkUrl(item, link)}</span>
+                            <button onClick={() => copyGeneratedLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                              {copiedLinkId === link.id ? (ra.linkCopied ?? 'Copiado!') : (ra.copy ?? 'Copiar')}
+                            </button>
+                            <button onClick={() => deleteLink(item, link)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer' }}>
+                              {ra.delete ?? 'Excluir'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '10px 0 0' }}>{ra.noLinks ?? 'Nenhum link gerado ainda pra este recurso.'}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

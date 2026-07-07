@@ -274,6 +274,16 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
     }
   }
 
+  const { data: links } = await supabaseAdmin
+    .from('resource_links').select('id, resource_id, label, utm_campaign, created_at')
+    .order('created_at', { ascending: false })
+  const linksByResource = new Map<number, { id: number; label: string; utm_campaign: string; created_at: string }[]>()
+  for (const lk of links ?? []) {
+    const arr = linksByResource.get(lk.resource_id) ?? []
+    arr.push(lk)
+    linksByResource.set(lk.resource_id, arr)
+  }
+
   const result = []
   for (const r of (resources ?? []) as ResourceRow[]) {
     const { count: signups } = await supabaseAdmin
@@ -289,9 +299,57 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
         signups:   signups ?? 0,
         by_source: bySource.get(r.id) ?? {},
       },
+      links: linksByResource.get(r.id) ?? [],
     })
   }
   res.json(result)
+})
+
+function slugifyLabel(name: string): string {
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+}
+
+// POST /api/resources/admin/:slug/links — gera um link de divulgação (UTM
+// pronto pra colar na descrição de um vídeo) com um rótulo de referência.
+router.post('/admin/:slug/links', requireAuth, async (req, res: Response) => {
+  if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
+  const { slug } = req.params
+  const label = typeof req.body?.label === 'string' ? req.body.label.trim() : ''
+  if (!label) { res.status(400).json({ error: 'Rótulo obrigatório' }); return }
+
+  const { data: resource } = await supabaseAdmin.from('resources').select('id').eq('slug', slug).maybeSingle()
+  if (!resource) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
+
+  let campaign = slugifyLabel(label) || 'video'
+  // Garante utm_campaign único dentro do recurso — duas campanhas iguais se
+  // misturariam nas estatísticas de origem.
+  const { count } = await supabaseAdmin
+    .from('resource_links').select('id', { count: 'exact', head: true })
+    .eq('resource_id', resource.id).eq('utm_campaign', campaign)
+  if (count && count > 0) campaign = `${campaign}-${count + 1}`
+
+  const { data: link, error } = await supabaseAdmin
+    .from('resource_links')
+    .insert({ resource_id: resource.id, label, utm_campaign: campaign })
+    .select('id, label, utm_campaign, created_at')
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(link)
+})
+
+// DELETE /api/resources/admin/:slug/links/:id
+router.delete('/admin/:slug/links/:id', requireAuth, async (req, res: Response) => {
+  if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
+  const { slug, id } = req.params
+  const { data: resource } = await supabaseAdmin.from('resources').select('id').eq('slug', slug).maybeSingle()
+  if (!resource) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
+  await supabaseAdmin.from('resource_links').delete().eq('id', id).eq('resource_id', resource.id)
+  res.json({ ok: true })
 })
 
 // POST /api/resources/admin — criar recurso
