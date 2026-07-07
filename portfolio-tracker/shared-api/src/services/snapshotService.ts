@@ -4,16 +4,14 @@ import { supabaseAdmin } from '../lib/supabase.js'
 import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import { getCurrentPrice, Asset, FITranche } from './priceService.js'
-import { getAssetSector } from './yahooService.js'
+import { getAssetSector, getYf } from './yahooService.js'
 import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from './bcbService.js'
-import YahooFinance from 'yahoo-finance2'
 import {
   localDate, localYM, ValPoint, interpolateKnownPoints,
   PrefetchedData, fetchPrefetchedData, prefetchFIRates,
   estimateContribValue, computePortfolioValueAtMonth,
 } from '../routes/performance.js'
 
-const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
 // ─── Snapshot types ───────────────────────────────────────────────────────────
 
@@ -402,7 +400,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
     const p2 = today < `${toY}-${String(toM).padStart(2, '0')}-28` ? today : `${toY}-${String(toM).padStart(2, '0')}-28`
     const rows = await cache.getOrFetch(
       `benchmark:monthly:${ticker}:${p1}:${p2}`, TTL.PRICE_HISTORICAL,
-      () => yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
+      async () => (await getYf()).historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
     )
     const pts = rows.map((r: { date: Date; close?: number; adjClose?: number }) => ({
       ym: localYM(r.date), price: r.close ?? r.adjClose ?? 0,
@@ -413,7 +411,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
         const d2ago = localDate(new Date(Date.now() - 2 * 86400000))
         const daily = await cache.getOrFetch(
           `benchmark:daily:${ticker}:${d2ago}:${today}`, TTL.PRICE_CURRENT,
-          () => yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
+          async () => (await getYf()).historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
         )
         if (daily.length > 0) {
           const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose

@@ -1,8 +1,8 @@
 import { Router, Response } from 'express'
 import crypto from 'crypto'
-import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 import { canAutoAccept } from './people.js'
 
 const router = Router()
@@ -1716,7 +1716,9 @@ ${catList}
 Transactions:
 ${descList}`
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  // Import dinâmico: só a categorização por IA usa o SDK — não pesa no cold start
+  const { default: AnthropicSDK } = await import('@anthropic-ai/sdk')
+  const anthropic = new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY })
   const msg = await anthropic.messages.create({
     model:      'claude-haiku-4-5-20251001',
     max_tokens: 2048,
@@ -3659,15 +3661,18 @@ function buildSubscription(
   }
 }
 
-export async function getActiveSubscriptions(userId: string): Promise<{ subscriptions: SubscriptionItem[]; error?: string }> {
+// A parte cara da detecção (18 meses de transações + clustering em JS) roda a
+// cada poll de notificações, então é cacheada por usuário por 10 min (padrão do
+// CurrencyContext). Os dismissals ficam FORA do cache e são filtrados a cada
+// chamada, então ignorar/restaurar uma assinatura continua com efeito imediato.
+// `group_key` é a chave do grupo de descrição — um dismissal do grupo inteiro
+// precisa esconder também os sub-clusters `${key}_${cents}` derivados dele.
+type DetectedSubscription = SubscriptionItem & { group_key: string }
+
+async function computeSubscriptions(userId: string): Promise<DetectedSubscription[]> {
   const since = new Date()
   since.setMonth(since.getMonth() - 18)
   const sinceStr = since.toISOString().split('T')[0]
-
-  const dismissalsPromise = supabaseAdmin
-    .from('finance_subscription_dismissals')
-    .select('key')
-    .eq('user_id', userId)
 
   // Paginate to bypass Supabase PostgREST default 1000-row limit
   const PAGE_SIZE = 1000
@@ -3684,27 +3689,24 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
       .order('date', { ascending: true })
       .order('id', { ascending: true })
       .range(from, from + PAGE_SIZE - 1)
-    if (error) return { subscriptions: [], error: error.message }
+    if (error) throw new Error(error.message)
     if (!data?.length) break
     transactions.push(...(data as unknown as SubscriptionTxRow[]))
     if (data.length < PAGE_SIZE) break
   }
 
-  if (transactions.length === 0) return { subscriptions: [] }
-
-  const { data: dismissals } = await dismissalsPromise
-  const dismissedKeys = new Set((dismissals ?? []).map(d => d.key))
+  if (transactions.length === 0) return []
 
   const groups = new Map<string, SubscriptionTxRow[]>()
   for (const tx of transactions) {
     const key = normalizeSubscriptionDesc(tx.description ?? '')
-    if (!key || key.length < 3 || dismissedKeys.has(key)) continue
+    if (!key || key.length < 3) continue
     const list = groups.get(key) ?? []
     list.push(tx)
     groups.set(key, list)
   }
 
-  const subscriptions: SubscriptionItem[] = []
+  const subscriptions: DetectedSubscription[] = []
 
   for (const [key, txs] of groups) {
     if (txs.length < 2) continue
@@ -3716,7 +3718,7 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
 
     if (!isDenylisted) {
       const sub = buildSubscription(key, sorted, category, false)
-      if (sub) subscriptions.push(sub)
+      if (sub) subscriptions.push({ ...sub, group_key: key })
       continue
     }
 
@@ -3732,14 +3734,29 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
     for (const [cents, cluster] of byAmount) {
       if (cluster.length < 2) continue
       const subKey = `${key}_${cents}`
-      if (dismissedKeys.has(subKey)) continue
       const sub = buildSubscription(subKey, cluster, category, true)
-      if (sub) subscriptions.push(sub)
+      if (sub) subscriptions.push({ ...sub, group_key: key })
     }
   }
 
   subscriptions.sort((a, b) => b.monthly_equivalent - a.monthly_equivalent)
-  return { subscriptions }
+  return subscriptions
+}
+
+export async function getActiveSubscriptions(userId: string): Promise<{ subscriptions: SubscriptionItem[]; error?: string }> {
+  try {
+    const [computed, dismissalsRes] = await Promise.all([
+      cache.getOrFetch(`finances:subs:${userId}`, 10 * 60_000, () => computeSubscriptions(userId)),
+      supabaseAdmin
+        .from('finance_subscription_dismissals')
+        .select('key')
+        .eq('user_id', userId),
+    ])
+    const dismissedKeys = new Set((dismissalsRes.data ?? []).map(d => d.key))
+    return { subscriptions: computed.filter(s => !dismissedKeys.has(s.key) && !dismissedKeys.has(s.group_key)) }
+  } catch (err) {
+    return { subscriptions: [], error: err instanceof Error ? err.message : String(err) }
+  }
 }
 
 router.get('/subscriptions', requireAuth, async (req, res: Response) => {

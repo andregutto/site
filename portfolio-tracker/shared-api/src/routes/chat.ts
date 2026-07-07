@@ -1,5 +1,7 @@
 import { Router, Response } from 'express'
-import Anthropic from '@anthropic-ai/sdk'
+// Type-only: o SDK da Anthropic só vira código carregado quando o chat é usado
+// (import dinâmico no handler), em vez de pesar no cold start de toda a função.
+import type Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { haversineKm, buildCostSummary } from './voyage.js'
@@ -1256,7 +1258,8 @@ router.post('/', requireAuth, async (req, res: Response) => {
     today,
   })
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const { default: AnthropicSDK } = await import('@anthropic-ai/sdk')
+  const anthropic = new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY })
   const runMessages: Anthropic.MessageParam[] = [...messages]
   let fullAssistantText = ''
 

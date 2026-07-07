@@ -1,5 +1,4 @@
 import { Router, Response } from 'express'
-import * as XLSX from 'xlsx'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getMonthlyHistory, Asset } from '../services/priceService.js'
@@ -43,11 +42,18 @@ function parseDate(s: string): string {
   return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
 }
 
-function parseFile(base64: string): MergedOp[] {
+// Import dinâmico: xlsx só é usado nas duas rotas de parse de planilha B3,
+// mas estava sendo parseado no cold start de todas as requests da função.
+async function readSheetRows(base64: string): Promise<unknown[][]> {
+  const XLSX = await import('xlsx')
   const buf = Buffer.from(base64, 'base64')
   const wb  = XLSX.read(buf, { type: 'buffer' })
   const ws  = wb.Sheets[wb.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][]
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][]
+}
+
+async function parseFile(base64: string): Promise<MergedOp[]> {
+  const rows = await readSheetRows(base64)
 
   // Collect raw operations (skip header row)
   const raw: MergedOp[] = []
@@ -177,7 +183,7 @@ router.post('/b3/parse', requireAuth, async (req, res: Response) => {
 
   let operations: MergedOp[]
   try {
-    operations = parseFile(file_base64)
+    operations = await parseFile(file_base64)
   } catch (e) {
     res.status(400).json({ error: `Falha ao ler arquivo: ${e instanceof Error ? e.message : e}` }); return
   }
@@ -360,11 +366,8 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
 
 // ─── Movimentação helpers ─────────────────────────────────────────────────────
 
-function parseMovimentacao(base64: string): MovOp[] {
-  const buf  = Buffer.from(base64, 'base64')
-  const wb   = XLSX.read(buf, { type: 'buffer' })
-  const ws   = wb.Sheets[wb.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][]
+async function parseMovimentacao(base64: string): Promise<MovOp[]> {
+  const rows = await readSheetRows(base64)
   // Columns: Entrada/Saída, Data, Movimentação, Produto, Instituição, Quantidade, Preço, Valor
 
   // First pass: index subscription exercise payments by (approx_date, qty)
@@ -433,7 +436,7 @@ router.post('/movimentacao/parse', requireAuth, async (req, res: Response) => {
   if (!file_base64) { res.status(400).json({ error: 'file_base64 obrigatório' }); return }
 
   let operations: MovOp[]
-  try { operations = parseMovimentacao(file_base64) }
+  try { operations = await parseMovimentacao(file_base64) }
   catch (e) { res.status(400).json({ error: `Falha ao ler arquivo: ${e instanceof Error ? e.message : e}` }); return }
 
   if (operations.length === 0) { res.status(400).json({ error: 'Nenhum evento corporativo encontrado no arquivo' }); return }

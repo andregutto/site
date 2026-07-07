@@ -4,10 +4,9 @@ import { supabaseAdmin } from '../lib/supabase.js'
 import { getFxRate } from '../lib/fx.js'
 import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../services/bcbService.js'
 import { getCurrentPrice, Asset, FITranche } from '../services/priceService.js'
+import { getYf } from '../services/yahooService.js'
 import { cache, TTL } from '../lib/cache.js'
-import YahooFinance from 'yahoo-finance2'
 
-const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
 const router = Router()
 
@@ -147,23 +146,45 @@ async function fetchPrefetchedDataUncached(userId: string, priceFrom?: string): 
 
   // Paginate price_history — Supabase PostgREST caps at 1000 rows by default.
   // Portfolios with years of history easily exceed this; pagination ensures all rows are loaded.
+  // Pages are fetched in parallel waves (count first, then ranges): the "Início"
+  // period pulls 100k+ rows, and fetching ~100 páginas em fila era o gargalo de
+  // latência do Dashboard/Performance em cache frio. O tiebreaker por asset_id
+  // torna a ordenação determinística entre páginas (ref_date repete entre ativos;
+  // sem ele, offset-pagination pode duplicar/pular linhas de queries separadas).
   const prices: PrefetchedData['prices'] = []
   {
     const pageSize = 1000
-    let offset = 0
-    while (true) {
+    const buildQuery = () => {
       let q = supabaseAdmin
         .from('price_history')
         .select('asset_id, price, currency, ref_date')
         .in('asset_id', assetIds)
         .order('ref_date', { ascending: true })
+        .order('asset_id', { ascending: true })
       if (priceFrom) q = q.gte('ref_date', priceFrom)
-      const { data: batch } = await q.range(offset, offset + pageSize - 1)
-      if (!batch || batch.length === 0) break
-      prices.push(...(batch as PrefetchedData['prices']))
-      if (batch.length < pageSize) break
-      offset += pageSize
+      return q
     }
+    let countQ = supabaseAdmin
+      .from('price_history')
+      .select('*', { count: 'exact', head: true })
+      .in('asset_id', assetIds)
+    if (priceFrom) countQ = countQ.gte('ref_date', priceFrom)
+    const { count } = await countQ
+    const pageCount = Math.ceil((count ?? 0) / pageSize)
+
+    const CONCURRENCY = 10
+    const pages: PrefetchedData['prices'][] = new Array(pageCount)
+    for (let start = 0; start < pageCount; start += CONCURRENCY) {
+      await Promise.all(
+        Array.from({ length: Math.min(CONCURRENCY, pageCount - start) }, (_, i) => {
+          const p = start + i
+          return buildQuery()
+            .range(p * pageSize, p * pageSize + pageSize - 1)
+            .then(({ data }) => { pages[p] = (data ?? []) as PrefetchedData['prices'] })
+        })
+      )
+    }
+    for (const page of pages) if (page?.length) prices.push(...page)
   }
 
   return {
@@ -1139,7 +1160,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
     const rows = await cache.getOrFetch(
       `benchmark:monthly:${ticker}:${p1}:${p2}`,
       TTL.PRICE_HISTORICAL,
-      () => yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
+      async () => (await getYf()).historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
     )
     const pts = rows.map(r => ({
       ym:    localYM(r.date),
@@ -1152,7 +1173,7 @@ export async function computeBenchmarks(fromStr: string, toStr: string): Promise
         const daily = await cache.getOrFetch(
           `benchmark:daily:${ticker}:${d2ago}:${today}`,
           TTL.PRICE_CURRENT,
-          () => yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
+          async () => (await getYf()).historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
         )
         if (daily.length > 0) {
           const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose
@@ -1390,7 +1411,7 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
       const p2Str = p2.toISOString().split('T')[0]
       await Promise.all(assetsNeedingStart.map(async a => {
         try {
-          const rows = await yf.historical(a.ticker_yahoo!, {
+          const rows = await (await getYf()).historical(a.ticker_yahoo!, {
             period1: p1Str, period2: p2Str, interval: '1d',
           }) as Array<{ date: Date; close?: number; adjClose?: number }>
           if (!rows.length) return

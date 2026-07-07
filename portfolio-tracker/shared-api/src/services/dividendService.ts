@@ -1,8 +1,7 @@
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getFxRate } from '../lib/fx.js'
-import YahooFinance from 'yahoo-finance2'
+import { getYf } from './yahooService.js'
 
-const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 const BASE  = 'https://brapi.dev/api'
 const TOKEN = process.env.BRAPI_TOKEN ? `?token=${process.env.BRAPI_TOKEN}` : ''
 const SEP   = TOKEN ? '&' : '?'
@@ -78,7 +77,7 @@ export async function fetchStatusInvestDividends(ticker: string): Promise<RawDiv
 }
 
 export async function fetchYahooDividends(ticker: string, from: string): Promise<RawDividend[]> {
-  const rows = await yf.historical(ticker, {
+  const rows = await (await getYf()).historical(ticker, {
     period1: from,
     period2: new Date().toISOString().split('T')[0],
     events: 'dividends',
