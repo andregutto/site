@@ -459,8 +459,8 @@ export default function AssetDetailPage() {
 
       {/* Split modal */}
       {showSplitModal && splitModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4">
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6 space-y-4" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
             <h2 className="font-bold text-[var(--arvo-fg)]">{d.splitModalTitle}</h2>
             {splitSuccess ? (
               <p className="text-green-600 text-sm font-medium">{d.splitSuccess}</p>

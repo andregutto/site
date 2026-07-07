@@ -18,7 +18,7 @@ export function Modal({ onClose, title, children, footer, maxWidth = 480 }: Moda
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       style={{ background: 'var(--arvo-overlay)' }}
       onClick={onClose}
     >
@@ -26,13 +26,13 @@ export function Modal({ onClose, title, children, footer, maxWidth = 480 }: Moda
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-h-[90vh] overflow-y-auto"
+        className="w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
         style={{
           maxWidth,
           background: 'var(--arvo-surface)',
           border: '1px solid var(--arvo-border)',
-          borderRadius: 'var(--arvo-radius-modal)',
           boxShadow: 'var(--arvo-shadow-lg)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         onClick={(e) => e.stopPropagation()}
       >

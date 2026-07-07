@@ -637,8 +637,8 @@ export default function HomePage() {
 
       {/* Seletor de amigo OU grupo pra dividir despesa */}
       {splitPicker && !splitFriend && !splitGroup && (
-        <div onClick={() => setSplitPicker(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.45)' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, maxHeight: '80vh', overflowY: 'auto', background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px' }}>
+        <div onClick={() => setSplitPicker(false)} className="flex items-end sm:items-center justify-center sm:p-4" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)' }}>
+          <div onClick={e => e.stopPropagation()} className="rounded-t-2xl sm:rounded-2xl" style={{ width: '100%', maxWidth: 400, maxHeight: '92vh', overflowY: 'auto', background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <p style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{th.splitWithWho ?? 'Dividir com quem?'}</p>
               <button type="button" onClick={() => setSplitPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>

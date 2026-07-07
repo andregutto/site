@@ -500,9 +500,12 @@ export default function DashboardPage() {
 
       {/* ── Share modal ── */}
       {showShareModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowShareModal(false) }}>
-          <div style={{ background: 'var(--arvo-surface)', borderRadius: 16, padding: '28px', width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+        <div
+          className="flex items-end sm:items-center justify-center sm:p-4"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowShareModal(false) }}
+        >
+          <div className="rounded-t-2xl sm:rounded-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" style={{ background: 'var(--arvo-surface)', padding: '28px', paddingBottom: 'calc(28px + env(safe-area-inset-bottom, 0px))', width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
               <div>

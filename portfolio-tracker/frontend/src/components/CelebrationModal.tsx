@@ -14,7 +14,7 @@ export default function CelebrationModal({ def, onClose }: Props) {
   const { currency: displayCurrency } = useCurrency()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" style={{ background: 'var(--arvo-overlay)' }}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm" style={{ background: 'var(--arvo-overlay)' }}>
       <style>{`
         @keyframes celebration-pop {
           0%   { transform: scale(0.94); opacity: 0; }
@@ -32,9 +32,10 @@ export default function CelebrationModal({ def, onClose }: Props) {
 
       {/* Modal */}
       <div
-        className="relative rounded-3xl px-10 py-10 text-center shadow-2xl overflow-hidden"
+        className="relative w-full sm:w-auto rounded-t-3xl sm:rounded-3xl px-10 py-10 text-center shadow-2xl overflow-hidden"
         style={{
           maxWidth: 360,
+          paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))',
           background: 'var(--arvo-surface)',
           border: '1px solid rgba(200,184,154,0.30)',
           animation: 'celebration-pop 0.4s ease-out forwards',

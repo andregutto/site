@@ -627,8 +627,8 @@ export function AssignModal({ momentId: _momentId, moments, transactionId, curre
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-xs max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-5" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-[var(--arvo-fg)] mb-3 text-sm">{t.finances.assignMoment}</h3>
         <div className="space-y-1">
           {moments.map(m => (

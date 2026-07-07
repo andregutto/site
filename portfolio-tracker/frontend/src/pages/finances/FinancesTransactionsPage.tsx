@@ -1910,8 +1910,8 @@ export default function FinancesTransactionsPage() {
 
       {/* Reimbursement group modal */}
       {showGroupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowGroupModal(false)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setShowGroupModal(false)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.createReimbursementGroup}</h3>
             <p className="text-xs text-[var(--arvo-fg-soft)] mb-4">{selected.size} transação(ões) selecionada(s)</p>
             <input
@@ -2204,8 +2204,8 @@ export default function FinancesTransactionsPage() {
 
       {/* Add transaction modal */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowAdd(false)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setShowAdd(false)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] mb-4">{t.finances.newTransaction}</h3>
             <div className="space-y-3">
               <div>
@@ -2277,12 +2277,15 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Mobile bottom sheet — category edit */}
+      {/* Category edit — bottom sheet no mobile, card centralizado no desktop */}
       {editSheetTx && (
-        <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setEditSheetTx(null)} />
-          <div className="fixed bottom-0 left-0 right-0 bg-[var(--arvo-surface)] rounded-t-2xl z-50 px-5 pt-4 pb-8 shadow-2xl">
-            <div className="w-10 h-1 bg-[var(--arvo-track-bg)] rounded-full mx-auto mb-4" />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 sm:p-4" onClick={() => setEditSheetTx(null)}>
+          <div
+            className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto px-5 pt-4 pb-8 shadow-2xl"
+            style={{ paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-[var(--arvo-track-bg)] rounded-full mx-auto mb-4 sm:hidden" />
             <p className="text-sm font-semibold text-[var(--arvo-fg)] truncate mb-0.5">{editSheetTx.description}</p>
             <p className="text-xs text-[var(--arvo-fg-soft)] mb-4">{fmtDate(editSheetTx.date)} · <span className={`tabular-nums ${editSheetTx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(editSheetTx.amount, editSheetTx.currency)}</span></p>
             <p className="text-xs text-[var(--arvo-fg-muted)] mb-2">{t.finances.category}</p>
@@ -2335,15 +2338,15 @@ export default function FinancesTransactionsPage() {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Escolher com quem dividir uma transação avulsa — amigos (momento oculto
           1:1) ou grupos já existentes (momento oculto do grupo, ver
           docs/SHARED_EXPENSES_MODEL.md), não só amigos individuais. */}
       {splitPickerTx && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSplitPickerTx(null)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setSplitPickerTx(null)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-xs max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-5 space-y-3" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitShort}</h3>
             {activeFriends.length === 0 && splitGroups.length === 0 ? (
               <p className="text-xs text-[var(--arvo-fg-soft)]">{t.people.emptyBody}</p>

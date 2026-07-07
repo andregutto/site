@@ -1205,8 +1205,8 @@ export default function ProfilePage() {
 
           {/* Modal de foto de perfil */}
           {showAvatarModal && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+              <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6 space-y-4" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
                 <h3 className="text-base font-bold text-[var(--arvo-fg)]">{t.profile.photoModalTitle}</h3>
 
                 {/* Cropper ou preview estático */}
@@ -1327,8 +1327,8 @@ export default function ProfilePage() {
 
           {/* Modal de confirmacao de exclusao */}
           {showDeleteModal && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+              <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6 space-y-4" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
                 <h3 className="text-lg font-bold text-[var(--arvo-fg)]">{t.profile.deleteModalTitle}</h3>
                 <p className="text-sm text-[var(--arvo-fg-muted)]">{t.profile.deleteModalDesc}</p>
 

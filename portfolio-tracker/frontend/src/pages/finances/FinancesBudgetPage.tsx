@@ -509,8 +509,8 @@ interface SpendingSummary { months: SpendingMonth[] }
 function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; userId: string; onClose: () => void; onSaved: () => void }) {
   const { t } = useI18n()
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={onClose}>
+      <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.editSplitTitle.replace('{name}', group.name)}</h3>
         <p className="text-xs text-[var(--arvo-fg-muted)] mb-4">{t.finances.editSplitHint}</p>
         <GroupSplitSection groupId={group.id} members={group.members} userId={userId} onSaved={onSaved} showScopeWarning />
@@ -1002,8 +1002,8 @@ export default function FinancesBudgetPage() {
           popover, built entirely from existing translated envelope name/description keys
           so it stays translatable across pt/en/fr. */}
       {showRefInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowRefInfo(false)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setShowRefInfo(false)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6 pb-4">
               <h3 className="font-semibold text-[var(--arvo-fg)] text-base mb-1.5">{t.finances.referenceSplitTitle}</h3>
               <p className="text-sm text-[var(--arvo-fg-muted)] leading-relaxed">{t.finances.referenceSplitBody}</p>
@@ -1027,7 +1027,7 @@ export default function FinancesBudgetPage() {
                 </div>
               ))}
             </div>
-            <div className="px-6 pt-3 pb-6">
+            <div className="px-6 pt-3 pb-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <p className="text-xs text-[var(--arvo-fg-soft)] italic leading-relaxed">{t.finances.referenceSplitFooter}</p>
               <button
                 onClick={() => setShowRefInfo(false)}
@@ -1213,8 +1213,8 @@ export default function FinancesBudgetPage() {
 
       {/* Category modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setModal(null)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setModal(null)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] mb-4">
               {modal.mode === 'add' ? t.finances.newCategory : t.finances.editCategory}
             </h3>
@@ -1285,8 +1285,8 @@ export default function FinancesBudgetPage() {
 
       {/* Share-to-group modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShareModal(null)}>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setShareModal(null)}>
+          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[92vh] sm:max-h-[90vh] overflow-y-auto p-6" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }} onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.shareCategory}</h3>
             <p className="text-xs text-[var(--arvo-fg-muted)] mb-4">{t.finances.pickGroupHint}</p>
             <div className="flex items-center gap-2 mb-1">

@@ -94,8 +94,8 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4">
+      <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[92vh] sm:max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between p-5 border-b border-[var(--arvo-border)]">
           <div>
             <h2 className="font-bold text-[var(--arvo-fg)] text-base">Converter para Renda Fixa</h2>
@@ -104,7 +104,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
           <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] text-xl leading-none ml-4">x</button>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+        <div className="overflow-y-auto flex-1 p-5 space-y-4" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-700 text-xs dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300">
             {hasContributions
               ? 'Este ativo ja tem aportes registrados. Informe apenas os parametros do titulo e o sistema calculara automaticamente.'
