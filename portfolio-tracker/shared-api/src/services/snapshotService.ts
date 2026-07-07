@@ -171,9 +171,20 @@ export async function computePortfolioValue(userId: string) {
         const hasTranches = tranches && tranches.length > 0
         if (!a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null) ||
             (!hasTranches && (!a.fi_principal || !a.fi_start_date))) return
-        const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
-        currency = result.currency; source = result.source
-        value_brl = currency === 'BRL' ? result.price : result.price * await getFxRate(currency)
+        let value_orig: number
+        try {
+          const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
+          currency = result.currency; source = result.source
+          value_orig = result.price
+        } catch (err) {
+          // Mesmo fallback do computePortfolioValue em routes/portfolio.ts: uma falha
+          // na fonte (BCB fora do ar, série do dia ainda não publicada) não pode fazer
+          // o ativo sumir do snapshot — usa o principal sem os juros do período.
+          console.warn(`[snapshot] getCurrentPrice falhou pra ${a.code} (renda fixa), usando principal como fallback:`, err)
+          currency = a.currency || 'BRL'; source = 'fixed_income_fallback'
+          value_orig = hasTranches ? tranches.reduce((s, t) => s + t.principal, 0) : Number(a.fi_principal)
+        }
+        value_brl = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
 
       } else {
         const holdings = holdingsMap[a.id] ?? 0

@@ -230,6 +230,19 @@ export async function computePortfolioValue(userId: string): Promise<PortfolioVa
           }
         }
 
+        // NaN/Infinity aqui contaminaria o total inteiro (NaN + x = NaN) — se algum
+        // dado malformado escapar das fontes (ex: parseFloat de um valor inesperado
+        // do BCB), o ativo entra zerado e sinalizado em vez de quebrar a soma.
+        if (!Number.isFinite(value_brl)) {
+          console.warn(`[portfolio] Valor não-finito pra ${a.code} (${value_brl}), zerando e marcando needs_manual`)
+          byAsset.push({
+            ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL',
+            holdings, price: null, source: 'error', needs_manual: true,
+            invested_brl: investedMap[a.id] ?? null, last_manual_date: null,
+          })
+          return
+        }
+
         byAsset.push({
           ...base,
           value_brl: Math.round(value_brl * 100) / 100,
@@ -240,7 +253,16 @@ export async function computePortfolioValue(userId: string): Promise<PortfolioVa
           last_manual_date: source === 'manual' ? (manualMap[a.id]?.last_date ?? null) : null,
         })
       } catch (err) {
+        // Último recurso: cada branch acima já tem seu próprio fallback, então chegar
+        // aqui é inesperado — mas se acontecer, o ativo entra com valor 0 e
+        // needs_manual marcado em vez de sumir da lista sem deixar rastro (um ativo
+        // ausente distorce o total silenciosamente; um zerado e sinalizado, não).
         console.warn(`[portfolio] Erro ao calcular ${a.code}:`, err)
+        byAsset.push({
+          ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL',
+          holdings: null, price: null, source: 'error', needs_manual: true,
+          invested_brl: investedMap[a.id] ?? null, last_manual_date: null,
+        })
       }
     })
   )
