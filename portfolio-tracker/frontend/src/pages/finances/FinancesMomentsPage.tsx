@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
-import { SearchBox, FormSection } from '../../components/ui'
+import { SearchBox, FormSection, DateRangePicker } from '../../components/ui'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from '../voyage/_shared/Avatar'
@@ -396,16 +396,12 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
       </FormSection>
 
       <FormSection title={t.finances.momentSectionDetails}>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>{t.finances.momentStartDate}</label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
-          </div>
-          <div>
-            <label className={labelCls}>{t.finances.momentEndDate}</label>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={fieldCls} />
-          </div>
-        </div>
+        <DateRangePicker
+          startValue={startDate} endValue={endDate}
+          onChangeStart={setStartDate} onChangeEnd={setEndDate}
+          startLabel={t.finances.momentStartDate} endLabel={t.finances.momentEndDate}
+          labelStyle={{ display: 'block', fontSize: 11, color: 'var(--arvo-fg-muted)', marginBottom: 4, fontFamily: 'var(--arvo-font-body)' }}
+        />
 
         <div>
           <label className={labelCls}>{t.finances.momentBudget} (opcional)</label>

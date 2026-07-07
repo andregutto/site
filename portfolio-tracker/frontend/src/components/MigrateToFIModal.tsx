@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from './InstitutionSelect'
+import { DatePicker } from './ui'
 
 interface Props {
   assetId: number
@@ -163,13 +164,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
 
               <div>
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Data de inicio</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  max={today}
-                  onChange={e => setStartDate(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                />
+                <DatePicker value={startDate} max={today} onChange={setStartDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
               </div>
             </>
           )}
@@ -177,13 +172,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Vencimento (opc.)</label>
-              <input
-                type="date"
-                value={maturity}
-                min={today}
-                onChange={e => setMaturity(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              />
+              <DatePicker value={maturity} min={today} onChange={setMaturity} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
             </div>
             <div>
               <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Instituicao (opc.)</label>

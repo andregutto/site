@@ -11,6 +11,7 @@ import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { Icon } from '../components/icons'
+import { DatePicker } from '../components/ui'
 import GoogleLogo from '../components/GoogleLogo'
 import { supabase } from '../lib/supabase'
 import { normalizeStorageUrl } from '../lib/storageUrl'
@@ -824,11 +825,11 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.birthdate}</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={birthdate}
-                  onChange={e => setBirthdate(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
+                  onChange={setBirthdate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  style={{ borderRadius: 3, padding: '8px 12px', fontSize: 14 }}
                 />
               </div>
             </div>

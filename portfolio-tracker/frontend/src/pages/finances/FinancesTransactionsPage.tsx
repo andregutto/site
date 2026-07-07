@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import { DatePicker, DateRangePicker } from '../../components/ui'
 import { resolveMomentIcon } from '../../lib/momentIcons'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import { SplitTransactionModal } from './ExpensesPanel'
@@ -932,11 +933,12 @@ export default function FinancesTransactionsPage() {
                   </div>
                 )}
                 {dateMode === 'range' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
-                    <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>→</span>
-                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
-                  </div>
+                  <DateRangePicker
+                    layout="inline"
+                    startValue={dateFrom} endValue={dateTo}
+                    onChangeStart={setDateFrom} onChangeEnd={setDateTo}
+                    style={{ width: 'auto', padding: '6px 8px', fontSize: 12, borderRadius: 8 }}
+                  />
                 )}
               </div>
             )}
@@ -1062,10 +1064,13 @@ export default function FinancesTransactionsPage() {
               </div>
             )}
             {dateMode === 'range' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 6px', fontSize: 11, fontFamily: 'var(--arvo-font-body)', flex: 1, minWidth: 0 }} />
-                <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>→</span>
-                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 6px', fontSize: 11, fontFamily: 'var(--arvo-font-body)', flex: 1, minWidth: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <DateRangePicker
+                  layout="inline"
+                  startValue={dateFrom} endValue={dateTo}
+                  onChangeStart={setDateFrom} onChangeEnd={setDateTo}
+                  style={{ width: 'auto', flex: 1, minWidth: 0, padding: '6px 6px', fontSize: 11, borderRadius: 8 }}
+                />
               </div>
             )}
           </div>
@@ -2204,7 +2209,7 @@ export default function FinancesTransactionsPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.common.date}</label>
-                <input type="date" value={addDate} onChange={e => setAddDate(e.target.value)} className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20" />
+                <DatePicker value={addDate} onChange={setAddDate} style={{ borderRadius: 8, padding: '8px 12px', fontSize: 14 }} />
               </div>
               <div>
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.common.description}</label>

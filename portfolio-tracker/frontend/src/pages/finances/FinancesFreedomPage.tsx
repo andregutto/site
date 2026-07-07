@@ -7,6 +7,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import { DatePicker } from '../../components/ui'
 import { CHART_AXIS_TICK, CHART_AXIS_LINE, formatCompactCurrency } from '../../components/charts'
 
 interface FreedomPlan {
@@ -469,12 +470,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
           </div>
           <div>
             <label className={labelCls}>{t.finances.freedomPlanStartDate}</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className={`${fieldCls} max-w-[200px]`}
-            />
+            <div className="max-w-[200px]">
+              <DatePicker value={startDate} onChange={setStartDate} />
+            </div>
           </div>
         </div>
       )}

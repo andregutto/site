@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { DateRangePicker } from '../../components/ui'
 import DestinationsEditor from './DestinationsEditor'
 import type { Trip, TripStatus, TripDestination } from './types'
 
@@ -194,22 +195,12 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           </label>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <label>
-              <span style={labelStyle}>{tv.startLabel ?? 'Início'}</span>
-              <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)}
-                onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
-              />
-            </label>
-            <label>
-              <span style={labelStyle}>{tv.endLabel ?? 'Fim'}</span>
-              <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)}
-                onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
-              />
-            </label>
-          </div>
+          <DateRangePicker
+            startValue={startDate} endValue={endDate}
+            onChangeStart={setStartDate} onChangeEnd={setEndDate}
+            startLabel={tv.startLabel ?? 'Início'} endLabel={tv.endLabel ?? 'Fim'}
+            labelStyle={labelStyle}
+          />
 
           {/* Status */}
           <label>

@@ -4,6 +4,7 @@ import { PageLoader } from '../components/ArvoLoader'
 import { apiFetch } from '../lib/api'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import InstitutionLogo from '../components/InstitutionLogo'
+import { DatePicker } from '../components/ui'
 import { useI18n } from '../contexts/I18nContext'
 
 interface InstitutionProfile {
@@ -489,11 +490,11 @@ export default function InstitutionsPage() {
                       </div>
                       <div>
                         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Data de abertura da conta</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={form.account_open_date}
-                          onChange={e => setForm(prev => ({ ...prev, account_open_date: e.target.value }))}
-                          className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
+                          onChange={iso => setForm(prev => ({ ...prev, account_open_date: iso }))}
+                          max={new Date().toISOString().slice(0, 10)}
+                          style={{ borderRadius: 3, padding: '8px 12px', fontSize: 14 }}
                         />
                       </div>
                     </div>
