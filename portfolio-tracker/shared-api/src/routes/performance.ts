@@ -492,29 +492,18 @@ export async function computePortfolioValueAtMonth(
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) return null
 
-        const ph = getPrice(a.id, ym)
-        const phIsExact = ph?.ref_date.substring(0, 7) === ym
-
-        if (ph && (phIsExact || !isCurrentOrFuture)) {
-          // If the logged DB price represents a total portfolio manual entry rather than unit price
-          value = ph.price > 50000 && fiStartDate ? ph.price : ph.price
-          const fx = ph.currency === 'BRL' ? 1 : await getFx(ph.currency)
-          value = value * fx
-        } else {
-          const fiPrincipal = Number(a.fi_principal) || 0
-          if (fiPrincipal > 0 && !!fiStartDate) {
-            try {
-              const result = await getCurrentPrice({ ...a, fi_principal: fiPrincipal, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, undefined, new Date(dateStr))
-              value = result.price
-            } catch { value = ph?.price ?? fiPrincipal }
-          } else {
-            const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
-            const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
-            try {
-              const result = await getCurrentPrice({ ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
-              value = result.price
-            } catch { value = ph?.price ?? principalSum }
-          }
+        // Ver computePortfolioValueAtDay acima: sempre calcula ao vivo (nunca usa o
+        // price_history, que pode estar dessincronizado há meses) e prioriza as
+        // tranches reais de aportes sobre o campo fi_principal/fi_start_date.
+        const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+        const fiPrincipal = Number(a.fi_principal) || 0
+        try {
+          const result = await getCurrentPrice({ ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
+          value = result.price
+        } catch {
+          value = activeTranches.length > 0
+            ? activeTranches.reduce((s, t) => s + t.principal, 0)
+            : fiPrincipal
         }
       } else {
         // Ticker / Variable income assets logic.
@@ -971,33 +960,27 @@ export async function computePortfolioValueAtDay(
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) return null
 
-        const ph = getPriceAtDay(a.id)
-        const phIsExact = ph?.ref_date === dateStr
-        if (ph && (phIsExact || !isCurrentOrFuture)) {
-          const fx = ph.currency === 'BRL' ? 1 : await getFx(ph.currency)
-          value = ph.price * fx
-        } else {
-          const fiPrincipal = Number(a.fi_principal) || 0
-          if (fiPrincipal > 0 && fiStartDate) {
-            try {
-              const result = await getCurrentPrice(
-                { ...a, fi_principal: fiPrincipal, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset,
-                undefined, new Date(dateStr + 'T12:00:00')
-              )
-              value = result.price
-            } catch { value = ph?.price ?? fiPrincipal }
-          } else {
-            const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
-            const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
-            try {
-              const result = await getCurrentPrice(
-                { ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset,
-                activeTranches.length > 0 ? activeTranches : undefined,
-                new Date(dateStr + 'T12:00:00')
-              )
-              value = result.price
-            } catch { value = ph?.price ?? principalSum }
-          }
+        // Renda fixa é 100% calculável analiticamente pra qualquer data (acumulação
+        // CDI/Selic/IPCA/pré), então sempre calcula ao vivo aqui — nunca usa o
+        // price_history (pode estar dessincronizado há meses), que fazia a data
+        // inicial do período congelar num valor antigo enquanto "hoje" usava um
+        // cálculo fresco, criando um salto de retorno que não é rentabilidade real.
+        // Mesma prioridade de tranches do total principal em portfolio.ts: aportes
+        // reais (contributions) sempre vencem o campo fi_principal/fi_start_date,
+        // que pode ser anterior a aportes registrados só como tranches novas.
+        const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+        const fiPrincipal = Number(a.fi_principal) || 0
+        try {
+          const result = await getCurrentPrice(
+            { ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset,
+            activeTranches.length > 0 ? activeTranches : undefined,
+            new Date(dateStr + 'T12:00:00')
+          )
+          value = result.price
+        } catch {
+          value = activeTranches.length > 0
+            ? activeTranches.reduce((s, t) => s + t.principal, 0)
+            : fiPrincipal
         }
       } else {
         if (holdings > 0) {
