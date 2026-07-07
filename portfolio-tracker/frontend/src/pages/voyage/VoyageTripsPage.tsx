@@ -61,11 +61,11 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
             style={{ objectPosition: trip.cover_image_position, filter: 'sepia(0.20) saturate(1.10) brightness(0.85)' }}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a1a18 0%, #2a2820 100%)' }}>
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="rgba(200,184,154,0.18)" strokeWidth="1.2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2 26l8-16 10 8 8-13 8 7"/>
-              <path strokeLinecap="round" d="M2 32h32"/>
-            </svg>
+          // Preto sólido + logo/wordmark — nunca uma foto de marca aqui, pra
+          // não parecer que é foto da própria viagem do usuário quando não é.
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ background: '#0D0D0D' }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="26" height="27" alt="" />
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
           </div>
         )}
         {/* gradient protection */}

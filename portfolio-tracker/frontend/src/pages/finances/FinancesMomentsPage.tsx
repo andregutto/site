@@ -1243,8 +1243,12 @@ export default function FinancesMomentsPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="h-20 flex items-center justify-center relative cursor-pointer" style={{ background: 'var(--arvo-surface-2)' }} onClick={() => navigate(`/finances/moments/${m.id}`)}>
-                        <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
+                      // Preto sólido + logo/wordmark — nunca uma foto de marca aqui, pra
+                      // não parecer que é foto do próprio momento do usuário quando não é.
+                      // O ícone/cor do tipo de momento continua aparecendo na linha abaixo.
+                      <div className="h-20 flex flex-col items-center justify-center gap-1.5 relative cursor-pointer" style={{ background: '#0D0D0D' }} onClick={() => navigate(`/finances/moments/${m.id}`)}>
+                        <img src="/brand/logo/arvo-symbol-gold.svg" width="20" height="21" alt="" />
+                        <span style={{ fontFamily: 'var(--arvo-font-display, inherit)', fontSize: 10.5, letterSpacing: '0.28em', textIndent: '0.28em', color: 'rgba(246,243,236,0.55)' }}>arvo</span>
                         <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
                           <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersTarget(m)} />
                         </div>
