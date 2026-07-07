@@ -26,7 +26,34 @@ import type { PortfolioValue } from '../lib/types'
    a dizer. Atalhos no fim, só pra destinos que não estão no header. */
 
 interface HomeFriendEntry { type: 'friend'; user_id: string; name: string; avatar_url?: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
-interface HomeGroupEntry { type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
+interface HomeGroupEntry {
+  type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null
+  members: { name?: string; avatar_url?: string }[]
+  member_count: number
+}
+
+// Avatar de grupo: 2 primeiros membros sobrepostos + "+N" se tiver mais —
+// mesma ideia da pilha de avatares do GroupCard em Pessoas, só que mais
+// compacta pro espaço de uma linha só aqui.
+function GroupAvatarStack({ members, memberCount }: { members: { name?: string; avatar_url?: string }[]; memberCount: number }) {
+  const shown = members.slice(0, 2)
+  const extra = memberCount - shown.length
+  const ring: React.CSSProperties = { border: '2px solid var(--arvo-surface)', borderRadius: '50%', flexShrink: 0 }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      {shown.map((m, i) => (
+        <div key={i} style={{ ...ring, marginLeft: i === 0 ? 0 : -8, zIndex: 2 - i }}>
+          <Avatar name={m.name} avatarUrl={m.avatar_url} size={20} />
+        </div>
+      ))}
+      {extra > 0 && (
+        <div style={{ ...ring, marginLeft: -8, width: 20, height: 20, background: 'var(--arvo-hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 8.5, fontWeight: 700, color: 'var(--arvo-fg-muted)' }}>+{extra}</span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface TodayData {
   first_name: string
@@ -531,7 +558,9 @@ export default function HomePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {friendsAndGroups.map(entry => (
                     <div key={entry.type === 'friend' ? `f-${entry.user_id}` : `g-${entry.id}`} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <Avatar name={entry.name} avatarUrl={entry.type === 'friend' ? entry.avatar_url : undefined} size={26} />
+                      {entry.type === 'friend'
+                        ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
+                        : <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />}
                       <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
                         {entry.type === 'group' && (
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>

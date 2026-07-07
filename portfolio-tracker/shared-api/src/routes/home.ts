@@ -17,7 +17,11 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
 }
 
 interface HomeFriendEntry { type: 'friend'; user_id: string; name: string; avatar_url?: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
-interface HomeGroupEntry { type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
+interface HomeGroupEntry {
+  type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null
+  members: { name?: string; avatar_url?: string }[] // até 4, pra pilha de avatares no card — ver member_count pro total
+  member_count: number
+}
 
 function topBalance(balance: Map<string, number>): { currency: string; amount: number } | null {
   let best: { currency: string; amount: number } | null = null
@@ -144,7 +148,24 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     }
   }
 
-  const displays = await Promise.all([...friendIds].map(id => userDisplay(id).then(d => ({ id, ...d }))))
+  // Membros ativos de cada grupo — pra pilha de avatares no card (2 avatares
+  // + "+N" quando tem mais). Não limita a query: precisa da contagem total
+  // (member_count) mesmo mostrando só os 4 primeiros em `members`.
+  const membersByGroup = new Map<number, string[]>()
+  if (groupMap.size > 0) {
+    const { data: groupMemberRows } = await supabaseAdmin
+      .from('shared_group_members').select('group_id, user_id')
+      .in('group_id', [...groupMap.keys()]).eq('status', 'active').not('user_id', 'is', null)
+    for (const m of groupMemberRows ?? []) {
+      const gid = (m as any).group_id as number
+      const list = membersByGroup.get(gid) ?? []
+      list.push((m as any).user_id as string)
+      membersByGroup.set(gid, list)
+    }
+  }
+
+  const allDisplayIds = new Set<string>([...friendIds, ...[...membersByGroup.values()].flat()])
+  const displays = await Promise.all([...allDisplayIds].map(id => userDisplay(id).then(d => ({ id, ...d }))))
   const displayMap = new Map(displays.map(d => [d.id, d]))
 
   const friends: HomeFriendEntry[] = [...friendIds].map(id => {
@@ -158,9 +179,12 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
 
   const groups: HomeGroupEntry[] = [...groupMap.entries()].map(([id, g]) => {
     const agg = groupAgg.get(id)
+    const memberIds = membersByGroup.get(id) ?? []
     return {
       type: 'group' as const, id, name: g.name,
       balance: agg ? topBalance(agg.balance) : null, last_activity: agg?.lastActivity ?? null,
+      members: memberIds.slice(0, 4).map(mid => { const d = displayMap.get(mid); return { name: d?.name ?? d?.email, avatar_url: d?.avatar_url } }),
+      member_count: memberIds.length,
     }
   }).sort((a, b) => (b.last_activity ?? '').localeCompare(a.last_activity ?? ''))
 
