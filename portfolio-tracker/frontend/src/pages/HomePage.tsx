@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
-import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,8 +9,6 @@ import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { useIsMobile } from '../hooks/useIsMobile'
-import { useLongPressReorder } from '../hooks/useLongPressReorder'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
 import type { ResourceItem } from './ResourcesPage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
@@ -148,13 +145,9 @@ export default function HomePage() {
   const { user } = useAuth()
   const { fmt, hideValues, fxRates } = useCurrency()
   const setup = useSetupChecklist(user?.id)
-  const isMobile = useIsMobile()
 
-  // Ordem dos cards Viagem/Momento/Recursos — reordenável só no mobile
-  // (pressionar e segurar), salva no perfil pra acompanhar o usuário em
-  // qualquer aparelho. `cardOrder` começa a partir da preferência salva e só
-  // é atualizado localmente pra feedback imediato; a fonte da verdade
-  // continua sendo user_metadata.home_card_order depois do refreshSession.
+  // Ordem dos cards Viagem/Momento/Recursos — vem da preferência salva no
+  // perfil (home_card_order), sem reorder interativo no card em si.
   const [cardOrder, setCardOrder] = useState<string[]>(() => (user?.user_metadata?.home_card_order as string[] | undefined) ?? [])
   useEffect(() => {
     setCardOrder((user?.user_metadata?.home_card_order as string[] | undefined) ?? [])
@@ -338,18 +331,6 @@ export default function HomePage() {
     sidebarCards.some(c => c.id === 'resource') &&
     friendsAndGroups.length > 0
   const showGoals = !hasAllFillers
-  const reorder = useLongPressReorder(
-    orderedSidebarCards.map(c => ({ id: c.id })),
-    async (newList) => {
-      const newOrder = newList.map(c => c.id)
-      setCardOrder(newOrder)
-      try {
-        await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ home_card_order: newOrder }) })
-        await supabase.auth.refreshSession()
-      } catch { /* mantém a ordem local mesmo se o PATCH falhar */ }
-    },
-    isMobile,
-  )
 
   if (loading) return <PageLoader />
 
@@ -601,25 +582,11 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Viagem, Momento, Recursos — mesmo formato de capa, ordem
-              reordenável no mobile (pressionar e segurar). No desktop o
-              reorder fica desligado; a ordem salva ainda se aplica. */}
+          {/* Viagem, Momento, Recursos — mesmo formato de capa; ordem
+              vem da preferência salva (home_card_order), sem reorder
+              interativo (removido: atrapalhava o scroll no mobile). */}
           {orderedSidebarCards.map(c => (
-            <div
-              key={c.id}
-              {...reorder.getHandleProps(c.id)}
-              style={{
-                opacity: reorder.isDragging(c.id) ? 0.88 : 1,
-                transform: reorder.isDragging(c.id) ? 'scale(1.02)' : 'none',
-                boxShadow: reorder.isDragging(c.id) ? 'var(--arvo-shadow-lg)' : 'none',
-                outline: reorder.isDropTarget(c.id) ? '1px dashed var(--arvo-gold)' : 'none',
-                outlineOffset: 2,
-                borderRadius: 16,
-                transition: 'opacity 120ms, transform 120ms, box-shadow 120ms',
-                touchAction: isMobile ? 'none' : 'auto',
-                ...(isMobile && { userSelect: 'none' as const, WebkitUserSelect: 'none' as const, WebkitTouchCallout: 'none' as const }),
-              }}
-            >
+            <div key={c.id}>
               {c.node}
             </div>
           ))}
