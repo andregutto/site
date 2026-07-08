@@ -1,4 +1,8 @@
-const CACHE = 'arvo-v37'
+// Bump a versão a cada leva de deploys relevante: o auto-reload das abas
+// abertas (controllerchange em main.tsx) só dispara quando os BYTES deste
+// arquivo mudam — sem bump, sessões antigas (Safari/PWA suspensos) ficam
+// presas num bundle velho indefinidamente, mesmo com vários deploys novos.
+const CACHE = 'arvo-v38'
 const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {
