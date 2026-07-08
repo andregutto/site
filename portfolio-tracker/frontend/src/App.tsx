@@ -73,6 +73,8 @@ import CommunityLayout from './pages/community/CommunityLayout'
 import CommunityHomePage from './pages/community/CommunityHomePage'
 import CommunityCategoryPage from './pages/community/CommunityCategoryPage'
 import CommunityTopicPage from './pages/community/CommunityTopicPage'
+import CommunityTripsPage from './pages/community/CommunityTripsPage'
+import UserProfilePage from './pages/UserProfilePage'
 import HomePage from './pages/HomePage'
 import { MessagingProvider } from './contexts/MessagingContext'
 import MessagesPage from './pages/messages/MessagesPage'
@@ -207,9 +209,13 @@ function AppRoutes() {
         <Route path="/community"       element={<CommunityLayout />}>
           <Route index                element={<CommunityHomePage />} />
           <Route path="admin"         element={<Navigate to="/admin" replace />} />
+          {/* "trips" antes de :slug — o segmento estático ganha da categoria dinâmica */}
+          <Route path="trips"         element={<CommunityTripsPage />} />
           <Route path=":slug"         element={<CommunityCategoryPage />} />
           <Route path=":slug/:topicId" element={<CommunityTopicPage />} />
         </Route>
+        {/* Perfil público de usuário — diferente de /profile (configurações próprias) */}
+        <Route path="/u/:username"    element={<UserProfilePage />} />
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />
           <Route path="transactions"  element={<FinancesTransactionsPage />} />

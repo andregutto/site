@@ -2514,6 +2514,8 @@
       "expiryNone": "Sans expiration",
       "gatedLink": "Lien avec inscription",
       "gatedLinkDesc": "Les visiteurs doivent créer un compte gratuit pour voir l’itinéraire",
+      "communityToggle": "Partager avec la communauté",
+      "communityToggleDesc": "Le voyage apparaît dans la galerie de voyages de la Communauté Arvo",
       "promoTitle": "Liens de diffusion (admin)",
       "promoEmpty": "Aucun lien de diffusion pour le moment",
       "promoPlaceholder": "Où allez-vous l’utiliser ? Ex : vidéo itinéraire Lisbonne",
@@ -2866,6 +2868,17 @@
     "linkTripEmpty": "Vous n'avez pas encore de voyages publics à lier.",
     "linkedTripCard": "Voyage lié",
     "viewTrip": "Voir le voyage",
+    "trips": {
+      "chip": "Voyages",
+      "title": "Voyages",
+      "subtitle": "Itinéraires partagés par les membres de la communauté",
+      "allCountries": "Tous",
+      "emptyTitle": "Aucun voyage partagé pour le moment",
+      "emptyBody": "Soyez le premier : ouvrez un voyage dans Voyage et activez \"Partager avec la communauté\" dans la fenêtre Partager.",
+      "emptyFilter": "Aucun voyage dans ce pays",
+      "durationOne": "{n} jour",
+      "durationMany": "{n} jours"
+    },
     "create": "Créer le sujet",
     "creating": "Création...",
     "cancel": "Annuler",
@@ -2939,6 +2952,17 @@
       "tierBeta": "Beta",
       "tierChanged": "Tier mis à jour"
     }
+  },
+  "userProfile": {
+    "notFound": "Profil introuvable",
+    "memberSince": "Membre depuis {date}",
+    "adminBadge": "Admin",
+    "editProfile": "Paramètres du profil",
+    "addFriend": "Ajouter en ami",
+    "publicTrips": "Voyages partagés",
+    "noTrips": "Aucun voyage partagé avec la communauté.",
+    "recentTopics": "Sujets récents",
+    "noTopics": "Aucun sujet créé pour le moment."
   },
   "messages": {
     "title": "Messages",

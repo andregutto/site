@@ -7,6 +7,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
+import ProfileLink from '../../components/ProfileLink'
 import { linkifyText } from '../community/_shared/linkify'
 import { useMessagingContext } from '../../contexts/MessagingContext'
 import MessagingPaywall from './MessagingPaywall'
@@ -228,9 +229,14 @@ export default function ConversationPage() {
     <div className="dm-thread-shell">
       <div className="flex items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--arvo-border)' }}>
         <button onClick={() => navigate('/messages')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 18, padding: 4 }}>←</button>
-        <Avatar name={conversation.peer.name} avatarUrl={conversation.peer.avatar_url} size={34} />
+        {/* Avatar/nome levam pro perfil público do contato */}
+        <ProfileLink username={conversation.peer.username}>
+          <Avatar name={conversation.peer.name} avatarUrl={conversation.peer.avatar_url} size={34} />
+        </ProfileLink>
         <div>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{conversation.peer.name ?? conversation.peer.username}</p>
+          <ProfileLink username={conversation.peer.username}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{conversation.peer.name ?? conversation.peer.username}</p>
+          </ProfileLink>
           {peerTyping ? (
             <p style={{ fontSize: 13, color: GOLD, fontStyle: 'italic' }}>{tm.typing ?? 'digitando...'}</p>
           ) : conversation.peer.username && (

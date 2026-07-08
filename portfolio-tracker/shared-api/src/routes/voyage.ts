@@ -1937,7 +1937,7 @@ router.delete('/trips/:id/share', requireAuth, async (req, res: Response) => {
 
 // Campos que os dois endpoints de leitura pública (por token e por trip id
 // gated) precisam da voyage_trips pra montar o payload.
-const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, user_id, photo_album_url'
+const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, community_visible, user_id, photo_album_url'
 
 interface PublicTripRow {
   id: number
@@ -1954,6 +1954,7 @@ interface PublicTripRow {
   show_place_expenses: boolean
   share_token: string | null
   share_expires_at: string | null
+  community_visible: boolean
   user_id: string
   photo_album_url: string | null
 }
@@ -2062,21 +2063,28 @@ router.get('/public/:token/kml', async (req, res: Response) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // Espelho do mecanismo de Recursos (resources.ts + lib/leads.ts): a rota
 // /voyage/shared/:tripId no frontend mostra o gate de cadastro pro visitante
-// deslogado e o roteiro completo pra quem está logado. Só existe quando o
-// dono habilitou compartilhamento (share_token não nulo) — o link público
-// por token (/public/:token) continua intocado e independente.
+// deslogado e o roteiro completo pra quem está logado. Existe quando o dono
+// habilitou o compartilhamento (share_token não nulo) OU disponibilizou a
+// viagem pra galeria da Comunidade (community_visible, migration 075) — são
+// dois consentimentos independentes. O link público por token
+// (/public/:token) continua intocado e independente.
 
 // Busca comum dos endpoints do gate: viagem por id, exigindo share habilitado
-// e não expirado. 'expired' vira 410 nos handlers, null vira 404.
+// (por token ou pela galeria) e não expirado. 'expired' vira 410 nos
+// handlers, null vira 404.
 async function getGatedTrip(tripId: number): Promise<PublicTripRow | 'expired' | null> {
   if (!Number.isInteger(tripId)) return null
   const { data: trip } = await supabaseAdmin
     .from('voyage_trips')
     .select(PUBLIC_TRIP_FIELDS)
     .eq('id', tripId)
-    .not('share_token', 'is', null)
+    .or('share_token.not.is.null,community_visible.eq.true')
     .maybeSingle<PublicTripRow>()
   if (!trip) return null
+  // A validade configurada no modal se aplica só ao link por token; o
+  // consentimento da galeria não expira — enquanto ele estiver ligado, a
+  // página continua acessível mesmo com o link público vencido.
+  if (trip.community_visible) return trip
   if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) return 'expired'
   return trip
 }
@@ -2149,6 +2157,25 @@ router.get('/shared/:tripId', requireAuth, async (req, res: Response) => {
   await backfillSignupSource(uid(req))
 
   res.json({ ...(await buildPublicTripPayload(trip)), share_token: trip.share_token })
+})
+
+// ── PATCH /api/voyage/trips/:id/community  (galeria da Comunidade) ────────────
+// Consentimento separado do link público (share_token): o dono decide expor a
+// viagem na galeria de viagens da Comunidade (frente C). Só o dono — nem
+// editores podem ligar/desligar a exposição pública da viagem de outra pessoa.
+router.patch('/trips/:id/community', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const visible = !!req.body?.visible
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  const { error } = await supabaseAdmin
+    .from('voyage_trips').update({ community_visible: visible }).eq('id', tripId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true, community_visible: visible })
 })
 
 // ── Links de divulgação (admin, espelho dos de resources.ts) ──────────────────

@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
-import { userDisplay } from './people.js'
+import { userDisplay, getFriendshipStatuses, type FriendshipStatus } from './people.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -705,6 +705,153 @@ export async function getRecentCommunityReplies(userId: string): Promise<RecentC
     }
   })
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Galeria de viagens da Comunidade + perfil público (frente C)
+// ═══════════════════════════════════════════════════════════════════════════
+// Viagens que o dono disponibilizou pra galeria (voyage_trips.community_visible,
+// migration 075) — consentimento separado do link público por token. O card
+// linka pra /voyage/shared/:tripId, cujo gate em voyage.ts também aceita
+// community_visible como autorização.
+
+export interface CommunityTripCard {
+  id: number
+  title: string
+  destination: string | null
+  country: string | null
+  cover_image_url: string | null
+  cover_image_position: string
+  start_date: string | null
+  end_date: string | null
+  status: string
+  created_at: string
+  destinations: { city: string | null; country: string | null }[]
+  owner: CommunityAuthor
+}
+
+const COMMUNITY_TRIP_FIELDS = 'id, user_id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, status, created_at'
+
+// Monta os cards da galeria (destinos + dono em queries em lote) — compartilhado
+// entre GET /trips (galeria) e GET /users/:username (viagens do perfil).
+async function buildCommunityTripCards(trips: any[]): Promise<CommunityTripCard[]> {
+  if (!trips.length) return []
+
+  const { data: dests } = await supabaseAdmin
+    .from('voyage_trip_destinations')
+    .select('trip_id, city, country, sort_order')
+    .in('trip_id', trips.map((t: any) => t.id))
+    .order('sort_order')
+  const destsByTrip: Record<number, { city: string | null; country: string | null }[]> = {}
+  for (const d of dests ?? []) (destsByTrip[d.trip_id] ??= []).push({ city: d.city, country: d.country })
+
+  const ownerIds = [...new Set(trips.map((t: any) => t.user_id as string))]
+  const displays = await Promise.all(ownerIds.map(async (id) => [id, await userDisplay(id)] as const))
+  const displayMap = new Map(displays)
+
+  return trips.map((t: any) => ({
+    id: t.id,
+    title: t.title,
+    destination: t.destination,
+    country: t.country,
+    cover_image_url: t.cover_image_url,
+    cover_image_position: t.cover_image_position,
+    start_date: t.start_date,
+    end_date: t.end_date,
+    status: t.status,
+    created_at: t.created_at,
+    destinations: destsByTrip[t.id] ?? [],
+    owner: toAuthor(t.user_id, displayMap.get(t.user_id)!),
+  }))
+}
+
+// ── GET /api/community/trips  (galeria, ordenada por recência) ───────────────
+router.get('/trips', async (req: any, res: any) => {
+  const userId = uid(req)
+  try {
+    await ensureMember(userId)
+
+    const { data: trips, error } = await supabaseAdmin
+      .from('voyage_trips')
+      .select(COMMUNITY_TRIP_FIELDS)
+      .eq('community_visible', true)
+      .order('created_at', { ascending: false })
+      .limit(60)
+    if (error) { res.status(500).json({ error: error.message }); return }
+
+    res.json({ trips: await buildCommunityTripCards(trips ?? []) })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── GET /api/community/users/:username  (perfil público, /u/:username) ────────
+router.get('/users/:username', async (req: any, res: any) => {
+  const userId = uid(req)
+  const username = String(req.params.username ?? '').trim().toLowerCase().replace(/^@/, '')
+  if (!username) { res.status(400).json({ error: 'username required' }); return }
+
+  try {
+    await ensureMember(userId)
+
+    const { data: handle } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', username).maybeSingle()
+    if (!handle) { res.status(404).json({ error: 'user not found' }); return }
+    const targetId = handle.user_id as string
+
+    const [display, authRes, adminIds, statuses, topicsRes, tripsRes] = await Promise.all([
+      userDisplay(targetId),
+      supabaseAdmin.auth.admin.getUserById(targetId),
+      getAdminIds(),
+      getFriendshipStatuses(userId, [targetId]),
+      supabaseAdmin
+        .from('community_topics')
+        .select('id, title, category_id, created_at, reply_count, last_post_at')
+        .eq('user_id', targetId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from('voyage_trips')
+        .select(COMMUNITY_TRIP_FIELDS)
+        .eq('user_id', targetId)
+        .eq('community_visible', true)
+        .order('created_at', { ascending: false }),
+    ])
+
+    const topics = topicsRes.data ?? []
+    const categoryIds = [...new Set(topics.map((t: any) => t.category_id))]
+    const { data: categories } = categoryIds.length
+      ? await supabaseAdmin.from('community_categories').select('id, slug').in('id', categoryIds)
+      : { data: [] as any[] }
+    const slugById = new Map((categories ?? []).map((c: any) => [c.id, c.slug]))
+
+    const friendship: FriendshipStatus = statuses[targetId] ?? 'none'
+
+    res.json({
+      profile: {
+        id: targetId,
+        username,
+        name: display.name ?? display.email,
+        avatar_url: display.avatar_url ?? null,
+        member_since: authRes.data?.user?.created_at ?? null,
+        is_admin: adminIds.has(targetId),
+      },
+      friendship_status: friendship,
+      topics: topics.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        category_slug: slugById.get(t.category_id) ?? '',
+        created_at: t.created_at,
+        reply_count: t.reply_count,
+        last_post_at: t.last_post_at,
+      })),
+      trips: await buildCommunityTripCards(tripsRes.data ?? []),
+    })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 
 // ═══════════════════════════════════════════════════════════════════════════

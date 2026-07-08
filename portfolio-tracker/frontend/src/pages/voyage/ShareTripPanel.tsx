@@ -30,6 +30,9 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
   const [hideCost, setHideCost] = useState(trip.share_hide_cost)
   const [showPlaceExpenses, setShowPlaceExpenses] = useState(trip.show_place_expenses)
   const [expiryDays, setExpiryDays] = useState<number | null>(null)
+  // Galeria da Comunidade — consentimento SEPARADO do link público: pode
+  // existir sem link e o link pode existir sem ela. Só o dono vê este modal.
+  const [communityVisible, setCommunityVisible] = useState(!!trip.community_visible)
 
   // Links de divulgação (lead magnet do YouTube) — bloco só pra admin
   // (community_admins, mesmo isAdmin dos Recursos). Pra todo mundo o
@@ -421,6 +424,34 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
               </button>
             </>
           )}
+
+          {/* Disponibilizar pra comunidade — independente do link público
+              (aparece com ou sem share_token). A viagem entra na galeria de
+              viagens da Comunidade, acessível só pra quem está logado. */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
+            <input
+              type="checkbox"
+              checked={communityVisible}
+              onChange={async e => {
+                const v = e.target.checked
+                setCommunityVisible(v)
+                try {
+                  await apiFetch(`/voyage/trips/${trip.id}/community`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ visible: v }),
+                  })
+                  onUpdate({ community_visible: v })
+                } catch {
+                  setCommunityVisible(!v)
+                }
+              }}
+              style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
+            />
+            <div>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>{sv.communityToggle ?? 'Disponibilizar pra comunidade'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{sv.communityToggleDesc ?? 'A viagem aparece na galeria de viagens da Comunidade Arvo'}</p>
+            </div>
+          </label>
         </div>
       </div>
     </div>

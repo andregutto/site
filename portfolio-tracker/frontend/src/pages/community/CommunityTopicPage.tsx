@@ -6,11 +6,10 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import PostCard from './_shared/PostCard'
+import { useFriendshipActions } from '../../hooks/useFriendshipActions'
 import type { CommunityTopicDetail } from './types'
 
 const OCRE = '#E8A020'
-
-type FriendshipStatus = 'self' | 'active' | 'pending' | 'none'
 
 export default function CommunityTopicPage() {
   const { slug, topicId } = useParams<{ slug: string; topicId: string }>()
@@ -22,18 +21,8 @@ export default function CommunityTopicPage() {
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
-  const [friendshipStatuses, setFriendshipStatuses] = useState<Record<string, FriendshipStatus>>({})
-
-  async function loadFriendshipStatuses(authorIds: string[]) {
-    const uniqueIds = [...new Set(authorIds)].filter(id => id !== user?.id)
-    if (!uniqueIds.length) return
-    try {
-      const res = await apiFetch<{ statuses: Record<string, FriendshipStatus> }>(`/messages/friendship-status?user_ids=${uniqueIds.join(',')}`)
-      setFriendshipStatuses(res.statuses)
-    } catch {
-      // botões de amizade/mensagem só não aparecem se isso falhar — não é crítico
-    }
-  }
+  // Amizade/mensagem — mecanismos compartilhados com a página de perfil (/u/:username)
+  const { statuses: friendshipStatuses, loadStatuses, invite, message: messageAuthor } = useFriendshipActions()
 
   async function load() {
     if (!topicId) return
@@ -41,7 +30,7 @@ export default function CommunityTopicPage() {
     try {
       const res = await apiFetch<{ topic: CommunityTopicDetail }>(`/community/topics/${topicId}`)
       setTopic(res.topic)
-      await loadFriendshipStatuses(res.topic.posts.map(p => p.author.id))
+      await loadStatuses(res.topic.posts.map(p => p.author.id), user?.id)
     } catch {
       setTopic(null)
     } finally {
@@ -52,23 +41,7 @@ export default function CommunityTopicPage() {
   async function inviteFriend(authorId: string) {
     const author = topic?.posts.find(p => p.author.id === authorId)?.author
     if (!author?.username) return
-    setFriendshipStatuses(prev => ({ ...prev, [authorId]: 'pending' }))
-    try {
-      await apiFetch('/people/invite', { method: 'POST', body: JSON.stringify({ username: author.username }) })
-    } catch {
-      setFriendshipStatuses(prev => ({ ...prev, [authorId]: 'none' }))
-    }
-  }
-
-  async function messageAuthor(authorId: string) {
-    try {
-      const res = await apiFetch<{ conversation: { id: number } }>('/messages/conversations', {
-        method: 'POST', body: JSON.stringify({ peer_user_id: authorId }),
-      })
-      navigate(`/messages/${res.conversation.id}`)
-    } catch {
-      // amizade pode ter sido desfeita entre o load da página e o clique — ignora
-    }
+    await invite(authorId, author.username)
   }
 
   // Recarrega os dados do tópico sem acionar o PageLoader de tela cheia —

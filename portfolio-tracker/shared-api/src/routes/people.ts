@@ -68,6 +68,34 @@ export async function areActiveFriends(userA: string, userB: string): Promise<bo
   return !!backward
 }
 
+// Status de amizade em lote entre `userId` e cada id de `otherIds`, em uma
+// query só — extraído do handler GET /messages/friendship-status pra ser
+// reaproveitado pelo perfil público (/community/users/:username) sem
+// duplicar a lógica. 'pending' cobre convite em qualquer direção.
+export type FriendshipStatus = 'self' | 'active' | 'pending' | 'none'
+export async function getFriendshipStatuses(userId: string, otherIds: string[]): Promise<Record<string, FriendshipStatus>> {
+  const uniqueIds = [...new Set(otherIds)]
+  const statuses: Record<string, FriendshipStatus> = {}
+
+  const others = uniqueIds.filter(id => id !== userId)
+  for (const id of uniqueIds) if (id === userId) statuses[id] = 'self'
+  if (others.length === 0) return statuses
+
+  const { data: rows } = await supabaseAdmin
+    .from('user_friends')
+    .select('owner_user_id, friend_user_id, status')
+    .or(`and(owner_user_id.eq.${userId},friend_user_id.in.(${others.join(',')})),and(friend_user_id.eq.${userId},owner_user_id.in.(${others.join(',')}))`)
+
+  for (const id of others) statuses[id] = 'none'
+  for (const row of rows ?? []) {
+    const otherId = row.owner_user_id === userId ? row.friend_user_id : row.owner_user_id
+    if (!otherId || !others.includes(otherId)) continue
+    if (row.status === 'active') statuses[otherId] = 'active'
+    else if (row.status === 'pending' && statuses[otherId] !== 'active') statuses[otherId] = 'pending'
+  }
+  return statuses
+}
+
 interface PendingFriendInvite {
   key: string
   token: string

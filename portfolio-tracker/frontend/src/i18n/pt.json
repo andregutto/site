@@ -2514,6 +2514,8 @@
       "expiryNone": "Sem prazo",
       "gatedLink": "Link com cadastro",
       "gatedLinkDesc": "Quem abrir precisa criar uma conta grátis para ver o roteiro",
+      "communityToggle": "Disponibilizar pra comunidade",
+      "communityToggleDesc": "A viagem aparece na galeria de viagens da Comunidade Arvo",
       "promoTitle": "Links de divulgação (admin)",
       "promoEmpty": "Nenhum link de divulgação ainda",
       "promoPlaceholder": "Onde vai usar? Ex: Vídeo roteiro Lisboa",
@@ -2866,6 +2868,17 @@
     "linkTripEmpty": "Você ainda não tem viagens públicas para vincular.",
     "linkedTripCard": "Viagem vinculada",
     "viewTrip": "Ver viagem",
+    "trips": {
+      "chip": "Viagens",
+      "title": "Viagens",
+      "subtitle": "Roteiros que membros da comunidade compartilharam",
+      "allCountries": "Todos",
+      "emptyTitle": "Nenhuma viagem compartilhada ainda",
+      "emptyBody": "Seja a primeira pessoa: abra uma viagem no Voyage e ative \"Disponibilizar pra comunidade\" no modal Compartilhar.",
+      "emptyFilter": "Nenhuma viagem neste país",
+      "durationOne": "{n} dia",
+      "durationMany": "{n} dias"
+    },
     "create": "Criar tópico",
     "creating": "Criando...",
     "cancel": "Cancelar",
@@ -2939,6 +2952,17 @@
       "tierBeta": "Beta",
       "tierChanged": "Tier atualizado"
     }
+  },
+  "userProfile": {
+    "notFound": "Perfil não encontrado",
+    "memberSince": "Membro desde {date}",
+    "adminBadge": "Admin",
+    "editProfile": "Configurações do perfil",
+    "addFriend": "Adicionar amigo",
+    "publicTrips": "Viagens compartilhadas",
+    "noTrips": "Nenhuma viagem compartilhada com a comunidade.",
+    "recentTopics": "Tópicos recentes",
+    "noTopics": "Nenhum tópico criado ainda."
   },
   "messages": {
     "title": "Mensagens",

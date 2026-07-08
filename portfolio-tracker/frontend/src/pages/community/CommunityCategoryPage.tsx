@@ -4,6 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
+import ProfileLink from '../../components/ProfileLink'
 import NewTopicModal from './NewTopicModal'
 import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
 import { catName } from './_shared/catName'
@@ -103,7 +104,10 @@ export default function CommunityCategoryPage() {
               className="w-full text-left flex items-center gap-3 rounded-[12px] p-3.5"
               style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
             >
-              <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={32} />
+              {/* Avatar/@ do autor levam pro perfil; o card continua abrindo o tópico */}
+              <ProfileLink username={topic.author.username}>
+                <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={32} />
+              </ProfileLink>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {topic.pinned && <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><PinIcon /></span>}
@@ -113,7 +117,10 @@ export default function CommunityCategoryPage() {
                   </span>
                 </div>
                 <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
-                  {topic.author.username ? `@${topic.author.username}` : topic.author.name} · {timeAgo(topic.last_post_at)}
+                  <ProfileLink username={topic.author.username}>
+                    {topic.author.username ? `@${topic.author.username}` : topic.author.name}
+                  </ProfileLink>
+                  {' · '}{timeAgo(topic.last_post_at)}
                 </div>
               </div>
             </button>

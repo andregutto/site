@@ -26,6 +26,7 @@ export interface Trip {
   share_expires_at: string | null
   share_hide_cost: boolean
   show_place_expenses: boolean
+  community_visible?: boolean
   dest_lat: number | null
   dest_lng: number | null
   photo_album_url: string | null

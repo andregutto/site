@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
-import { userDisplay, areActiveFriends } from './people.js'
+import { userDisplay, areActiveFriends, getFriendshipStatuses } from './people.js'
 import { ensureMemberTier, TIER_RANK } from './community.js'
 
 const router = Router()
@@ -436,27 +436,8 @@ router.get('/friendship-status', async (req: any, res: any) => {
     const ids = String(req.query.user_ids ?? '').split(',').map(s => s.trim()).filter(s => UUID_RE.test(s))
     if (!ids.length) { res.json({ statuses: {} }); return }
 
-    const uniqueIds = [...new Set(ids)]
-    const statuses: Record<string, 'self' | 'active' | 'pending' | 'none'> = {}
-
-    const others = uniqueIds.filter(id => id !== userId)
-    for (const id of uniqueIds) if (id === userId) statuses[id] = 'self'
-    if (others.length === 0) { res.json({ statuses }); return }
-
-    const { data: rows } = await supabaseAdmin
-      .from('user_friends')
-      .select('owner_user_id, friend_user_id, status')
-      .or(`and(owner_user_id.eq.${userId},friend_user_id.in.(${others.join(',')})),and(friend_user_id.eq.${userId},owner_user_id.in.(${others.join(',')}))`)
-
-    for (const id of others) statuses[id] = 'none'
-    for (const row of rows ?? []) {
-      const otherId = row.owner_user_id === userId ? row.friend_user_id : row.owner_user_id
-      if (!otherId || !others.includes(otherId)) continue
-      if (row.status === 'active') statuses[otherId] = 'active'
-      else if (row.status === 'pending' && statuses[otherId] !== 'active') statuses[otherId] = 'pending'
-    }
-
-    res.json({ statuses })
+    // Lógica compartilhada com o perfil público — ver getFriendshipStatuses em people.ts.
+    res.json({ statuses: await getFriendshipStatuses(userId, ids) })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao buscar status de amizade' })
   }

@@ -5,6 +5,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
+import ProfileLink from '../../components/ProfileLink'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import MessagingPaywall from './MessagingPaywall'
 import PullToRefresh from '../../components/PullToRefresh'
@@ -247,12 +248,17 @@ export default function MessagesPage() {
                   padding: '12px 16px', cursor: 'pointer',
                 }}
               >
-                <Avatar name={c.peer.name} avatarUrl={c.peer.avatar_url} size={40} />
+                {/* Avatar/nome levam pro perfil do contato; o resto da linha abre a conversa */}
+                <ProfileLink username={c.peer.username}>
+                  <Avatar name={c.peer.name} avatarUrl={c.peer.avatar_url} size={40} />
+                </ProfileLink>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
-                      {c.peer.name ?? c.peer.username ?? '-'}
-                    </span>
+                    <ProfileLink username={c.peer.username}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
+                        {c.peer.name ?? c.peer.username ?? '-'}
+                      </span>
+                    </ProfileLink>
                   </div>
                   {c.last_message && (
                     <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: c.last_message.deleted_at ? 'italic' : 'normal' }}>

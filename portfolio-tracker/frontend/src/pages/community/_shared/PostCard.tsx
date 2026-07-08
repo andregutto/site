@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Avatar from '../../voyage/_shared/Avatar'
+import ProfileLink from '../../../components/ProfileLink'
 import { useI18n } from '../../../contexts/I18nContext'
 import { formatTimestamp } from '../../../lib/notifications'
 import { linkifyText } from './linkify'
@@ -45,19 +46,26 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
       <div className="flex items-start gap-3">
-        <Avatar name={post.author.name} avatarUrl={post.author.avatar_url} size={32} />
+        {/* Avatar e nome levam pro perfil público quando o autor tem @username */}
+        <ProfileLink username={post.author.username}>
+          <Avatar name={post.author.name} avatarUrl={post.author.avatar_url} size={32} />
+        </ProfileLink>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>
-              {post.author.name}
-            </span>
+            <ProfileLink username={post.author.username}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>
+                {post.author.name}
+              </span>
+            </ProfileLink>
             {post.author.is_admin && (
               <span title="Admin" style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0, cursor: 'default' }}>
                 <img src="/brand/logo/arvo-symbol-gold.svg" width="10" height="10" alt="Admin" />
               </span>
             )}
             {post.author.username && (
-              <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>@{post.author.username}</span>
+              <ProfileLink username={post.author.username}>
+                <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>@{post.author.username}</span>
+              </ProfileLink>
             )}
             <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>
               {formatTimestamp(post.created_at, locale)}

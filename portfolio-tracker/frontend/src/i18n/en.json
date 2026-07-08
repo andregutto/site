@@ -2514,6 +2514,8 @@
       "expiryNone": "No expiry",
       "gatedLink": "Sign-up link",
       "gatedLinkDesc": "Visitors must create a free account to see the itinerary",
+      "communityToggle": "Share with the community",
+      "communityToggleDesc": "The trip appears in the Arvo Community trip gallery",
       "promoTitle": "Promo links (admin)",
       "promoEmpty": "No promo links yet",
       "promoPlaceholder": "Where will you use it? E.g. Lisbon itinerary video",
@@ -2866,6 +2868,17 @@
     "linkTripEmpty": "You don't have any public trips to link yet.",
     "linkedTripCard": "Linked trip",
     "viewTrip": "View trip",
+    "trips": {
+      "chip": "Trips",
+      "title": "Trips",
+      "subtitle": "Itineraries shared by community members",
+      "allCountries": "All",
+      "emptyTitle": "No trips shared yet",
+      "emptyBody": "Be the first: open a trip in Voyage and enable \"Share with the community\" in the Share modal.",
+      "emptyFilter": "No trips in this country",
+      "durationOne": "{n} day",
+      "durationMany": "{n} days"
+    },
     "create": "Create topic",
     "creating": "Creating...",
     "cancel": "Cancel",
@@ -2939,6 +2952,17 @@
       "tierBeta": "Beta",
       "tierChanged": "Tier updated"
     }
+  },
+  "userProfile": {
+    "notFound": "Profile not found",
+    "memberSince": "Member since {date}",
+    "adminBadge": "Admin",
+    "editProfile": "Profile settings",
+    "addFriend": "Add friend",
+    "publicTrips": "Shared trips",
+    "noTrips": "No trips shared with the community.",
+    "recentTopics": "Recent topics",
+    "noTopics": "No topics created yet."
   },
   "messages": {
     "title": "Messages",

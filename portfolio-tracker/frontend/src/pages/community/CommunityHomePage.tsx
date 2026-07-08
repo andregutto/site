@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import { SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
+import ProfileLink from '../../components/ProfileLink'
 import PullToRefresh from '../../components/PullToRefresh'
 import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
 import { catName } from './_shared/catName'
@@ -36,14 +37,18 @@ function TopicResultsList({ topics, tc, navigate }: {
           className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
           style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
         >
-          <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+          {/* Avatar/@ do autor levam pro perfil; o resto do card continua abrindo o tópico */}
+          <ProfileLink username={topic.author.username}>
+            <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+          </ProfileLink>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
               {topic.pinned && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><PinIcon /></span>}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
-              @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+              <ProfileLink username={topic.author.username}>@{topic.author.username ?? topic.author.name}</ProfileLink>
+              {' · '}{timeAgo(topic.last_post_at)}
               {topic.matched_in_body && ` · ${tc?.matchedInBody ?? 'encontrado numa resposta'}`}
             </div>
           </div>
@@ -270,6 +275,26 @@ export default function CommunityHomePage() {
             {catName(tc, c)}
           </button>
         ))}
+        {/* Galeria de viagens da comunidade — mesma navegação por chip das categorias */}
+        <button
+          onClick={() => navigate('/community/trips')}
+          className="flex items-center gap-2"
+          style={{
+            fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 16px', borderRadius: 999,
+            background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+            color: 'var(--arvo-fg)', cursor: 'pointer',
+            transition: 'border-color 200ms ease, background 200ms ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
+        >
+          <span style={{ lineHeight: 0, color: 'var(--arvo-fg-muted)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            </svg>
+          </span>
+          {tc?.trips?.chip ?? 'Viagens'}
+        </button>
       </div>
 
       <div>
@@ -294,7 +319,10 @@ export default function CommunityHomePage() {
                 className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
                 style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
               >
-                <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+                {/* Avatar/nome do autor levam pro perfil; o card continua abrindo o tópico */}
+                <ProfileLink username={topic.author.username}>
+                  <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+                </ProfileLink>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
                     {topic.pinned && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><PinIcon /></span>}
@@ -302,7 +330,8 @@ export default function CommunityHomePage() {
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
-                    {topic.author.name ?? topic.author.username} · {timeAgo(topic.last_post_at)}
+                    <ProfileLink username={topic.author.username}>{topic.author.name ?? topic.author.username}</ProfileLink>
+                    {' · '}{timeAgo(topic.last_post_at)}
                   </div>
                 </div>
                 {cat && (

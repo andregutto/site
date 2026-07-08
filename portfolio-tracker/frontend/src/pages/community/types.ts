@@ -86,6 +86,23 @@ export interface CommunityTopicDetail {
   posts: CommunityPost[]
 }
 
+// Card da galeria de viagens da Comunidade (GET /community/trips) — também
+// usado pelas viagens públicas do perfil (/u/:username).
+export interface CommunityTripCard {
+  id: number
+  title: string
+  destination: string | null
+  country: string | null
+  cover_image_url: string | null
+  cover_image_position: string
+  start_date: string | null
+  end_date: string | null
+  status: string
+  created_at: string
+  destinations: { city: string | null; country: string | null }[]
+  owner: CommunityAuthor
+}
+
 export interface VoyageTripOption {
   id: number
   title: string
