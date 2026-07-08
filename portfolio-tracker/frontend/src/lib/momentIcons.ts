@@ -1,10 +1,27 @@
 import type { IconName } from '../components/icons'
 
-// 18 drawn icons offered in the Moments "icon" picker (replaces the emoji set).
+// Drawn icons offered in the Moments "icon" picker (replaces the emoji set).
+// Covers types of life/finance events (trip, celebration, purchase, milestone,
+// health, study...), not generic UI actions (no gear/search/chevron/arrow/etc).
 export const MOMENT_ICON_KEYS: IconName[] = [
-  'sparkle', 'plane', 'party', 'cake', 'beach', 'mountain',
-  'mask', 'music', 'utensils', 'home', 'ring', 'graduation',
-  'cart', 'trophy', 'gamepad', 'car', 'pill', 'gift',
+  // viagem
+  'plane', 'beach', 'mountain', 'luggage', 'globe',
+  // festa & celebração
+  'sparkle', 'party', 'cake', 'mask', 'music', 'gift', 'bell',
+  // comida & consumo
+  'utensils', 'cart',
+  // casa & compra grande
+  'home', 'building', 'key',
+  // relacionamento & marco pessoal
+  'ring', 'heart', 'graduation',
+  // saúde & lazer
+  'pill', 'trophy', 'gamepad', 'car',
+  // finanças & metas
+  'coin', 'wallet', 'bank', 'target', 'scale', 'seal', 'shield', 'doc',
+  // crescimento (metáfora de virada/evolução)
+  'seed', 'sprout', 'tree', 'wheat',
+  // outros
+  'scissors',
 ]
 
 // Legacy emoji (previously stored in `moments.icon`) → new drawn-icon key.

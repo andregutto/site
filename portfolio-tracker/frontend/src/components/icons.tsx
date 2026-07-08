@@ -29,6 +29,8 @@ const PATHS = {
   ring: <><circle cx="8" cy="9.5" r="4.5" /><path d="M6 5.5L4.8 3.2 6.5 1.5h3l1.7 1.7L10 5.5" /></>,
   scissors: <><circle cx="3.5" cy="4" r="2" /><circle cx="3.5" cy="12" r="2" /><path d="M5.2 5.1L14 12.5M5.2 10.9L14 3.5" /></>,
   plane: <path d="M14.5 1.5L9.8 14.5l-2.6-5.7L1.5 6.2 14.5 1.5zM7.2 8.8l3.3-3.3" />,
+  luggage: <><rect x="3" y="5" width="10" height="8.5" rx="1.5" /><path d="M6 5V3.5A1.5 1.5 0 017.5 2h1A1.5 1.5 0 0110 3.5V5M6 7.5v3.5M10 7.5v3.5" /></>,
+  doc: <path d="M4 1.5h5.5L12 4v10.5H4V1.5ZM9.5 1.5V4H12M6 7h4M6 9.5h4M6 12h2.5" />,
 
   /* nature — brand metaphors */
   seed: <><ellipse cx="8" cy="9.5" rx="3" ry="4" /><path d="M2.5 14.5h11" /></>,
@@ -52,6 +54,7 @@ const PATHS = {
   car: <><path d="M2 11.5V9l1.5-3.5h9L14 9v2.5" /><path d="M1.5 11.5h13" /><circle cx="4.5" cy="12.7" r="1.3" /><circle cx="11.5" cy="12.7" r="1.3" /></>,
   pill: <><path d="M3.5 12.5a4 4 0 010-5.7l5.3-5.3a4 4 0 015.7 5.7l-5.3 5.3a4 4 0 01-5.7 0z" /><path d="M6.3 5.7l4 4" /></>,
   gift: <><rect x="2" y="6.5" width="12" height="8" rx=".5" /><path d="M2 9.5h12M8 6.5v8" /><path d="M8 6.5c-1.6 0-3-1-3-2.5S6.1 1.8 7.2 2.5 8 4.5 8 6.5zM8 6.5c1.6 0 3-1 3-2.5S9.9 1.8 8.8 2.5 8 4.5 8 6.5z" /></>,
+  heart: <path d="M8 13.5 3 8.7a3 3 0 114.2-4.2L8 5.3l.8-.8A3 3 0 1113 8.7l-5 4.8Z" />,
 
   /* time & flow */
   clock: <><circle cx="8" cy="8" r="6.5" /><path d="M8 4.5V8l2.5 1.5" /></>,

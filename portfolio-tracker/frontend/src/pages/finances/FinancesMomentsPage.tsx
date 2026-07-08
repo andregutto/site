@@ -359,7 +359,7 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
       <FormSection title={t.finances.momentSectionStyle}>
         <div>
           <label className={labelCls}>{t.finances.momentIcon}</label>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 max-h-[168px] overflow-y-auto pr-0.5">
             {MOMENT_ICON_KEYS.map(ic => (
               <button
                 key={ic} type="button"
