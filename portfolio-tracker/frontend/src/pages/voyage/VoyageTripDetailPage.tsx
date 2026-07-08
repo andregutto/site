@@ -87,7 +87,7 @@ function fmtEur(n: number) {
 function HeroStat({ label, value, accent, chevron }: { label: string; value: string; accent?: boolean; chevron?: 'up' | 'down' }) {
   return (
     <div style={{ textAlign: 'center', padding: '0 14px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 21, fontVariantNumeric: 'tabular-nums', color: accent ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 21, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: accent ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
         {value}
         {chevron && (
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ transform: chevron === 'up' ? 'rotate(180deg)' : 'none' }}>
@@ -351,14 +351,16 @@ export default function VoyageTripDetailPage() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.06em', color: '#fff', marginBottom: 4, lineHeight: 1.2 }}>
               {trip.title}
             </h1>
-            <div className="flex flex-col" style={{ gap: 6 }}>
+            {/* Destino e data na mesma linha, data alinhada à direita —
+                em vez de empilhados, o que desperdiçava altura do hero. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'rgba(255,255,255,0.65)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
                 </span>
               )}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}
@@ -386,34 +388,6 @@ export default function VoyageTripDetailPage() {
         </p>
       )}
 
-      {/* Álbum de fotos — card dedicado (visível a todos que veem a viagem,
-          colaboradores incluídos) e também replicado na página pública. */}
-      {trip.photo_album_url && (
-        <a
-          href={trip.photo_album_url} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', marginBottom: 20, borderRadius: 12, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-hover-bg)', textDecoration: 'none' }}
-        >
-          <span style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(200,184,154,0.14)', flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={GOLD} strokeWidth="1.5">
-              <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
-              <circle cx="7" cy="8" r="1.5" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 14l4-3.5 3.5 3 3-2.5 3.5 3" />
-            </svg>
-          </span>
-          <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>
-              {tv.photoAlbumTitle ?? 'Álbum de fotos compartilhado'}
-            </span>
-            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
-              {tv.photoAlbumSubtitle ?? 'Abrir em uma nova aba'}
-            </span>
-          </span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 3h7v7M13 3L6.5 9.5M11 9.5V13H3V5h3.5" />
-          </svg>
-        </a>
-      )}
-
       {/* Faixa de stats (Dias · Lugares · Custo) — mesma linguagem da página
           pública, logo abaixo do hero. Clicar expande o detalhamento de
           custo completo (categorias, lugares, por colaborador). */}
@@ -434,7 +408,7 @@ export default function VoyageTripDetailPage() {
               style={{
                 width: '100%', display: 'flex', alignItems: 'stretch', justifyContent: 'space-around',
                 background: 'var(--arvo-surface)', borderRadius: 14, border: '1px solid var(--arvo-border)',
-                boxShadow: 'var(--arvo-shadow-sm)', padding: '14px 8px',
+                boxShadow: 'var(--arvo-shadow-sm)', padding: '11px 8px',
                 cursor: hasCost ? 'pointer' : 'default',
               }}
             >

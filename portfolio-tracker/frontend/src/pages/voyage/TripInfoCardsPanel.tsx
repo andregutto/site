@@ -5,12 +5,13 @@ import { Switch } from '../../components/ui'
 import ArvoLoader from '../../components/ArvoLoader'
 import CategoryIcon, { ICON_KEYS } from '../community/_shared/CategoryIcon'
 
-// Grid de "Informações úteis" da viagem: agência, transporte, passeio,
-// hospedagem, restaurante ou tipo livre (com ícone à escolha). Cards sempre
-// visíveis, sem accordion. Usado em dois contextos:
+// Grid de "Complementos" da viagem: agência, transporte, passeio, hospedagem,
+// restaurante, álbum de fotos ou tipo livre (com ícone à escolha). Cards
+// sempre visíveis, sem accordion. Usado em dois contextos:
 // - Página da viagem (dono/membros): todos os cards; dono ganha adicionar
-//   (card "+" na 1ª posição), editar (clique no corpo, bottom-sheet) e
-//   excluir (X no card ou dentro do editor) + badge nos ocultos.
+//   ("+" pequeno no cabeçalho da seção), editar (clique no corpo,
+//   bottom-sheet) e excluir (X no card ou dentro do editor) + badge nos
+//   ocultos.
 // - Visões compartilhadas (TripShareView): só os cards shared, sem controles
 //   (o payload público já vem filtrado do servidor).
 
@@ -28,7 +29,7 @@ export interface InfoCardData {
   icon_key?: string | null
 }
 
-const PREDEFINED_KINDS = ['agency', 'transport', 'tour', 'lodging', 'restaurant'] as const
+const PREDEFINED_KINDS = ['agency', 'transport', 'tour', 'lodging', 'restaurant', 'album'] as const
 
 // Ícones outline no traço da plataforma (stroke 1.5, sem preenchimento) —
 // um por tipo; tipo livre cai no ícone genérico de nota.
@@ -74,6 +75,15 @@ function KindIcon({ kind, size = 18 }: { kind: string; size?: number }) {
           <path d="M14.5 3c-1.5 1.2-2.3 2.9-2.3 4.8 0 1.6.9 2.7 2.3 2.7V17M14.5 3v7.5" />
         </svg>
       )
+    case 'album': // pilha de fotos (moldura de trás + moldura da frente com paisagem)
+      return (
+        <svg {...common}>
+          <rect x="4.5" y="2" width="11.5" height="9.5" rx="1.4" transform="rotate(5 10.25 6.75)" opacity="0.5" />
+          <rect x="2.5" y="5.5" width="12.5" height="10.5" rx="1.5" />
+          <circle cx="6" cy="9" r="1.2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.2 14l3-3 2.3 2 2.5-3 3.7 4.2" />
+        </svg>
+      )
     default: // nota genérica (tipo livre)
       return (
         <svg {...common}>
@@ -91,6 +101,7 @@ function kindLabel(kind: string, ic: any): string {
     case 'tour': return ic.kindTour ?? 'Passeio'
     case 'lodging': return ic.kindLodging ?? 'Hospedagem'
     case 'restaurant': return ic.kindRestaurant ?? 'Restaurante'
+    case 'album': return ic.kindAlbum ?? 'Álbum de fotos'
     case 'other': return ic.kindOther ?? 'Outro'
     default: return kind // tipo livre: mostra o texto como foi cadastrado
   }
@@ -378,11 +389,14 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
   onEdit: () => void
   onDelete: () => void
 }) {
+  // Layout horizontal (ícone à esquerda, conteúdo à direita) — mesma lógica
+  // do CoverCard da Home, só que sem imagem de capa: compacto, sem precisar
+  // da altura de uma foto.
   return (
     <div
       style={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 8,
-        padding: '14px 14px 12px', borderRadius: 12, background: 'var(--arvo-hover-bg)',
+        position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12,
+        padding: '13px 14px', borderRadius: 12, background: 'var(--arvo-hover-bg)',
         border: '1px solid var(--arvo-border-soft)', cursor: canEdit ? 'pointer' : 'default',
         transition: `border-color 280ms ${EASE}`, minHeight: 0,
       }}
@@ -411,7 +425,7 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
         <CardIcon kind={c.kind} iconKey={c.icon_key} size={17} />
       </span>
 
-      <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingRight: canEdit ? 16 : 0 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{c.title}</p>
           {canEdit && c.shared === false && <HiddenFromShareBadge label={hiddenLabel} />}
@@ -422,56 +436,36 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{c.body}</p>
         )}
+        {(c.phone || c.url) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+            {c.phone && (
+              <a
+                href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} onClick={e => e.stopPropagation()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4.2 2.8h3l1.4 3.7-1.9 1.4a11.5 11.5 0 005.4 5.4l1.4-1.9 3.7 1.4v3a1.5 1.5 0 01-1.6 1.5C8.6 16.7 3.3 11.4 2.7 4.4a1.5 1.5 0 011.5-1.6z" />
+                </svg>
+                {c.phone}
+              </a>
+            )}
+            {c.url && (
+              <a
+                href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
+                  <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                </svg>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.url.replace(/^https?:\/\/(www\.)?/, '')}
+                </span>
+              </a>
+            )}
+          </div>
+        )}
       </div>
-
-      {(c.phone || c.url) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto', paddingTop: 4, flexWrap: 'wrap' }}>
-          {c.phone && (
-            <a
-              href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} onClick={e => e.stopPropagation()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none' }}
-            >
-              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4.2 2.8h3l1.4 3.7-1.9 1.4a11.5 11.5 0 005.4 5.4l1.4-1.9 3.7 1.4v3a1.5 1.5 0 01-1.6 1.5C8.6 16.7 3.3 11.4 2.7 4.4a1.5 1.5 0 011.5-1.6z" />
-              </svg>
-              {c.phone}
-            </a>
-          )}
-          {c.url && (
-            <a
-              href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
-            >
-              <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
-                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-              </svg>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {c.url.replace(/^https?:\/\/(www\.)?/, '')}
-              </span>
-            </a>
-          )}
-        </div>
-      )}
     </div>
-  )
-}
-
-// Card "+" — sempre na primeira posição, mesmo formato/tamanho dos demais
-function AddCard({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button" onClick={onClick}
-      style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-        minHeight: 110, borderRadius: 12, border: '1px dashed var(--arvo-border)', background: 'none',
-        color: 'var(--arvo-fg-soft)', cursor: 'pointer', transition: `border-color 280ms ${EASE}, color 280ms ${EASE}`,
-      }}
-    >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-        <path d="M9 2.5v13M2.5 9h13" />
-      </svg>
-      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}>{label}</span>
-    </button>
   )
 }
 
@@ -502,27 +496,46 @@ export default function TripInfoCardsPanel({ tripId, cards, isOwner = false, onC
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {/* Eyebrow — separa visualmente da seção seguinte, sem interação */}
-      <p style={{
-        fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
-        color: 'var(--arvo-fg-muted)', marginBottom: 10,
-      }}>
-        {ic.title ?? 'Informações úteis'}
-      </p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {canEdit && <AddCard label={ic.add ?? 'Adicionar informação'} onClick={() => setEditing('new')} />}
-        {cards.map(c => (
-          <InfoCard
-            key={c.id}
-            card={c}
-            canEdit={canEdit}
-            hiddenLabel={hiddenLabel}
-            onEdit={() => setEditing(c)}
-            onDelete={() => handleDelete(c)}
-          />
-        ))}
+      {/* Eyebrow + "+" pequeno (mesmo padrão do cabeçalho do Roteiro/Momentos) —
+          sem contador, sem seta de expandir: não há mais accordion. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <p style={{
+          fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
+          color: 'var(--arvo-fg-muted)',
+        }}>
+          {ic.title ?? 'Complementos'}
+        </p>
+        {canEdit && (
+          <button
+            type="button" onClick={() => setEditing('new')}
+            title={ic.add ?? 'Adicionar'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, borderRadius: 999, flexShrink: 0,
+              background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M7 1.5v11M1.5 7h11" />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {cards.length === 0 && canEdit ? null : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {cards.map(c => (
+            <InfoCard
+              key={c.id}
+              card={c}
+              canEdit={canEdit}
+              hiddenLabel={hiddenLabel}
+              onEdit={() => setEditing(c)}
+              onDelete={() => handleDelete(c)}
+            />
+          ))}
+        </div>
+      )}
 
       {editing && canEdit && tripId != null && (
         <InfoCardEditor

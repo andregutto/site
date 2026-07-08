@@ -2348,7 +2348,7 @@
   },
   "voyage": {
     "infoCards": {
-      "title": "Useful information",
+      "title": "Extras",
       "add": "Add information",
       "addTitle": "New information",
       "editTitle": "Edit information",
@@ -2372,7 +2372,8 @@
       "includeInShare": "Include in sharing",
       "includeInShareDesc": "Shown on the public link, the sign-up link and the Community",
       "save": "Save",
-      "iconLabel": "Icon"
+      "iconLabel": "Icon",
+      "kindAlbum": "Photo album"
     },
     "partialShare": {
       "visibleInShare": "Visible when shared",
@@ -2402,8 +2403,6 @@
     "statusLabel": "Status",
     "summaryLabel": "Summary",
     "coverLabel": "Cover photo",
-    "photoAlbumLabel": "Photo album (optional)",
-    "photoAlbumPlaceholder": "Shared album link",
     "deleting": "Deleting…",
     "statusPlanning": "Planning",
     "statusOngoing": "Ongoing",
@@ -2464,8 +2463,6 @@
     "expensesTitle": "Expenses",
     "linkExpenseShort": "Link expense",
     "editTripBtn": "Edit",
-    "photoAlbumTitle": "Shared photo album",
-    "photoAlbumSubtitle": "Open in a new tab",
     "tripDatesLabel": "Trip dates",
     "startLabel": "Start",
     "endLabel": "End",
@@ -2703,8 +2700,6 @@
       "kmlStep3": "Go to Your places → Maps → Create a map.",
       "kmlStep4": "Click Import and select the downloaded KML file.",
       "kmlStep5": "The places appear on your map and stay saved to open in the mobile app.",
-      "photoAlbum": "See more photos →",
-      "photoAlbumTitle": "Shared photo album",
       "openDestination": "Open destination in Maps",
       "openDestinationMulti": "Open in Maps",
       "openInMaps": "Open in Maps →",
@@ -2733,7 +2728,8 @@
     "mapNoCreatedTrips": "No trips created yet",
     "mapNoCoordsInTrip": "No places with coordinates in this trip",
     "mapAddPlacesHint": "Add places to your trips to see the map",
-    "dayLabel": "Day"
+    "dayLabel": "Day",
+    "dayLabelShort": "Day"
   },
   "people": {
     "accept": "Accept",

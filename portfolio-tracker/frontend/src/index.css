@@ -227,6 +227,15 @@ textarea:focus-visible {
   .chat-dialog-safe { bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* Roteiro da viagem — lápis de renomear, estrela de destaque e o pill de dia
+   ficam escondidos até passar o mouse sobre a linha, mas só em dispositivos
+   com hover confiável (mouse de verdade); em touch não existe hover, então
+   o próprio componente decide não aplicar essa classe nesses casos. */
+@media (hover: hover) and (pointer: fine) {
+  .itin-row .itin-hover-reveal { opacity: 0; transition: opacity 160ms ease; }
+  .itin-row:hover .itin-hover-reveal { opacity: 1; }
+}
+
 /* Scrollbar — thin gold tint */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

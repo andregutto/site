@@ -2348,7 +2348,7 @@
   },
   "voyage": {
     "infoCards": {
-      "title": "Informations utiles",
+      "title": "Compléments",
       "add": "Ajouter une information",
       "addTitle": "Nouvelle information",
       "editTitle": "Modifier l'information",
@@ -2372,7 +2372,8 @@
       "includeInShare": "Inclure dans le partage",
       "includeInShareDesc": "Visible sur le lien public, le lien avec inscription et la Communauté",
       "save": "Enregistrer",
-      "iconLabel": "Icône"
+      "iconLabel": "Icône",
+      "kindAlbum": "Album photo"
     },
     "partialShare": {
       "visibleInShare": "Visible dans le partage",
@@ -2402,8 +2403,6 @@
     "statusLabel": "Statut",
     "summaryLabel": "Résumé",
     "coverLabel": "Photo de couverture",
-    "photoAlbumLabel": "Album photo (optionnel)",
-    "photoAlbumPlaceholder": "Lien de l'album partagé",
     "deleting": "Suppression…",
     "statusPlanning": "Planification",
     "statusOngoing": "En voyage",
@@ -2464,8 +2463,6 @@
     "expensesTitle": "Dépenses",
     "linkExpenseShort": "Lier une dépense",
     "editTripBtn": "Modifier",
-    "photoAlbumTitle": "Album photo partagé",
-    "photoAlbumSubtitle": "Ouvrir dans un nouvel onglet",
     "tripDatesLabel": "Dates du voyage",
     "startLabel": "Début",
     "endLabel": "Fin",
@@ -2703,8 +2700,6 @@
       "kmlStep3": "Allez dans Vos adresses → Cartes → Créer une carte.",
       "kmlStep4": "Cliquez sur Importer et sélectionnez le fichier KML téléchargé.",
       "kmlStep5": "Les lieux apparaissent sur votre carte et restent enregistrés pour les ouvrir dans l'application mobile.",
-      "photoAlbum": "Voir plus de photos →",
-      "photoAlbumTitle": "Album photo partagé",
       "openDestination": "Ouvrir la destination sur Maps",
       "openDestinationMulti": "Ouvrir sur Maps",
       "openInMaps": "Ouvrir sur Maps →",
@@ -2733,7 +2728,8 @@
     "mapNoCreatedTrips": "Aucun voyage créé pour le moment",
     "mapNoCoordsInTrip": "Aucun lieu avec coordonnées dans ce voyage",
     "mapAddPlacesHint": "Ajoutez des lieux à vos voyages pour voir la carte",
-    "dayLabel": "Jour"
+    "dayLabel": "Jour",
+    "dayLabelShort": "Jour"
   },
   "people": {
     "accept": "Accepter",

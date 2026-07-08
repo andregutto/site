@@ -7,10 +7,10 @@ import { apiFetch } from '../../lib/api'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
-import OpeningHoursBlock from './_shared/OpeningHours'
 import CurrentLocationMarker from './_shared/CurrentLocationMarker'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
 import { openDirections } from './_shared/googleMapsRoute'
+import PlacePopup from './_shared/PlacePopup'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -356,34 +356,15 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
                     o balão podia ser mais alto que o próprio mapa — nenhum
                     zoom resolve isso, é espaço vertical disponível. Agora o
                     conteúdo rola por dentro em vez de ficar cortado. */}
-                <Popup closeButton={false} maxHeight={220} autoPanPadding={[16, 16]}>
-                  <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
-                    {/* Botão de fechar próprio — em vez do × nativo do Leaflet,
-                        que só fechava o popup sem desmarcar a seleção na
-                        lista (o destaque do lugar ficava "preso"). */}
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
-                      style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 14 }}
-                    >✕</button>
-                    {p.day_number != null && (
-                      <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(p.day_number))}</span>
-                    )}
-                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{p.name}</p>
-                    {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
-                    {p.address && <p style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{p.address}</p>}
-                    <OpeningHoursBlock hours={p.opening_hours} />
-                    {p.trip_note && <p style={{ fontSize: 12, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
-                    {(p.expense_total ?? 0) > 0 && (
-                      <p style={{ fontSize: 12, color: '#444', marginBottom: 4 }}>{tv.spentHere ?? 'Gasto aqui:'} <strong>{fmtEur(p.expense_total!)}</strong></p>
-                    )}
-                    {p.google_maps_url && (
-                      <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
-                        {tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
-                      </a>
-                    )}
-                  </div>
+                <Popup closeButton={false} maxHeight={180} autoPanPadding={[16, 16]}>
+                  <PlacePopup
+                    place={p}
+                    dayLabel={d => (tv.day ?? 'Dia {n}').replace('{n}', String(d))}
+                    spentLabel={tv.spentHere ?? 'Gasto aqui:'}
+                    openInMapsLabel={tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
+                    formatCurrency={fmtEur}
+                    onClose={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
+                  />
                 </Popup>
               </Marker>
             ))}

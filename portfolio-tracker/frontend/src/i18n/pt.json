@@ -2348,7 +2348,7 @@
   },
   "voyage": {
     "infoCards": {
-      "title": "Informações úteis",
+      "title": "Complementos",
       "add": "Adicionar informação",
       "addTitle": "Nova informação",
       "editTitle": "Editar informação",
@@ -2372,7 +2372,8 @@
       "includeInShare": "Incluir no compartilhamento",
       "includeInShareDesc": "Aparece no link público, no link com cadastro e na Comunidade",
       "save": "Salvar",
-      "iconLabel": "Ícone"
+      "iconLabel": "Ícone",
+      "kindAlbum": "Álbum de fotos"
     },
     "partialShare": {
       "visibleInShare": "Visível no compartilhamento",
@@ -2402,8 +2403,6 @@
     "statusLabel": "Status",
     "summaryLabel": "Resumo",
     "coverLabel": "Foto de capa",
-    "photoAlbumLabel": "Álbum de fotos (opcional)",
-    "photoAlbumPlaceholder": "Link de álbum compartilhado",
     "deleting": "Excluindo…",
     "statusPlanning": "Planejamento",
     "statusOngoing": "Em viagem",
@@ -2464,8 +2463,6 @@
     "expensesTitle": "Despesas",
     "linkExpenseShort": "Vincular gasto",
     "editTripBtn": "Editar",
-    "photoAlbumTitle": "Álbum de fotos compartilhado",
-    "photoAlbumSubtitle": "Abrir em uma nova aba",
     "tripDatesLabel": "Datas da viagem",
     "startLabel": "Início",
     "endLabel": "Fim",
@@ -2703,8 +2700,6 @@
       "kmlStep3": "Vá em Seus lugares → Mapas → Criar um mapa.",
       "kmlStep4": "Clique em Importar e selecione o arquivo KML baixado.",
       "kmlStep5": "Os lugares aparecem no seu mapa e ficam salvos para abrir no app do celular.",
-      "photoAlbum": "Ver mais fotos →",
-      "photoAlbumTitle": "Álbum de fotos compartilhado",
       "openDestination": "Abrir destino no Maps",
       "openDestinationMulti": "Abrir no Maps",
       "openInMaps": "Abrir no Maps →",
@@ -2733,7 +2728,8 @@
     "mapNoCreatedTrips": "Nenhuma viagem criada ainda",
     "mapNoCoordsInTrip": "Nenhum lugar com coordenadas nesta viagem",
     "mapAddPlacesHint": "Adicione lugares às suas viagens para ver o mapa",
-    "dayLabel": "Dia"
+    "dayLabel": "Dia",
+    "dayLabelShort": "Dia"
   },
   "people": {
     "accept": "Aceitar",

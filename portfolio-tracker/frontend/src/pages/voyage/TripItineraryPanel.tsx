@@ -7,6 +7,7 @@ import { HiddenFromShareBadge, EyeIcon, EyeOffIcon } from './TripInfoCardsPanel'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
 import { openDirections } from './_shared/googleMapsRoute'
+import { useHoverCapable } from '../../hooks/useMediaQuery'
 import type { TripDestination } from './types'
 
 const RED  = '#D63B2F'
@@ -174,8 +175,8 @@ function isLogisticalStay(category: string | null): boolean {
   return key.includes('carro') || key.includes('aluguel')
 }
 
-function DayBadge({ day, canEdit, onChangeDay }: {
-  day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void
+function DayBadge({ day, canEdit, onChangeDay, className }: {
+  day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void; className?: string
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
@@ -203,6 +204,7 @@ function DayBadge({ day, canEdit, onChangeDay }: {
   return (
     <button
       type="button"
+      className={className}
       onClick={() => { if (canEdit) { setVal(day?.toString() ?? ''); setEditing(true) } }}
       title={canEdit ? 'Editar o dia' : undefined}
       style={{
@@ -323,6 +325,10 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  // Hover não existe em touch — só esconde-e-revela em dispositivo com mouse
+  // de verdade. No mobile essas ações continuam sempre visíveis (lápis/
+  // estrela) ou são movidas pro painel "Mais" (pill de dia, ação rara).
+  const hoverCapable = useHoverCapable()
   const [expanded, setExpanded] = useState(!!autoOpenStay)
   const [editingNote, setEditingNote] = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -416,6 +422,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
   return (
     <div
       data-row-id={item.id}
+      className="itin-row"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={endTouch}
@@ -487,6 +494,18 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.name}
               </p>
+              {/* Abrir no Maps — perto do título (era um ícone quase invisível
+                  na fileira de baixo); dourado em vez de fg-soft pra ficar
+                  visível de relance. */}
+              {item.google_maps_url && (
+                <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
+                  onClick={e => e.stopPropagation()}
+                  style={{ flexShrink: 0, color: GOLD, display: 'flex', alignItems: 'center' }}>
+                  <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                  </svg>
+                </a>
+              )}
               {item.is_highlight && (
                 <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
               )}
@@ -531,7 +550,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
             lugar). Renomear é seguro: o KML usa as coordenadas pro pin, o
             nome é só rótulo. */}
         {canEdit && isPlace && (
-          <button type="button" title={tv.editName ?? 'Editar nome'}
+          <button type="button" title={tv.editName ?? 'Editar nome'} className="itin-hover-reveal"
             onClick={e => { e.stopPropagation(); setEditingName(true) }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, marginTop: 1, display: 'flex', color: 'var(--arvo-fg-faint)', flexShrink: 0 }}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -577,7 +596,12 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
               {(tv.dayRange ?? 'Dia {from} – {to}').replace('{from}', String(item.checkin_day)).replace('{to}', String(item.checkout_day))}
             </span>
           ) : (
-            <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+            // Trocar de dia é ação rara — em telas com hover fica escondido
+            // até passar o mouse sobre a linha; no mobile (sem hover) sai
+            // totalmente da linha principal e vai pro painel "Mais" abaixo.
+            hoverCapable && (
+              <DayBadge className="itin-hover-reveal" day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+            )
           )}
           {/* Pill de gasto — mesmo tamanho/formato do pill de dia, em vez do
               botão grande de antes (variava de tamanho com a contagem de
@@ -606,16 +630,8 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
             </button>
           )}
           {canEdit && isPlace && (
-            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'}
+            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'} className="itin-hover-reveal"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 14, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>★</button>
-          )}
-          {item.google_maps_url && (
-            <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
-              style={{ padding: 5, color: 'var(--arvo-fg-soft)', display: 'flex', alignItems: 'center' }}>
-              <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-              </svg>
-            </a>
           )}
           {canEdit && (isPlace || isTransport || isNote) && (
             <button type="button" onClick={() => setExpanded(v => !v)} title={tv.moreOptions ?? 'Mais opções'}
@@ -637,6 +653,15 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           check-in/check-out already cover the day/time question. */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Dia — só aqui dentro no mobile (sem hover disponível pra
+              esconder-e-revelar na linha principal); trocar de dia é ação
+              rara, então não precisa ficar sempre visível fora do "Mais". */}
+          {!hoverCapable && !isStay && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{tv.dayLabelShort ?? 'Dia'}</span>
+              <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+            </div>
+          )}
           {showDestinationPicker && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
               <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{tv.destinationLabel ?? 'Destino'}</span>
@@ -1165,20 +1190,23 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                     )}
                   </p>
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {items.filter(p => p.day_number === d && p.kind === 'place' && p.lat != null && p.lng != null).length > 1 && (
-                    <button type="button" onClick={() => openDayRoute(d)} title={tv.dayRouteTitle ?? 'Abrir roteiro deste dia no Google Maps'}
-                      style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
-                      <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <button type="button" onClick={() => openDayRoute(d)} title={tv.dayRouteShort ?? tv.dayRouteTitle ?? 'Roteiro no Maps'}
+                      style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 3, color: 'var(--arvo-fg-soft)' }}>
+                      <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
                       </svg>
-                      {tv.dayRouteShort ?? 'Roteiro no Maps'}
                     </button>
                   )}
                   {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
-                    <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
-                      {tv.sortByTime ?? 'Ordenar por horário'}
+                    <button type="button" onClick={() => sortDayByTime(d)} title={tv.sortByTime ?? 'Ordenar por horário'}
+                      style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 3, color: 'var(--arvo-fg-soft)' }}>
+                      {/* Ícone de ordenação (linhas decrescentes + seta) */}
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" d="M2 4h10M2 7h7M2 10h4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 8v4.5M9.3 11l1.7 1.7 1.7-1.7" />
+                      </svg>
                     </button>
                   )}
                 </span>

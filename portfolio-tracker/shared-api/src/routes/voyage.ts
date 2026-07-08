@@ -708,7 +708,7 @@ router.patch('/trips/:id', requireAuth, async (req, res: Response) => {
 
   const allowed = ['title', 'destination', 'country', 'cover_image_url', 'cover_image_position',
                    'start_date', 'end_date', 'summary', 'status', 'show_place_expenses',
-                   'dest_lat', 'dest_lng', 'photo_album_url']
+                   'dest_lat', 'dest_lng']
   const update: Record<string, unknown> = {}
   for (const k of allowed) if (k in req.body) update[k] = req.body[k] ?? null
 
@@ -2098,7 +2098,7 @@ router.patch('/trips/:id/share-visibility', requireAuth, async (req, res: Respon
 
 // Campos que os dois endpoints de leitura pública (por token e por trip id
 // gated) precisam da voyage_trips pra montar o payload.
-const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, community_visible, user_id, photo_album_url, share_hidden_category_ids, share_hidden_transaction_ids'
+const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, community_visible, user_id, share_hidden_category_ids, share_hidden_transaction_ids'
 
 interface PublicTripRow {
   id: number
@@ -2117,7 +2117,6 @@ interface PublicTripRow {
   share_expires_at: string | null
   community_visible: boolean
   user_id: string
-  photo_album_url: string | null
   share_hidden_category_ids: number[]
   share_hidden_transaction_ids: number[]
 }
@@ -2135,7 +2134,7 @@ async function buildPublicTripPayload(trip: PublicTripRow) {
     sharedPlacesOnly: true,
   }
 
-  const [placesRes, costRes, ownerRes, destinations, infoCards] = await Promise.all([
+  const [placesRes, costRes, ownerRes, ownerHandleRes, ownerProfileRes, destinations, infoCards] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
       .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day, destination_id')
       .eq('trip_id', trip.id)
@@ -2144,6 +2143,10 @@ async function buildPublicTripPayload(trip: PublicTripRow) {
       .order('sort_order'),
     !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id, shareFilter) : Promise.resolve(null),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
+    // @username e public_profile do dono — pro avatar/link inline no hero da
+    // página pública (só aparece se o dono tiver optado por perfil público).
+    supabaseAdmin.from('user_handles').select('username').eq('user_id', trip.user_id).maybeSingle(),
+    supabaseAdmin.from('profiles').select('public_profile').eq('id', trip.user_id).maybeSingle(),
     getDestinations(trip.id),
     getInfoCards(trip.id),
   ])
@@ -2155,15 +2158,22 @@ async function buildPublicTripPayload(trip: PublicTripRow) {
 
   const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
   const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
+  // public_profile default é true (mesma regra de community.ts/profile.ts:
+  // só false quando explicitamente desativado) — mas o avatar só aparece se
+  // também houver @username, senão não há pra onde linkar.
+  const ownerPublicProfile = (ownerProfileRes.data?.public_profile !== false) && !!ownerHandleRes.data?.username
 
   return {
     trip: {
       title: trip.title, destination: trip.destination, country: trip.country,
       cover_image_url: trip.cover_image_url, cover_image_position: trip.cover_image_position,
       start_date: trip.start_date, end_date: trip.end_date,
-      summary: trip.summary, status: trip.status, photo_album_url: trip.photo_album_url,
+      summary: trip.summary, status: trip.status,
     },
     owner_name: ownerName,
+    owner_username: ownerHandleRes.data?.username ?? null,
+    owner_avatar_url: ownerMeta.avatar_url ?? null,
+    owner_public_profile: ownerPublicProfile,
     places: publicPlaces,
     cost: costRes,
     destinations,

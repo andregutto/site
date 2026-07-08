@@ -38,7 +38,6 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
   const [startDate, setStartDate] = useState(trip.start_date ?? '')
   const [endDate, setEndDate] = useState(trip.end_date ?? '')
   const [summary, setSummary] = useState(trip.summary ?? '')
-  const [photoAlbumUrl, setPhotoAlbumUrl] = useState(trip.photo_album_url ?? '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -91,7 +90,6 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
         end_date: endDate || null,
         status: trip.status,
         summary: summary.trim() || null,
-        photo_album_url: photoAlbumUrl.trim() || null,
       }
       const result = await apiFetch<{ trip: Trip }>(`/voyage/trips/${trip.id}`, { method: 'PATCH', body: JSON.stringify(body) })
       onSaved(result.trip)
@@ -189,11 +187,6 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
       <label>
         <span style={labelStyle}>{tv.summaryLabel ?? 'Resumo'}</span>
         <textarea style={{ ...fieldStyle, resize: 'vertical', minHeight: 60 }} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Uma frase sobre a viagem..." />
-      </label>
-
-      <label>
-        <span style={labelStyle}>{tv.photoAlbumLabel ?? 'Álbum de fotos (opcional)'}</span>
-        <input type="url" style={fieldStyle} value={photoAlbumUrl} onChange={e => setPhotoAlbumUrl(e.target.value)} placeholder={tv.photoAlbumPlaceholder ?? 'Link de álbum compartilhado'} />
       </label>
 
       {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>{error}</p>}

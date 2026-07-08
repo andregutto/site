@@ -9,10 +9,12 @@ import LanguageSelector from '../../components/LanguageSelector'
 import ArvoLoader from '../../components/ArvoLoader'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import TripInfoCardsPanel, { type InfoCardData } from './TripInfoCardsPanel'
-import OpeningHoursBlock from './_shared/OpeningHours'
 import CurrentLocationMarker from './_shared/CurrentLocationMarker'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
 import { openDirections } from './_shared/googleMapsRoute'
+import ProfileLink from '../../components/ProfileLink'
+import Avatar from './_shared/Avatar'
+import PlacePopup from './_shared/PlacePopup'
 
 function intlLocaleFor(locale: string) {
   return locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
@@ -64,7 +66,6 @@ interface PublicTrip {
   end_date: string | null
   summary: string | null
   status: string
-  photo_album_url: string | null
 }
 
 interface PublicCost {
@@ -76,6 +77,12 @@ interface PublicCost {
 export interface PageData {
   trip: PublicTrip
   owner_name: string
+  // @username/avatar/consentimento de perfil público do dono — usados pro
+  // avatar clicável inline no "Roteiro de {name}" do hero. Sem username ou
+  // com public_profile=false, o nome aparece em texto puro (sem link).
+  owner_username?: string | null
+  owner_avatar_url?: string | null
+  owner_public_profile?: boolean
   places: PublicPlace[]
   cost: PublicCost | null
   destinations?: { id: number; city: string | null; country: string | null }[]
@@ -432,6 +439,10 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
   const hasUndated = places.some(p => p.day_number == null)
   const placeCount = places.filter(p => (p.kind ?? 'place') === 'place').length
   const dayCount = days.length > 0 ? days.length : tripDurationDays(trip.start_date, trip.end_date)
+  // KML/Maps actions — usados na barra compacta de ícones acima do mapa.
+  const mapDests = (data.destinations ?? []).filter(d => d.city || d.country)
+  const mapsQuery = (s: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s)}`
+  const destText = (d: { city: string | null; country: string | null }) => [d.city, d.country].filter(Boolean).join(', ')
 
   function staysOnDay(d: number) {
     return places.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
@@ -494,33 +505,49 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
               {(() => {
                 const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
-                return <>{pre}<strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>{post}</>
+                // Avatar pequeno inline antes do nome do dono — só quando ele
+                // tiver optado por perfil público e tiver @username (senão
+                // não há pra onde linkar, e fica só o nome em texto puro).
+                const showOwnerLink = data.owner_public_profile && !!data.owner_username
+                return (
+                  <>
+                    {pre}
+                    {showOwnerLink ? (
+                      <ProfileLink username={data.owner_username} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <Avatar name={owner_name} avatarUrl={data.owner_avatar_url ?? undefined} size={20} />
+                        <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+                      </ProfileLink>
+                    ) : (
+                      <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+                    )}
+                    {post}
+                  </>
+                )
               })()}
             </p>
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 10 }}>
               {trip.title}
             </h1>
-            <div className="flex flex-col" style={{ gap: 6 }}>
+            {/* Destino e data na mesma linha, data alinhada à direita */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               {(() => {
                 const dests = data.destinations ?? []
                 const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
                 const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
                 const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
-                if (!mobileLabel) return null
+                if (!mobileLabel) return <span />
                 return (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.68)' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     <span className="sm:hidden">{mobileLabel}</span>
                     <span className="hidden sm:inline">{desktopLabel}</span>
                   </span>
                 )
               })()}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}
@@ -535,7 +562,7 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
         <div style={{
           marginTop: -28, marginBottom: 28, position: 'relative', zIndex: 2, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto',
           background: 'var(--arvo-surface)', borderRadius: 16, border: '1px solid var(--arvo-border)',
-          boxShadow: 'var(--arvo-shadow-lg)', padding: '18px 8px',
+          boxShadow: 'var(--arvo-shadow-lg)', padding: '14px 8px',
           display: 'flex', alignItems: 'stretch', justifyContent: 'space-around',
         }}>
           {dayCount != null && (
@@ -557,136 +584,14 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
           </p>
         )}
 
-        {/* Informações úteis — mesma seção expansível da página interna,
-            só com os cards compartilhados e sem controles de edição. */}
+        {/* Complementos — mesma seção da página interna, largura do bloco de
+            conteúdo principal (roteiro+mapa), só com os cards compartilhados
+            e sem controles de edição. */}
         {(data.info_cards?.length ?? 0) > 0 && (
-          <div style={{ maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+          <div style={{ marginBottom: 16 }}>
             <TripInfoCardsPanel cards={data.info_cards!} />
           </div>
         )}
-
-        {/* Álbum de fotos — card dedicado, mesmo conteúdo da página interna */}
-        {trip.photo_album_url && (
-          <a
-            href={trip.photo_album_url} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', marginTop: 16, marginBottom: 16, borderRadius: 12, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)', textDecoration: 'none', maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}
-          >
-            <span style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(200,184,154,0.14)', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#C8B89A" strokeWidth="1.5">
-                <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
-                <circle cx="7" cy="8" r="1.5" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 14l4-3.5 3.5 3 3-2.5 3.5 3" />
-              </svg>
-            </span>
-            <span style={{ flex: 1 }}>
-              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>
-                {tv.public?.photoAlbumTitle ?? 'Álbum de fotos compartilhado'}
-              </span>
-              <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
-                {tv.public?.photoAlbum ?? 'Ver mais fotos →'}
-              </span>
-            </span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 3h7v7M13 3L6.5 9.5M11 9.5V13H3V5h3.5" />
-            </svg>
-          </a>
-        )}
-
-        {/* Download + import actions — uma linha limpa: KML (primário),
-            Maps (dropdown quando há vários destinos) e um "?" de ajuda. */}
-        {withCoords.length > 0 && (() => {
-          const dests = (data.destinations ?? []).filter(d => d.city || d.country)
-          const mapsQuery = (s: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s)}`
-          const destText = (d: { city: string | null; country: string | null }) => [d.city, d.country].filter(Boolean).join(', ')
-          return (
-          <div style={{ marginBottom: 32, marginTop: 16 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              {kmlUrl && (
-                <a
-                  href={kmlUrl}
-                  download
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.02em' }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
-                  </svg>
-                  {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
-                </a>
-              )}
-
-              {/* Maps: 0/1 destino → link direto; vários → dropdown por destino */}
-              {dests.length > 1 ? (
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button" onClick={() => setShowMapsMenu(v => !v)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-                    </svg>
-                    {tv.public?.openDestinationMulti ?? 'Open in Maps'}
-                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4l2.5 2.5L7.5 4" /></svg>
-                  </button>
-                  {showMapsMenu && (
-                    <>
-                      <div onClick={() => setShowMapsMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, boxShadow: 'var(--arvo-shadow-lg)', overflow: 'hidden', minWidth: 180 }}>
-                        {dests.map(d => (
-                          <a key={d.id} href={mapsQuery(destText(d))} target="_blank" rel="noopener noreferrer"
-                            onClick={() => setShowMapsMenu(false)}
-                            style={{ display: 'block', padding: '8px 14px', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
-                            {destText(d)}
-                          </a>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <a
-                  href={mapsQuery(dests[0] ? destText(dests[0]) : `${trip.destination ?? ''} ${trip.country ?? ''}`)}
-                  target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-                  </svg>
-                  {tv.public?.openDestination ?? 'Open destination in Maps'}
-                </a>
-              )}
-
-              {/* Ajuda KML — botão "?" redondo e discreto */}
-              <button
-                type="button" onClick={() => setShowKmlHelp(v => !v)}
-                title={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
-                aria-label={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
-                style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: showKmlHelp ? 'var(--arvo-hover-bg)' : 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 14 }}
-              >
-                ?
-              </button>
-            </div>
-
-            {/* Passo a passo do KML — aparece ao clicar no "?" */}
-            {withCoords.length > 0 && (
-              <div style={{ textAlign: 'center', marginTop: 10 }}>
-                {showKmlHelp && (
-                  <ol style={{
-                    textAlign: 'left', maxWidth: 420, margin: '10px auto 0', padding: '14px 18px 14px 34px',
-                    borderRadius: 12, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
-                    fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)', lineHeight: 1.7,
-                  }}>
-                    <li>{tv.public?.kmlStep1 ?? 'Baixe o arquivo KML pelo botão acima.'}</li>
-                    <li>{tv.public?.kmlStep2 ?? 'Abra google.com/maps no computador e entre na sua conta Google.'}</li>
-                    <li>{tv.public?.kmlStep3 ?? 'Vá em Seus lugares → Mapas → Criar um mapa.'}</li>
-                    <li>{tv.public?.kmlStep4 ?? 'Clique em Importar e selecione o arquivo KML baixado.'}</li>
-                    <li>{tv.public?.kmlStep5 ?? 'Os lugares aparecem no seu mapa e ficam salvos para abrir no app do celular.'}</li>
-                  </ol>
-                )}
-              </div>
-            )}
-          </div>
-          )
-        })()}
 
         {/* Roteiro (lista, esquerda 40%) + mapa (direita 60%, sticky) — mesma
             estrutura map-forward da página privada. Filtro de dia compartilhado
@@ -738,8 +643,91 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
               </div>
 
               {withCoords.length > 0 && (
-                <div className="order-1 lg:order-2 h-[440px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
-                  <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: '100%', isolation: 'isolate' }}>
+                <div className="order-1 lg:order-2 h-[480px] lg:sticky lg:top-4 lg:h-[calc(100vh-110px)] lg:max-h-[800px]" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* Linha fina de ícones (KML, Maps, ajuda) — antes ficava
+                      como bloco de texto no fim da página; agora é compacta
+                      e fica acima do mapa, no topo da coluna. */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    {kmlUrl && (
+                      <a
+                        href={kmlUrl}
+                        download
+                        title={tv.public?.downloadKml ?? 'Download KML for Google Maps'}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 999, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', flexShrink: 0 }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
+                        </svg>
+                      </a>
+                    )}
+
+                    {/* Maps: 0/1 destino → link direto; vários → dropdown por destino */}
+                    {mapDests.length > 1 ? (
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          type="button" onClick={() => setShowMapsMenu(v => !v)}
+                          title={tv.public?.openDestinationMulti ?? 'Open in Maps'}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 999, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', flexShrink: 0 }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                          </svg>
+                        </button>
+                        {showMapsMenu && (
+                          <>
+                            <div onClick={() => setShowMapsMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, boxShadow: 'var(--arvo-shadow-lg)', overflow: 'hidden', minWidth: 180 }}>
+                              {mapDests.map(d => (
+                                <a key={d.id} href={mapsQuery(destText(d))} target="_blank" rel="noopener noreferrer"
+                                  onClick={() => setShowMapsMenu(false)}
+                                  style={{ display: 'block', padding: '8px 14px', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
+                                  {destText(d)}
+                                </a>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <a
+                        href={mapsQuery(mapDests[0] ? destText(mapDests[0]) : `${trip.destination ?? ''} ${trip.country ?? ''}`)}
+                        target="_blank" rel="noopener noreferrer"
+                        title={tv.public?.openDestination ?? 'Open destination in Maps'}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 999, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', flexShrink: 0 }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                        </svg>
+                      </a>
+                    )}
+
+                    {/* Ajuda KML — botão "?" redondo e discreto */}
+                    <button
+                      type="button" onClick={() => setShowKmlHelp(v => !v)}
+                      title={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
+                      aria-label={tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?'}
+                      style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: showKmlHelp ? 'var(--arvo-hover-bg)' : 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}
+                    >
+                      ?
+                    </button>
+                  </div>
+
+                  {/* Passo a passo do KML — aparece ao clicar no "?" */}
+                  {showKmlHelp && (
+                    <ol style={{
+                      flexShrink: 0, padding: '12px 16px 12px 30px',
+                      borderRadius: 12, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', lineHeight: 1.6,
+                    }}>
+                      <li>{tv.public?.kmlStep1 ?? 'Baixe o arquivo KML pelo botão acima.'}</li>
+                      <li>{tv.public?.kmlStep2 ?? 'Abra google.com/maps no computador e entre na sua conta Google.'}</li>
+                      <li>{tv.public?.kmlStep3 ?? 'Vá em Seus lugares → Mapas → Criar um mapa.'}</li>
+                      <li>{tv.public?.kmlStep4 ?? 'Clique em Importar e selecione o arquivo KML baixado.'}</li>
+                      <li>{tv.public?.kmlStep5 ?? 'Os lugares aparecem no seu mapa e ficam salvos para abrir no app do celular.'}</li>
+                    </ol>
+                  )}
+
+                  <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', flex: 1, minHeight: 0, isolation: 'isolate' }}>
                     {visibleCoords.length === 0 ? (
                       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
                     ) : (
@@ -773,31 +761,16 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
                             ref={m => { if (m) markerRefs.current[p.id] = m }}
                             eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
                           >
-                            <Popup closeButton={false} maxHeight={220} autoPanPadding={[16, 16]}>
-                              <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
-                                  style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 14 }}
-                                >✕</button>
-                                {p.day_number != null && (
-                                  <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
-                                    {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}
-                                  </span>
-                                )}
-                                <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{p.name}</p>
-                                {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
-                                {p.address && <p style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{p.address}</p>}
-                                <OpeningHoursBlock hours={p.opening_hours} />
-                                {(p.expense_total ?? 0) > 0 && (
-                                  <p style={{ fontSize: 12, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
-                                )}
-                                {p.google_maps_url && (
-                                  <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#555', textDecoration: 'none' }}>
-                                    {tv.public?.openInMaps ?? 'Open in Maps →'}
-                                  </a>
-                                )}
-                              </div>
+                            <Popup closeButton={false} maxHeight={180} autoPanPadding={[16, 16]}>
+                              <PlacePopup
+                                place={p}
+                                dayLabel={d => (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(d))}
+                                categoryLabel={cat => categoryLabel(cat, tv) ?? cat}
+                                spentLabel={tv.public?.expenseHere ?? 'Spent here:'}
+                                openInMapsLabel={tv.public?.openInMaps ?? 'Open in Maps →'}
+                                formatCurrency={n => fmtCurrency(n, 'EUR', intlLocale)}
+                                onClose={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
+                              />
                             </Popup>
                           </Marker>
                         ))}
