@@ -636,7 +636,7 @@ export default function PerformancePage() {
                               {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '-'}
                             </td>
                             <td className="px-4 py-3 text-right arvo-num text-xs font-medium text-green-600">
-                              {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '-' })()}
+                              {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(v)}` : '-' })()}
                             </td>
                             <td className={`px-4 py-3 text-right arvo-num font-medium ${
                               gain == null ? 'text-[var(--arvo-fg-soft)]' :
@@ -718,7 +718,7 @@ export default function PerformancePage() {
                                             <td className="py-1.5 text-right arvo-num text-xs font-medium text-green-600">
                                               {(() => {
                                                 const v = divByMonthAsset.get(m.month)?.get(d.asset_id)
-                                                return v ? `+${fmt(convert(v))}` : '-'
+                                                return v ? `+${fmt(v)}` : '-'
                                               })()}
                                             </td>
                                             <td className={`py-1.5 text-right arvo-num font-medium ${!hasGainData ? 'text-[var(--arvo-fg-faint)]' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>

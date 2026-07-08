@@ -54,7 +54,7 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
               <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--arvo-border)' }}>
                 <div className="h-full rounded-full" style={{ background: 'var(--arvo-green)', width: `${Math.min(100, (a.total_brl / divSummary.by_asset[0].total_brl) * 100)}%` }} />
               </div>
-              <span className="text-xs w-16 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>{fmt(convert(a.total_brl))}</span>
+              <span className="text-xs w-16 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>{fmt(a.total_brl)}</span>
             </div>
           </div>
         ))}
@@ -78,7 +78,7 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
             <div className="flex items-start gap-4">
               <div className="flex-1">
                 <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
+                <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(divSummary.total_brl)}</p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
               </div>
               {yieldPct != null && (
@@ -95,7 +95,7 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
           <div className="flex flex-wrap gap-4 items-start">
             <div className="shrink-0">
               <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
-              <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
+              <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(divSummary.total_brl)}</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
             </div>
             {yieldPct != null && (

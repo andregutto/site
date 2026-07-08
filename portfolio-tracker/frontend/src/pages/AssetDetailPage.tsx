@@ -1243,7 +1243,7 @@ export default function AssetDetailPage() {
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
-                              {totalBrlVal != null ? fmt(convert(totalBrlVal)) : '-'}
+                              {totalBrlVal != null ? fmt(totalBrlVal) : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               {profitBrl != null ? (
@@ -1292,7 +1292,7 @@ export default function AssetDetailPage() {
                             <div className="text-xs text-[var(--arvo-fg-muted)] mt-1">{fmtDate(c.date, intlLocale)}</div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="font-medium text-sm text-[var(--arvo-fg)]">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '-'}</div>
+                            <div className="font-medium text-sm text-[var(--arvo-fg)]">{totalBrlVal != null ? fmt(totalBrlVal) : '-'}</div>
                             {profitBrl != null && (
                               <div>
                                 <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
@@ -1329,7 +1329,7 @@ export default function AssetDetailPage() {
             </h2>
             {assetDividends.length > 0 && (
               <span className="text-sm font-bold text-green-600">
-                {fmt(convert(assetDividends.reduce((s, r) => s + (r.amount_brl ?? 0), 0)))}
+                {fmt(assetDividends.reduce((s, r) => s + (r.amount_brl ?? 0), 0))}
               </span>
             )}
           </div>
@@ -1368,7 +1368,7 @@ export default function AssetDetailPage() {
                           {div.currency} {fmtNum(div.amount_per_share, 6, intlLocale)}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-green-600">
-                          {fmt(convert(div.amount_brl ?? 0))}
+                          {fmt(div.amount_brl ?? 0)}
                         </td>
                       </tr>
                     ))}
@@ -1385,7 +1385,7 @@ export default function AssetDetailPage() {
                          div.dividend_type === 'rendimento' ? (td.typeRendimento ?? 'Rendimento') :
                          (td.typeDividend ?? 'Dividendo')}
                       </span>
-                      <span className="font-bold text-green-600">{fmt(convert(div.amount_brl ?? 0))}</span>
+                      <span className="font-bold text-green-600">{fmt(div.amount_brl ?? 0)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-[var(--arvo-fg-muted)]">
                       <span>EX: {fmtDate(div.ex_date, intlLocale)}</span>
