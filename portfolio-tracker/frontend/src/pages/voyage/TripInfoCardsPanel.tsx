@@ -16,6 +16,7 @@ import CategoryIcon, { ICON_KEYS } from '../community/_shared/CategoryIcon'
 //   (o payload público já vem filtrado do servidor).
 
 const GOLD = '#C8B89A'
+const RED = '#D63B2F'
 const EASE = 'cubic-bezier(0.35, 0, 0.65, 1)' // curva quase linear padrão do app (~280ms)
 
 export interface InfoCardData {
@@ -124,6 +125,21 @@ export function EyeIcon({ size = 13 }: { size?: number }) {
       <path d="M1.7 10S4.5 4.7 10 4.7 18.3 10 18.3 10 15.5 15.3 10 15.3 1.7 10 1.7 10z" />
       <circle cx="10" cy="10" r="2.5" />
     </svg>
+  )
+}
+
+// Pill de tipo do card — mesmo estilo visual da pill de tier usada em
+// Recursos (fundo bege claro, texto dourado, uppercase pequeno). Fica no
+// canto superior direito do card, dando contexto que o ícone sozinho não dá.
+function KindPill({ kind, ic }: { kind: string; ic: any }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.10em', textTransform: 'uppercase',
+      color: GOLD, background: 'rgba(200,184,154,0.14)', padding: '2px 7px', borderRadius: 999,
+      flexShrink: 0, whiteSpace: 'nowrap',
+    }}>
+      {kindLabel(kind, ic)}
+    </span>
   )
 }
 
@@ -392,16 +408,26 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
   // Layout horizontal (ícone à esquerda, conteúdo à direita) — mesma lógica
   // do CoverCard da Home, só que sem imagem de capa: compacto, sem precisar
   // da altura de uma foto.
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const ic = tv.infoCards ?? {}
   return (
     <div
       style={{
-        position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12,
+        position: 'relative', display: 'flex', alignItems: 'center', gap: 12,
         padding: '13px 14px', borderRadius: 12, background: 'var(--arvo-hover-bg)',
         border: '1px solid var(--arvo-border-soft)', cursor: canEdit ? 'pointer' : 'default',
         transition: `border-color 280ms ${EASE}`, minHeight: 0,
       }}
       onClick={canEdit ? onEdit : undefined}
     >
+      {/* Pill de tipo — canto superior direito do card. Quando o dono pode
+          editar, o X de excluir já ocupa esse canto exato, então a pill
+          desloca um pouco pra esquerda pra não sobrepor. */}
+      <div style={{ position: 'absolute', top: 8, right: canEdit ? 30 : 8 }}>
+        <KindPill kind={c.kind} ic={ic} />
+      </div>
+
       {canEdit && (
         <button
           type="button"
@@ -426,13 +452,13 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
       </span>
 
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingRight: canEdit ? 16 : 0 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{c.title}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingRight: 60 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 500, color: 'var(--arvo-fg)' }}>{c.title}</p>
           {canEdit && c.shared === false && <HiddenFromShareBadge label={hiddenLabel} />}
         </div>
         {c.body && (
           <p style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 3,
+            fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 3,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{c.body}</p>
         )}
@@ -506,33 +532,41 @@ export default function TripInfoCardsPanel({ tripId, cards, isOwner = false, onC
           {ic.title ?? 'Complementos'}
         </p>
         {canEdit && (
+          // Mesmo padrão sólido do "+" usado em VoyageTripsPage e
+          // CommunityHomePage — círculo 32×32 na cor de destaque da
+          // vertical, em vez do outline discreto de antes.
           <button
             type="button" onClick={() => setEditing('new')}
             title={ic.add ?? 'Adicionar'}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 22, height: 22, borderRadius: 999, flexShrink: 0,
-              background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer',
+              width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, lineHeight: 1, borderRadius: 999,
+              background: RED, color: '#fff', border: 'none', cursor: 'pointer',
+              transition: 'all 160ms ease', flexShrink: 0,
             }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
-            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M7 1.5v11M1.5 7h11" />
-            </svg>
+            +
           </button>
         )}
       </div>
 
       {cards.length === 0 && canEdit ? null : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        // Flex-wrap em vez de grid — com poucos cards (1-2), colunas de grid
+        // vazias do lado ficavam esquisitas; com flex-wrap cada card ocupa
+        // uma largura confortável e o resto do espaço só fica livre.
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           {cards.map(c => (
-            <InfoCard
-              key={c.id}
-              card={c}
-              canEdit={canEdit}
-              hiddenLabel={hiddenLabel}
-              onEdit={() => setEditing(c)}
-              onDelete={() => handleDelete(c)}
-            />
+            <div key={c.id} style={{ flex: '1 1 300px', maxWidth: 420 }}>
+              <InfoCard
+                card={c}
+                canEdit={canEdit}
+                hiddenLabel={hiddenLabel}
+                onEdit={() => setEditing(c)}
+                onDelete={() => handleDelete(c)}
+              />
+            </div>
           ))}
         </div>
       )}

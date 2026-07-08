@@ -279,7 +279,12 @@ export default function VoyageTripDetailPage() {
             <div style={{ position: 'absolute', inset: 0, background: '#0D0D0D' }} />
           )}
           {!trip.cover_image_url && (
-            <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 7 }}>
+            // Logo/wordmark fica ao lado do stack de colaboradores (mesma
+            // linha), não empilhado acima — empilhado colidia com o eyebrow
+            // "ARVO VOYAGE" ancorado no rodapé em heros mais baixos (lg:h-44).
+            // Ficando na mesma linha horizontal do topo, a colisão não
+            // depende mais da altura do hero.
+            <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 7, pointerEvents: 'none' }}>
               <img src="/brand/logo/arvo-symbol-gold.svg" width="17" height="18" alt="" />
               <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.26em', textIndent: '0.26em', color: 'rgba(246,243,236,0.45)' }}>arvo</span>
             </div>
@@ -335,15 +340,23 @@ export default function VoyageTripDetailPage() {
             )}
           </div>
 
-          {/* Collaborators — avatar stack + invite trigger, canto inferior direito (livre, sem disputar espaço com o título) */}
-          <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
+          {/* Collaborators — avatar stack + invite trigger, canto superior
+              esquerdo. Antes ficava no canto inferior direito, mas com
+              destino+data ocupando a linha inteira do rodapé (space-between)
+              a data colidia visualmente com esse controle — movido pra cima
+              deixa o rodapé do hero só com texto. Quando não há foto de capa,
+              o logo/wordmark "arvo" também fica nesse canto — em vez de
+              empilhar (colidia com o eyebrow do título em heros baixos),
+              o stack desloca à direita do logo, na mesma linha. */}
+          <div style={{ position: 'absolute', top: 16, left: trip.cover_image_url ? 16 : 84 }}>
             <CollaboratorsHero tripId={Number(id)} onOpen={() => setShowMembers(true)} />
           </div>
 
           {/* Title overlay — pointerEvents:none porque a div cobre a faixa
-              inferior inteira (right:0) e, mesmo vazia visualmente do lado
-              direito, estava interceptando o clique no botão de
-              colaboradores que fica por cima dela no canto inferior direito. */}
+              inferior inteira e, mesmo vazia visualmente, interceptava
+              cliques em controles por cima dela. Agora que nenhum controle
+              fica mais no rodapé (colaboradores e status subiram pro topo),
+              isso é só uma garantia extra. */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px 22px', pointerEvents: 'none' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.7)', marginBottom: 6 }}>
               ARVO VOYAGE
@@ -355,12 +368,12 @@ export default function VoyageTripDetailPage() {
                 em vez de empilhados, o que desperdiçava altura do hero. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
                 </span>
               )}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}

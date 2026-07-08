@@ -283,7 +283,7 @@ function PlaceCard({ p, selected, onSelect }: { p: PublicPlace; selected?: boole
       <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{itemIcon(p)}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', fontWeight: 500 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: 'var(--arvo-fg)', fontWeight: 500 }}>
             {p.name}
           </p>
           {p.is_highlight && (
@@ -505,53 +505,69 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
-              {(() => {
-                const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
-                // Avatar pequeno inline antes do nome do dono — só quando ele
-                // tiver optado por perfil público e tiver @username (senão
-                // não há pra onde linkar, e fica só o nome em texto puro).
-                const showOwnerLink = data.owner_public_profile && !!data.owner_username
-                return (
-                  <>
-                    {pre}
-                    {showOwnerLink ? (
-                      <ProfileLink username={data.owner_username} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        <Avatar name={owner_name} avatarUrl={data.owner_avatar_url ?? undefined} size={20} />
-                        <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
-                      </ProfileLink>
-                    ) : (
-                      <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
-                    )}
-                    {post}
-                  </>
-                )
-              })()}
-            </p>
-            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 10 }}>
-              {trip.title}
-            </h1>
-            {/* Destino e data na mesma linha, data alinhada à direita */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              {(() => {
-                const dests = data.destinations ?? []
-                const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
-                const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
-                const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
-                if (!mobileLabel) return <span />
-                return (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <span className="sm:hidden">{mobileLabel}</span>
-                    <span className="hidden sm:inline">{desktopLabel}</span>
-                  </span>
-                )
-              })()}
+            {/* Linha de assinatura — avatar (se houver) ANTES do texto "Roteiro
+                de {Nome}", com a data alinhada à direita na mesma linha. No
+                mobile, se o nome for longo, a data desce pra uma segunda
+                linha (flex-wrap) em vez de espremer/cortar — só a partir de
+                sm: é que garantimos a mesma linha com justify-content. */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center sm:justify-between" style={{ gap: '4px 10px', marginBottom: 8 }}>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', minWidth: 0, flex: '1 1 auto' }}>
+                {(() => {
+                  const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
+                  // Avatar pequeno inline antes do nome do dono — só quando ele
+                  // tiver optado por perfil público e tiver @username (senão
+                  // não há pra onde linkar, e fica só o nome em texto puro).
+                  const showOwnerLink = data.owner_public_profile && !!data.owner_username
+                  return (
+                    <>
+                      {showOwnerLink && (
+                        <ProfileLink username={data.owner_username} style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                          <Avatar name={owner_name} avatarUrl={data.owner_avatar_url ?? undefined} size={20} />
+                        </ProfileLink>
+                      )}
+                      {/* No mobile o texto pode quebrar linha (sem nowrap/ellipsis)
+                          — nome muito longo empurra a data pra baixo em vez de
+                          truncar ou espremer. A partir de sm: (mesma linha
+                          garantida pelo container acima) volta a truncar com
+                          ellipsis, já que ali sempre há espaço reservado. */}
+                      <span className="sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap" style={{ minWidth: 0 }}>
+                        {pre}
+                        {showOwnerLink ? (
+                          <ProfileLink username={data.owner_username} style={{ display: 'inline' }}>
+                            <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+                          </ProfileLink>
+                        ) : (
+                          <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+                        )}
+                        {post}
+                      </span>
+                    </>
+                  )
+                })()}
+              </p>
               {dateStr && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}
             </div>
+            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 6 }}>
+              {trip.title}
+            </h1>
+            {/* Destino sozinho — não compartilha mais linha com a data */}
+            {(() => {
+              const dests = data.destinations ?? []
+              const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
+              const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
+              const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
+              if (!mobileLabel) return null
+              return (
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="sm:hidden">{mobileLabel}</span>
+                  <span className="hidden sm:inline">{desktopLabel}</span>
+                </p>
+              )
+            })()}
           </div>
         </div>
       </div>
@@ -646,8 +662,9 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
                 <div className="order-1 lg:order-2 h-[480px] lg:sticky lg:top-4 lg:h-[calc(100vh-110px)] lg:max-h-[800px]" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {/* Linha fina de ícones (KML, Maps, ajuda) — antes ficava
                       como bloco de texto no fim da página; agora é compacta
-                      e fica acima do mapa, no topo da coluna. */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      e fica acima do mapa, no topo da coluna, alinhada à
+                      direita (mesmo lado onde o mapa "termina" visualmente). */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, flexShrink: 0 }}>
                     {kmlUrl && (
                       <a
                         href={kmlUrl}

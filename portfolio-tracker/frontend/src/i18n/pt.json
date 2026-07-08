@@ -2377,7 +2377,7 @@
     },
     "partialShare": {
       "visibleInShare": "Visível no compartilhamento",
-      "hiddenBadge": "oculto no compartilhamento",
+      "hiddenBadge": "Oculto",
       "hideFromShareTitle": "Ocultar do compartilhamento",
       "showInShareTitle": "Mostrar no compartilhamento"
     },

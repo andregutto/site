@@ -491,7 +491,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
                 {item.name}
               </p>
               {/* Abrir no Maps — perto do título (era um ícone quase invisível
@@ -506,21 +506,32 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
                   </svg>
                 </a>
               )}
-              {item.is_highlight && (
-                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
-              )}
               {isStay && (
                 <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, flexShrink: 0 }}>
                   {itemIcon(item)} {item.checkout_day! - item.checkin_day! + 1} dias
                 </span>
               )}
-              {isOwner && item.shared === false && (
-                <HiddenFromShareBadge label={tv.partialShare?.hiddenBadge ?? 'oculto no compartilhamento'} />
-              )}
+              {/* Cluster de indicadores de estado — destaque (estrela, agora
+                  clicável e sem texto "destaque" ao lado) + "Oculto", ambos
+                  empurrados pro extremo direito da linha do título, em vez de
+                  espalhados/duplicados com a fileira de ações debaixo. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
+                {canEdit && isPlace && (
+                  <button type="button" onClick={e => { e.stopPropagation(); onPatch({ is_highlight: !item.is_highlight }) }}
+                    title={tv.highlightTitle ?? 'Destaque'}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', fontSize: 13, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-faint)' }}>★</button>
+                )}
+                {!canEdit && item.is_highlight && (
+                  <span style={{ fontSize: 13, lineHeight: 1, color: RED }}>★</span>
+                )}
+                {isOwner && item.shared === false && (
+                  <HiddenFromShareBadge label={tv.partialShare?.hiddenBadge ?? 'Oculto'} />
+                )}
+              </div>
             </div>
           )}
           {item.address && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
           {/* Time summary — for transport items the icon+title already say the
               mode, so only the times are shown here to avoid repeating it */}
@@ -614,11 +625,12 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           )}
           {/* Quando já há despesa vinculada, o link com o valor (abaixo do
               nome) já cobre essa ação — aqui fica só o ícone, consistente
-              com os outros botões da linha. Sem despesa ainda, é a única
-              entrada para essa ação, então ganha um rótulo de texto pra
-              não ficar um ícone solto e ambíguo. */}
+              com os outros botões da linha. Sem despesa ainda, é informação
+              vazia (não há valor pra mostrar), então some por trás do
+              hover-reveal como as demais ações raras — só o pill de valor
+              já vinculado (acima) fica sempre visível. */}
           {canEdit && !hasExpenses && (
-            <button type="button" onClick={() => setShowExpenses(true)} title={tv.linkExpenseShort ?? 'Vincular gasto'}
+            <button type="button" onClick={() => setShowExpenses(true)} title={tv.linkExpenseShort ?? 'Vincular gasto'} className="itin-hover-reveal"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
               $
             </button>
@@ -628,10 +640,6 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
               $
             </button>
-          )}
-          {canEdit && isPlace && (
-            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'} className="itin-hover-reveal"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 14, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>★</button>
           )}
           {canEdit && (isPlace || isTransport || isNote) && (
             <button type="button" onClick={() => setExpanded(v => !v)} title={tv.moreOptions ?? 'Mais opções'}
