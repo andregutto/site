@@ -137,11 +137,6 @@ export default function ResourceDetailPage() {
         {r.title} <span style={{ opacity: 0.5 }}>/</span> <span style={{ color: 'var(--arvo-fg)' }}>{resource.title}</span>
       </button>
 
-      {/* Título grande em serifa, centralizado, fora do card (referência Epic) */}
-      <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(26px, 4vw, 36px)', color: 'var(--arvo-fg)', margin: '4px 0 0', lineHeight: 1.18, textAlign: 'center' }}>
-        {resource.title}
-      </h1>
-
       <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, overflow: 'hidden' }}>
         {/* Imagem autoral com gradiente na base fundindo na superfície do
             card — a foto "escorre" pro painel de ação, sem borda seca. */}
@@ -155,6 +150,20 @@ export default function ResourceDetailPage() {
         </div>
 
         <div style={{ padding: '4px 24px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Título embaixo da imagem (preferência do André sobre o título
+              centralizado acima do card da referência Epic) */}
+          <div>
+            <span style={{
+              display: 'inline-block', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.10em', textTransform: 'uppercase',
+              color: 'var(--arvo-gold-text, #8C6A28)', background: 'var(--arvo-beige, #F1EDE5)', padding: '4px 12px', borderRadius: 999, marginBottom: 10,
+            }}>
+              {tierLabel}
+            </span>
+            <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
+              {resource.title}
+            </h1>
+          </div>
+
           {/* Card de ação: ícone do tipo + destino visível + botão pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--arvo-beige, #F1EDE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-gold-text, #8C6A28)', flexShrink: 0 }}>
