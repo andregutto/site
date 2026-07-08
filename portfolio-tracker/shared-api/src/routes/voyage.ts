@@ -375,6 +375,7 @@ interface TripInfoCard {
   url: string | null
   shared: boolean
   sort_order: number
+  icon_key: string | null
 }
 
 async function getInfoCards(tripId: number): Promise<TripInfoCard[]> {
@@ -398,8 +399,8 @@ router.post('/trips/:id/info-cards', requireAuth, async (req, res: Response) => 
   const tripId = Number(req.params.id)
   if (!(await requireTripOwner(tripId, uid(req), res))) return
 
-  const { kind, title, body, phone, url, shared } = req.body as {
-    kind?: string; title?: string; body?: string; phone?: string; url?: string; shared?: boolean
+  const { kind, title, body, phone, url, shared, icon_key } = req.body as {
+    kind?: string; title?: string; body?: string; phone?: string; url?: string; shared?: boolean; icon_key?: string | null
   }
   if (!title?.trim()) { res.status(400).json({ error: 'Título obrigatório' }); return }
 
@@ -415,6 +416,8 @@ router.post('/trips/:id/info-cards', requireAuth, async (req, res: Response) => 
     url: url?.trim().slice(0, 500) || null,
     shared: shared ?? true,
     sort_order: count ?? 0,
+    // Só faz sentido pro tipo livre; o cliente decide e manda null nos pré-definidos
+    icon_key: icon_key?.trim().slice(0, 40) || null,
   }).select('*').single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.status(201).json({ card: data })
@@ -439,6 +442,10 @@ router.patch('/trips/:id/info-cards/:cardId', requireAuth, async (req, res: Resp
   if ('url'    in b) update.url    = String(b.url ?? '').trim().slice(0, 500) || null
   if ('shared' in b) update.shared = !!b.shared
   if ('sort_order' in b) update.sort_order = Number(b.sort_order) || 0
+  // icon_key só faz sentido pro tipo livre; o cliente decide isso (envia null
+  // nos 5 tipos pré-definidos) — o backend só persiste o que veio, sem inferir
+  // a partir do texto de "kind" (que pode ser qualquer string customizada).
+  if ('icon_key' in b) update.icon_key = String(b.icon_key ?? '').trim().slice(0, 40) || null
   if (Object.keys(update).length === 0) { res.status(400).json({ error: 'No fields' }); return }
 
   const { data, error } = await supabaseAdmin
@@ -2163,7 +2170,7 @@ async function buildPublicTripPayload(trip: PublicTripRow) {
     // Só os cards que o dono deixou no compartilhamento, com campos públicos
     info_cards: infoCards
       .filter(c => c.shared)
-      .map(c => ({ id: c.id, kind: c.kind, title: c.title, body: c.body, phone: c.phone, url: c.url })),
+      .map(c => ({ id: c.id, kind: c.kind, title: c.title, body: c.body, phone: c.phone, url: c.url, icon_key: c.icon_key })),
   }
 }
 

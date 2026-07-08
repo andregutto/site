@@ -2371,7 +2371,8 @@
       "urlLabel": "Link",
       "includeInShare": "Include in sharing",
       "includeInShareDesc": "Shown on the public link, the sign-up link and the Community",
-      "save": "Save"
+      "save": "Save",
+      "iconLabel": "Icon"
     },
     "partialShare": {
       "visibleInShare": "Visible when shared",

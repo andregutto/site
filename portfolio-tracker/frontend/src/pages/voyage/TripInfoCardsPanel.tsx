@@ -3,11 +3,14 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { Switch } from '../../components/ui'
 import ArvoLoader from '../../components/ArvoLoader'
+import CategoryIcon, { ICON_KEYS } from '../community/_shared/CategoryIcon'
 
-// Card EXPANSÍVEL de "Informações úteis" da viagem: agência, transporte,
-// passeio, hospedagem, restaurante ou tipo livre. Usado em dois contextos:
-// - Página da viagem (dono/membros): todos os cards; dono ganha adicionar/
-//   editar/excluir (editor em bottom-sheet) e badge nos ocultos.
+// Grid de "Informações úteis" da viagem: agência, transporte, passeio,
+// hospedagem, restaurante ou tipo livre (com ícone à escolha). Cards sempre
+// visíveis, sem accordion. Usado em dois contextos:
+// - Página da viagem (dono/membros): todos os cards; dono ganha adicionar
+//   (card "+" na 1ª posição), editar (clique no corpo, bottom-sheet) e
+//   excluir (X no card ou dentro do editor) + badge nos ocultos.
 // - Visões compartilhadas (TripShareView): só os cards shared, sem controles
 //   (o payload público já vem filtrado do servidor).
 
@@ -22,6 +25,7 @@ export interface InfoCardData {
   phone: string | null
   url: string | null
   shared?: boolean
+  icon_key?: string | null
 }
 
 const PREDEFINED_KINDS = ['agency', 'transport', 'tour', 'lodging', 'restaurant'] as const
@@ -142,6 +146,7 @@ function InfoCardEditor({ tripId, card, onSaved, onDeleted, onClose }: {
   const isPredefined = (k: string) => (PREDEFINED_KINDS as readonly string[]).includes(k)
   const [kind, setKind] = useState<string>(card ? (isPredefined(card.kind) ? card.kind : 'other') : 'agency')
   const [customKind, setCustomKind] = useState(card && !isPredefined(card.kind) && card.kind !== 'other' ? card.kind : '')
+  const [iconKey, setIconKey] = useState<string>(card?.icon_key || ICON_KEYS[0])
   const [title, setTitle] = useState(card?.title ?? '')
   const [body, setBody] = useState(card?.body ?? '')
   const [phone, setPhone] = useState(card?.phone ?? '')
@@ -171,6 +176,8 @@ function InfoCardEditor({ tripId, card, onSaved, onDeleted, onClose }: {
         phone: phone.trim() || null,
         url: url.trim() || null,
         shared,
+        // Ícone à escolha só se aplica ao tipo livre; nos pré-definidos fica null
+        icon_key: kind === 'other' ? iconKey : null,
       }
       const data = card
         ? await apiFetch<{ card: InfoCardData }>(`/voyage/trips/${tripId}/info-cards/${card.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
@@ -243,12 +250,32 @@ function InfoCardEditor({ tripId, card, onSaved, onDeleted, onClose }: {
               ))}
             </div>
             {kind === 'other' && (
-              <input
-                value={customKind} onChange={e => setCustomKind(e.target.value)}
-                placeholder={ic.kindOtherPlaceholder ?? 'Ex: Seguro viagem'}
-                maxLength={40}
-                style={{ ...fieldStyle, marginTop: 8 }}
-              />
+              <>
+                <input
+                  value={customKind} onChange={e => setCustomKind(e.target.value)}
+                  placeholder={ic.kindOtherPlaceholder ?? 'Ex: Seguro viagem'}
+                  maxLength={40}
+                  style={{ ...fieldStyle, marginTop: 8 }}
+                />
+                {/* Ícone à escolha pro tipo livre — mesmo picker da Comunidade */}
+                <span style={{ ...labelStyle, marginTop: 10 }}>{ic.iconLabel ?? 'Ícone'}</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {ICON_KEYS.map(k => (
+                    <button
+                      key={k} type="button" onClick={() => setIconKey(k)} title={k}
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                        border: `1px solid ${iconKey === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                        background: iconKey === k ? 'var(--arvo-hover-bg)' : 'transparent',
+                        color: iconKey === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)',
+                        transition: `all 280ms ${EASE}`,
+                      }}
+                    >
+                      <CategoryIcon iconKey={k} size={15} />
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -333,7 +360,122 @@ function InfoCardEditor({ tripId, card, onSaved, onDeleted, onClose }: {
   )
 }
 
-// ── Painel expansível ─────────────────────────────────────────────────────────
+// Resolve o ícone do card: tipos pré-definidos usam KindIcon; tipo livre com
+// icon_key escolhido usa CategoryIcon (picker reusado da Comunidade); tipo
+// livre sem icon_key (cards antigos, criados antes desta mudança) cai no
+// ícone genérico de nota do KindIcon.
+function CardIcon({ kind, iconKey, size = 18 }: { kind: string; iconKey?: string | null; size?: number }) {
+  const isPredefined = (PREDEFINED_KINDS as readonly string[]).includes(kind)
+  if (!isPredefined && iconKey) return <CategoryIcon iconKey={iconKey} size={size} />
+  return <KindIcon kind={kind} size={size} />
+}
+
+// ── Card individual ────────────────────────────────────────────────────────────
+function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
+  card: InfoCardData
+  canEdit: boolean
+  hiddenLabel: string
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div
+      style={{
+        position: 'relative', display: 'flex', flexDirection: 'column', gap: 8,
+        padding: '14px 14px 12px', borderRadius: 12, background: 'var(--arvo-hover-bg)',
+        border: '1px solid var(--arvo-border-soft)', cursor: canEdit ? 'pointer' : 'default',
+        transition: `border-color 280ms ${EASE}`, minHeight: 0,
+      }}
+      onClick={canEdit ? onEdit : undefined}
+    >
+      {canEdit && (
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          title="×"
+          style={{
+            position: 'absolute', top: 8, right: 8, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'none', border: 'none', borderRadius: 999, cursor: 'pointer', color: 'var(--arvo-fg-faint)', flexShrink: 0,
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
+          </svg>
+        </button>
+      )}
+
+      <span style={{
+        width: 34, height: 34, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(200,184,154,0.18)', color: GOLD, flexShrink: 0,
+      }}>
+        <CardIcon kind={c.kind} iconKey={c.icon_key} size={17} />
+      </span>
+
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingRight: canEdit ? 16 : 0 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{c.title}</p>
+          {canEdit && c.shared === false && <HiddenFromShareBadge label={hiddenLabel} />}
+        </div>
+        {c.body && (
+          <p style={{
+            fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 3,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>{c.body}</p>
+        )}
+      </div>
+
+      {(c.phone || c.url) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto', paddingTop: 4, flexWrap: 'wrap' }}>
+          {c.phone && (
+            <a
+              href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} onClick={e => e.stopPropagation()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.2 2.8h3l1.4 3.7-1.9 1.4a11.5 11.5 0 005.4 5.4l1.4-1.9 3.7 1.4v3a1.5 1.5 0 01-1.6 1.5C8.6 16.7 3.3 11.4 2.7 4.4a1.5 1.5 0 011.5-1.6z" />
+              </svg>
+              {c.phone}
+            </a>
+          )}
+          {c.url && (
+            <a
+              href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+              </svg>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.url.replace(/^https?:\/\/(www\.)?/, '')}
+              </span>
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Card "+" — sempre na primeira posição, mesmo formato/tamanho dos demais
+function AddCard({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button" onClick={onClick}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+        minHeight: 110, borderRadius: 12, border: '1px dashed var(--arvo-border)', background: 'none',
+        color: 'var(--arvo-fg-soft)', cursor: 'pointer', transition: `border-color 280ms ${EASE}, color 280ms ${EASE}`,
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <path d="M9 2.5v13M2.5 9h13" />
+      </svg>
+      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}>{label}</span>
+    </button>
+  )
+}
+
+// ── Grid de cards ──────────────────────────────────────────────────────────────
 export default function TripInfoCardsPanel({ tripId, cards, isOwner = false, onChanged }: {
   tripId?: number
   cards: InfoCardData[]
@@ -343,127 +485,43 @@ export default function TripInfoCardsPanel({ tripId, cards, isOwner = false, onC
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const ic = tv.infoCards ?? {}
-  const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<InfoCardData | 'new' | null>(null)
 
   const canEdit = isOwner && tripId != null
+  const hiddenLabel = tv.partialShare?.hiddenBadge ?? 'oculto no compartilhamento'
 
-  // Sem cards: membros/visitantes não veem nada; o dono vê só o atalho de adicionar
+  // Sem cards e sem dono: nada a mostrar
   if (cards.length === 0 && !canEdit) return null
-  if (cards.length === 0 && canEdit) {
-    return (
-      <>
-        <button
-          type="button" onClick={() => setEditing('new')}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 20, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, padding: '7px 13px', borderRadius: 8, background: 'none', border: '1px dashed var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
-        >
-          <KindIcon kind="other" size={13} />
-          + {ic.title ?? 'Informações úteis'}
-        </button>
-        {editing === 'new' && tripId != null && (
-          <InfoCardEditor
-            tripId={tripId} card={null}
-            onSaved={c => onChanged?.([...cards, c])}
-            onDeleted={() => {}}
-            onClose={() => setEditing(null)}
-          />
-        )}
-      </>
-    )
+
+  async function handleDelete(card: InfoCardData) {
+    if (!tripId) return
+    if (!confirm((ic.confirmDelete ?? 'Excluir "{title}"?').replace('{title}', card.title))) return
+    await apiFetch(`/voyage/trips/${tripId}/info-cards/${card.id}`, { method: 'DELETE' })
+    onChanged?.(cards.filter(x => x.id !== card.id))
   }
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', borderRadius: 14, border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', marginBottom: 20, overflow: 'hidden' }}>
-      {/* Cabeçalho clicável — colapsado mostra "Informações úteis (N)" */}
-      <button
-        type="button" onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-      >
-        <span style={{ color: GOLD, display: 'flex', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="10" cy="10" r="7.5" />
-            <path d="M10 9v4.5M10 6.4h.01" />
-          </svg>
-        </span>
-        <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
-          {ic.title ?? 'Informações úteis'} <span style={{ color: 'var(--arvo-fg-soft)' }}>({cards.length})</span>
-        </span>
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: `transform 280ms ${EASE}` }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
-        </svg>
-      </button>
+    <div style={{ marginBottom: 20 }}>
+      {/* Eyebrow — separa visualmente da seção seguinte, sem interação */}
+      <p style={{
+        fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
+        color: 'var(--arvo-fg-muted)', marginBottom: 10,
+      }}>
+        {ic.title ?? 'Informações úteis'}
+      </p>
 
-      {/* Conteúdo — expande com a curva quase linear padrão (~280ms) */}
-      <div style={{ display: 'grid', gridTemplateRows: open ? '1fr' : '0fr', transition: `grid-template-rows 280ms ${EASE}` }}>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '2px 16px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {cards.map(c => (
-              <div
-                key={c.id}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}
-              >
-                <span style={{ color: GOLD, flexShrink: 0, marginTop: 1, display: 'flex' }}>
-                  <KindIcon kind={c.kind} />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{c.title}</p>
-                    <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-                      {kindLabel(c.kind, ic)}
-                    </span>
-                    {canEdit && c.shared === false && (
-                      <HiddenFromShareBadge label={tv.partialShare?.hiddenBadge ?? 'oculto no compartilhamento'} />
-                    )}
-                  </div>
-                  {c.body && (
-                    <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'pre-wrap' }}>{c.body}</p>
-                  )}
-                  {(c.phone || c.url) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 5, flexWrap: 'wrap' }}>
-                      {c.phone && (
-                        <a href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none' }}>
-                          <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4.2 2.8h3l1.4 3.7-1.9 1.4a11.5 11.5 0 005.4 5.4l1.4-1.9 3.7 1.4v3a1.5 1.5 0 01-1.6 1.5C8.6 16.7 3.3 11.4 2.7 4.4a1.5 1.5 0 011.5-1.6z" />
-                          </svg>
-                          {c.phone}
-                        </a>
-                      )}
-                      {c.url && (
-                        <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none', maxWidth: 260, overflow: 'hidden' }}>
-                          <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
-                            <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-                          </svg>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {c.url.replace(/^https?:\/\/(www\.)?/, '')}
-                          </span>
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {canEdit && (
-                  <button
-                    type="button" onClick={() => setEditing(c)} title={ic.edit ?? 'Editar'}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, color: 'var(--arvo-fg-faint)', flexShrink: 0, display: 'flex', marginTop: 1 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {canEdit && (
-              <button
-                type="button" onClick={() => setEditing('new')}
-                style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 11px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
-              >
-                + {ic.add ?? 'Adicionar informação'}
-              </button>
-            )}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {canEdit && <AddCard label={ic.add ?? 'Adicionar informação'} onClick={() => setEditing('new')} />}
+        {cards.map(c => (
+          <InfoCard
+            key={c.id}
+            card={c}
+            canEdit={canEdit}
+            hiddenLabel={hiddenLabel}
+            onEdit={() => setEditing(c)}
+            onDelete={() => handleDelete(c)}
+          />
+        ))}
       </div>
 
       {editing && canEdit && tripId != null && (

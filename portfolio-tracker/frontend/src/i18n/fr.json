@@ -2371,7 +2371,8 @@
       "urlLabel": "Lien",
       "includeInShare": "Inclure dans le partage",
       "includeInShareDesc": "Visible sur le lien public, le lien avec inscription et la Communauté",
-      "save": "Enregistrer"
+      "save": "Enregistrer",
+      "iconLabel": "Icône"
     },
     "partialShare": {
       "visibleInShare": "Visible dans le partage",
