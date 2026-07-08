@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import type { Trip } from './types'
@@ -10,6 +10,8 @@ interface Props {
   trip: Trip
   onUpdate: (t: Partial<Trip>) => void
 }
+
+interface ShareLink { id: number; label: string; utm_campaign: string; created_at: string }
 
 export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () => void }) {
   const { t } = useI18n()
@@ -24,13 +26,66 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
   const [loading, setLoading] = useState(false)
   const [revoking, setRevoking] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [gatedCopied, setGatedCopied] = useState(false)
   const [hideCost, setHideCost] = useState(trip.share_hide_cost)
   const [showPlaceExpenses, setShowPlaceExpenses] = useState(trip.show_place_expenses)
   const [expiryDays, setExpiryDays] = useState<number | null>(null)
 
+  // Links de divulgação (lead magnet do YouTube) — bloco só pra admin
+  // (community_admins, mesmo isAdmin dos Recursos). Pra todo mundo o
+  // endpoint devolve is_admin: false e o bloco simplesmente não aparece.
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [promoLinks, setPromoLinks] = useState<ShareLink[]>([])
+  const [newLinkLabel, setNewLinkLabel] = useState('')
+  const [creatingLink, setCreatingLink] = useState(false)
+  const [copiedLinkId, setCopiedLinkId] = useState<number | null>(null)
+
+  useEffect(() => {
+    apiFetch<{ is_admin: boolean; links: ShareLink[] }>(`/voyage/trips/${trip.id}/share-links`)
+      .then(data => { setIsAdmin(data.is_admin); setPromoLinks(data.links) })
+      .catch(() => {})
+  }, [trip.id])
+
   const shareUrl = trip.share_token
     ? `${window.location.origin}/trip/${trip.share_token}`
     : null
+
+  // Link com cadastro: keyed por trip id (não por token) — a página
+  // /voyage/shared/:tripId só existe enquanto o share estiver habilitado
+  // (share_token não nulo no servidor).
+  const gatedUrl = trip.share_token
+    ? `${window.location.origin}/voyage/shared/${trip.id}`
+    : null
+
+  function promoLinkUrl(link: ShareLink): string {
+    return `${window.location.origin}/voyage/shared/${trip.id}?utm_source=youtube&utm_campaign=${encodeURIComponent(link.utm_campaign)}`
+  }
+
+  function copyPromoLink(link: ShareLink) {
+    navigator.clipboard.writeText(promoLinkUrl(link)).then(() => {
+      setCopiedLinkId(link.id)
+      setTimeout(() => setCopiedLinkId(null), 1800)
+    })
+  }
+
+  async function createPromoLink() {
+    if (creatingLink || !newLinkLabel.trim()) return
+    setCreatingLink(true)
+    try {
+      const link = await apiFetch<ShareLink>(`/voyage/trips/${trip.id}/share-links`, {
+        method: 'POST', body: JSON.stringify({ label: newLinkLabel.trim() }),
+      })
+      setPromoLinks(prev => [link, ...prev])
+      setNewLinkLabel('')
+    } finally {
+      setCreatingLink(false)
+    }
+  }
+
+  async function deletePromoLink(link: ShareLink) {
+    await apiFetch(`/voyage/trips/${trip.id}/share-links/${link.id}`, { method: 'DELETE' })
+    setPromoLinks(prev => prev.filter(l => l.id !== link.id))
+  }
 
   async function generate() {
     setLoading(true)
@@ -61,6 +116,13 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
     navigator.clipboard.writeText(shareUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function copyGatedLink() {
+    if (!gatedUrl) return
+    navigator.clipboard.writeText(gatedUrl)
+    setGatedCopied(true)
+    setTimeout(() => setGatedCopied(false), 2000)
   }
 
   const fieldStyle: React.CSSProperties = {
@@ -133,6 +195,35 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   </a>
                 </div>
               </div>
+
+              {/* Link com cadastro — mesma viagem, mas atrás de um gate de
+                  login/cadastro (/voyage/shared/:tripId). É o link pra
+                  descrição de vídeo quando o objetivo é converter cadastro,
+                  não só mostrar o roteiro. */}
+              {gatedUrl && (
+                <div>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
+                    {sv.gatedLink ?? 'Link com cadastro'}
+                  </p>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      readOnly
+                      value={gatedUrl}
+                      style={{ ...fieldStyle, flex: 1, color: 'var(--arvo-fg-soft)', fontSize: 12 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={copyGatedLink}
+                      style={{ padding: '6px 14px', borderRadius: 5, background: gatedCopied ? '#1F8A5B' : RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, flexShrink: 0, transition: 'background 200ms' }}
+                    >
+                      {gatedCopied ? '✓' : (tv.actions?.copy ?? 'Copiar')}
+                    </button>
+                  </div>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 6 }}>
+                    {sv.gatedLinkDesc ?? 'Quem abrir precisa criar uma conta grátis para ver o roteiro'}
+                  </p>
+                </div>
+              )}
 
               {/* Hide cost */}
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -209,6 +300,63 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   ))}
                 </div>
               </div>
+
+              {/* Links de divulgação — bloco só pra admin (community_admins):
+                  rótulo → utm_campaign automático no link com cadastro, pra
+                  medir qual vídeo converte (mesmo mecanismo dos Recursos). */}
+              {isAdmin && gatedUrl && (
+                <div style={{ paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
+                    {sv.promoTitle ?? 'Links de divulgação (admin)'}
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {promoLinks.map(link => (
+                      <div key={link.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12.5 }}>
+                        <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)', flex: '0 1 auto', maxWidth: 140 }}>{link.label}</span>
+                        <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-mono, monospace)', color: 'var(--arvo-fg-soft)', flex: 1, fontSize: 11.5 }}>{promoLinkUrl(link)}</span>
+                        <button
+                          type="button"
+                          onClick={() => copyPromoLink(link)}
+                          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: copiedLinkId === link.id ? '#1F8A5B' : 'var(--arvo-fg-soft)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          {copiedLinkId === link.id ? '✓' : (tv.actions?.copy ?? 'Copiar')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deletePromoLink(link)}
+                          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 10px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: RED, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          {sv.promoDelete ?? 'Excluir'}
+                        </button>
+                      </div>
+                    ))}
+                    {promoLinks.length === 0 && (
+                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+                        {sv.promoEmpty ?? 'Nenhum link de divulgação ainda'}
+                      </p>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                    <input
+                      value={newLinkLabel}
+                      onChange={e => setNewLinkLabel(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') createPromoLink() }}
+                      placeholder={sv.promoPlaceholder ?? 'Onde vai usar? Ex: Vídeo roteiro Lisboa'}
+                      style={{ ...fieldStyle, flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={createPromoLink}
+                      disabled={creatingLink || !newLinkLabel.trim()}
+                      style={{ padding: '6px 14px', borderRadius: 5, background: RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, flexShrink: 0, opacity: (creatingLink || !newLinkLabel.trim()) ? 0.5 : 1 }}
+                    >
+                      {sv.promoGenerate ?? 'Gerar'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Revoke */}
               <div style={{ paddingTop: 8, borderTop: '1px solid var(--arvo-border-soft)' }}>

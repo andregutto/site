@@ -66,6 +66,8 @@ import VoyageMapPage from './pages/voyage/VoyageMapPage'
 import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 import AcceptMomentInvitePage from './pages/finances/AcceptMomentInvitePage'
 import PublicTripPage from './pages/voyage/PublicTripPage'
+import SharedTripGatePage from './pages/voyage/SharedTripGatePage'
+import SharedTripViewPage from './pages/voyage/SharedTripViewPage'
 import PeoplePage from './pages/PeoplePage'
 import CommunityLayout from './pages/community/CommunityLayout'
 import CommunityHomePage from './pages/community/CommunityHomePage'
@@ -142,7 +144,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : sessionStorage.getItem('pending_resource_slug') ? `/resources/${sessionStorage.getItem('pending_resource_slug')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : sessionStorage.getItem('pending_resource_slug') ? `/resources/${sessionStorage.getItem('pending_resource_slug')}` : sessionStorage.getItem('pending_trip_gate') ? `/voyage/shared/${sessionStorage.getItem('pending_trip_gate')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
       <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home'} replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
@@ -159,6 +161,10 @@ function AppRoutes() {
           path (React Router não permite path duplicado), então a troca acontece
           aqui, condicionada ao próprio estado de auth já disponível neste componente. */}
       {!user && <Route path="/resources/:slug" element={<ResourcePublicPage />} />}
+      {/* Mesmo mecanismo pro lead magnet de viagem: deslogado vê o gate de
+          cadastro, logado vê o roteiro dentro do AppLayout (rota nas rotas
+          protegidas de /voyage, abaixo). */}
+      {!user && <Route path="/voyage/shared/:tripId" element={<SharedTripGatePage />} />}
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/assets"         element={<AssetsPage />} />
@@ -193,6 +199,7 @@ function AppRoutes() {
         <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/voyage"          element={<VoyageLayout />}>
           <Route index                element={<VoyageTripsPage />} />
+          <Route path="shared/:tripId" element={<SharedTripViewPage />} />
           <Route path=":id"           element={<VoyageTripDetailPage />} />
           <Route path="places"        element={<VoyagePlacesPage />} />
           <Route path="map"           element={<VoyageMapPage />} />

@@ -2511,7 +2511,22 @@
       "expiry7": "7 days",
       "expiry30": "30 days",
       "expiry90": "90 days",
-      "expiryNone": "No expiry"
+      "expiryNone": "No expiry",
+      "gatedLink": "Sign-up link",
+      "gatedLinkDesc": "Visitors must create a free account to see the itinerary",
+      "promoTitle": "Promo links (admin)",
+      "promoEmpty": "No promo links yet",
+      "promoPlaceholder": "Where will you use it? E.g. Lisbon itinerary video",
+      "promoGenerate": "Generate",
+      "promoDelete": "Delete"
+    },
+    "gate": {
+      "eyebrow": "Itinerary access",
+      "placesOne": "1 place",
+      "placesMany": "{n} places",
+      "daysOne": "1 day",
+      "daysMany": "{n} days",
+      "unlockHint": "Log in or create your free account on the left to see the full itinerary, with the map and every place."
     },
     "expenses": {
       "label": "EXPENSES",
@@ -2813,7 +2828,10 @@
       "uploadCover": "Choose cover",
       "changeCover": "Change cover",
       "uploadCoverError": "Failed to upload cover photo",
-      "dragHint": "Drag to reposition"
+      "dragHint": "Drag to reposition",
+      "tripsTitle": "Trips",
+      "tripsSubtitle": "Shared trips behind the sign-up gate. Generate promo links in the trip's Share modal.",
+      "tripOpen": "Open trip"
     },
     "gateEyebrow": "Resource access",
     "unlockHint": "Log in or create your account on the side to unlock.",

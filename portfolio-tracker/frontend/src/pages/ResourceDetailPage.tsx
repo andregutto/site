@@ -42,7 +42,7 @@ interface ResourceDetail {
 // roteamento condicional em App.tsx). Sem isso, todo clique de um usuário já
 // logado num link com UTM perdia a atribuição. Por isso lê a URL desta
 // própria página primeiro; sessionStorage só sobra como fallback do fluxo
-// pós-redirect do Google (ver AuthContext.bootstrapResourceSignupSource).
+// pós-redirect do Google (ver AuthContext.bootstrapSignupSource).
 function getStoredUtm(): Record<string, string> {
   const params = new URLSearchParams(window.location.search)
   const fromUrl: Record<string, string> = {}

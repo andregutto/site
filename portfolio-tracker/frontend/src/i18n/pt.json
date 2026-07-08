@@ -2511,7 +2511,22 @@
       "expiry7": "7 dias",
       "expiry30": "30 dias",
       "expiry90": "90 dias",
-      "expiryNone": "Sem prazo"
+      "expiryNone": "Sem prazo",
+      "gatedLink": "Link com cadastro",
+      "gatedLinkDesc": "Quem abrir precisa criar uma conta grátis para ver o roteiro",
+      "promoTitle": "Links de divulgação (admin)",
+      "promoEmpty": "Nenhum link de divulgação ainda",
+      "promoPlaceholder": "Onde vai usar? Ex: Vídeo roteiro Lisboa",
+      "promoGenerate": "Gerar",
+      "promoDelete": "Excluir"
+    },
+    "gate": {
+      "eyebrow": "Acesso ao roteiro",
+      "placesOne": "1 lugar",
+      "placesMany": "{n} lugares",
+      "daysOne": "1 dia",
+      "daysMany": "{n} dias",
+      "unlockHint": "Faça login ou crie sua conta grátis ao lado para ver o roteiro completo, com mapa e todos os lugares."
     },
     "expenses": {
       "label": "DESPESAS",
@@ -2813,7 +2828,10 @@
       "uploadCover": "Escolher capa",
       "changeCover": "Trocar capa",
       "uploadCoverError": "Erro ao enviar a foto de capa",
-      "dragHint": "Arraste pra reposicionar"
+      "dragHint": "Arraste pra reposicionar",
+      "tripsTitle": "Viagens",
+      "tripsSubtitle": "Viagens compartilhadas com gate de cadastro. Gere os links de divulgação no modal Compartilhar da viagem.",
+      "tripOpen": "Abrir viagem"
     },
     "gateEyebrow": "Acesso ao recurso",
     "unlockHint": "Faça login ou crie sua conta ao lado para liberar.",

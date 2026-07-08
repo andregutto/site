@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
-import { cache } from '../lib/cache.js'
+import { isAdmin, pickUtm, backfillSignupSource, slugifyLabel, type UtmFields } from '../lib/leads.js'
 import { TIER_RANK } from './community.js'
 
 // Recursos (lead magnets do canal): página pública /resources/:slug com
@@ -18,15 +18,9 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
-// Admins compartilhados com a comunidade (tabela community_admins, migration
-// 067) — mesma chave de cache do community.ts pra invalidar junto.
-async function isAdmin(userId: string): Promise<boolean> {
-  const ids = await cache.getOrFetch('community:admins', 60_000, async () => {
-    const { data } = await supabaseAdmin.from('community_admins').select('user_id')
-    return new Set<string>((data ?? []).map((r: { user_id: string }) => r.user_id))
-  })
-  return ids.has(userId)
-}
+// isAdmin/pickUtm/backfillSignupSource/slugifyLabel viviam aqui e migraram
+// pra ../lib/leads.ts quando o gate de viagens (voyage.ts) passou a usar os
+// mesmos helpers.
 
 export interface ResourceRow {
   id: number
@@ -51,44 +45,6 @@ async function getUserTier(userId: string): Promise<string> {
   const { data } = await supabaseAdmin
     .from('community_members').select('tier').eq('user_id', userId).maybeSingle()
   return data?.tier ?? 'free'
-}
-
-interface UtmFields {
-  utm_source?: string
-  utm_medium?: string
-  utm_campaign?: string
-  utm_content?: string
-  referrer?: string
-}
-
-function pickUtm(src: Record<string, unknown>): UtmFields {
-  const clip = (v: unknown) => (typeof v === 'string' && v ? v.slice(0, 120) : undefined)
-  return {
-    utm_source:   clip(src.utm_source),
-    utm_medium:   clip(src.utm_medium),
-    utm_campaign: clip(src.utm_campaign),
-    utm_content:  clip(src.utm_content),
-    referrer:     typeof src.referrer === 'string' && src.referrer ? src.referrer.slice(0, 500) : undefined,
-  }
-}
-
-// Fallback de atribuição: se o trigger não gravou (conta criada antes da
-// migration, ou fluxo sem metadata), copia signup_source do user_metadata.
-// Nunca lança.
-async function backfillSignupSource(userId: string): Promise<void> {
-  try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('signup_source').eq('id', userId).maybeSingle()
-    if (profile && !profile.signup_source) {
-      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
-      const metaSource = userData?.user?.user_metadata?.signup_source
-      if (typeof metaSource === 'string' && metaSource) {
-        await supabaseAdmin.from('profiles').update({ signup_source: metaSource }).eq('id', userId)
-      }
-    }
-  } catch (err) {
-    console.warn('[resources] signup_source backfill failed:', err)
-  }
 }
 
 // Nunca lança: perder um evento de métrica não pode derrubar o request.
@@ -348,15 +304,6 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
   }
   res.json(result)
 })
-
-function slugifyLabel(name: string): string {
-  return name
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
-}
 
 // POST /api/resources/admin/:slug/links — gera um link de divulgação (UTM
 // pronto pra colar na descrição de um vídeo) com um rótulo de referência.

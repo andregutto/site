@@ -37,6 +37,22 @@ interface ResourceRow {
   links: ResourceLink[]
 }
 
+// Aquisição por viagem compartilhada (lead magnet da frente B): payload do
+// GET /voyage/admin/acquisition — views do gate, cadastros via
+// profiles.signup_source = 'trip:<id>' e quebra por campanha. Os links de
+// divulgação se gerenciam no modal Compartilhar da própria viagem; aqui é
+// só leitura do funil.
+interface TripAcqRow {
+  id: number
+  title: string
+  destination: string | null
+  country: string | null
+  cover_image_url: string | null
+  cover_image_position: string | null
+  stats: { views: number; signups: number; by_source: Record<string, number> }
+  links: ResourceLink[]
+}
+
 type FormState = {
   slug: string
   title: string
@@ -120,6 +136,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [items, setItems] = useState<ResourceRow[]>([])
+  const [trips, setTrips] = useState<TripAcqRow[]>([])
   const [editingId, setEditingId] = useState<number | 'new' | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -136,8 +153,13 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
   async function load() {
     setLoading(true)
     try {
-      const data = await apiFetch<ResourceRow[]>('/resources/admin/list')
+      const [data, acq] = await Promise.all([
+        apiFetch<ResourceRow[]>('/resources/admin/list'),
+        // Falha da seção Viagens não derruba a página de Recursos.
+        apiFetch<TripAcqRow[]>('/voyage/admin/acquisition').catch(() => [] as TripAcqRow[]),
+      ])
       setItems(data)
+      setTrips(acq)
     } catch (err: any) {
       if (/403|forbidden|admin/i.test(String(err?.message))) setForbidden(true)
     } finally {
@@ -604,6 +626,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
           </div>
         </section>
       ) : (
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map(item => (
             <div key={item.id} className="rounded-[14px] border overflow-hidden" style={{ background: 'var(--arvo-surface)', borderColor: 'var(--arvo-border)' }}>
@@ -698,6 +721,69 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
             <p style={{ ...card, fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', padding: 16 }}>{ra.empty ?? 'Nenhum recurso criado ainda'}</p>
           )}
         </div>
+
+        {/* Viagens como lead magnet (frente B): funil de cada viagem com
+            share habilitado — views do gate, cadastros atribuídos e origem
+            por campanha. Os links de divulgação se criam no modal
+            Compartilhar da viagem, não aqui. */}
+        {trips.length > 0 && (
+          <section>
+            <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
+              {ra.tripsTitle ?? 'Viagens'}
+            </h2>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', margin: '4px 0 0' }}>
+              {ra.tripsSubtitle ?? 'Viagens compartilhadas com gate de cadastro. Gere os links de divulgação no modal Compartilhar da viagem.'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ marginTop: 14 }}>
+              {trips.map(trip => (
+                <div key={trip.id} className="rounded-[14px] border overflow-hidden" style={{ background: 'var(--arvo-surface)', borderColor: 'var(--arvo-border)' }}>
+                  <div className="relative" style={{ paddingBottom: '56.25%', background: 'var(--arvo-black)', overflow: 'hidden' }}>
+                    {trip.cover_image_url ? (
+                      <img
+                        src={trip.cover_image_url}
+                        alt={trip.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ objectPosition: trip.cover_image_position ?? '50% 50%' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="26" alt="" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ padding: '14px 16px' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{trip.title}</span>
+                      <a
+                        href={`/voyage/${trip.id}`}
+                        title={ra.tripOpen ?? 'Abrir viagem'}
+                        className="p-1.5 shrink-0 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 13 13" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                        </svg>
+                      </a>
+                    </div>
+                    <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/voyage/shared/{trip.id}</p>
+                    <p className="truncate" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
+                      {trip.stats.views} {ra.views ?? 'views'} · {trip.stats.signups} {ra.signups ?? 'cadastros'} · {trip.links.length} {ra.manageLinks ?? 'links'}
+                    </p>
+                    {Object.keys(trip.stats.by_source ?? {}).length > 0 && (
+                      <p className="truncate" style={{ fontSize: 10.5, color: 'var(--arvo-fg-faint, var(--arvo-fg-soft))', margin: '3px 0 0' }}>
+                        {(ra.bySource ?? 'Origem:')} {Object.entries(trip.stats.by_source)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([source, count]) => `${source} (${count})`)
+                          .join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        </>
       )}
     </div>
   )

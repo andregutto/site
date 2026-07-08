@@ -4,6 +4,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
 import { canAutoAccept } from './people.js'
+import { isAdmin, pickUtm, backfillSignupSource, slugifyLabel, type UtmFields } from '../lib/leads.js'
 
 const router = Router()
 
@@ -1934,21 +1935,33 @@ router.delete('/trips/:id/share', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-// ── GET /api/voyage/public/:token  (página pública — sem auth) ───────────────
-router.get('/public/:token', async (req, res: Response) => {
-  const { token } = req.params
+// Campos que os dois endpoints de leitura pública (por token e por trip id
+// gated) precisam da voyage_trips pra montar o payload.
+const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, user_id, photo_album_url'
 
-  const { data: trip } = await supabaseAdmin
-    .from('voyage_trips')
-    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_expires_at, user_id, photo_album_url')
-    .eq('share_token', token)
-    .single()
+interface PublicTripRow {
+  id: number
+  title: string
+  destination: string | null
+  country: string | null
+  cover_image_url: string | null
+  cover_image_position: string
+  start_date: string | null
+  end_date: string | null
+  summary: string | null
+  status: string
+  share_hide_cost: boolean
+  show_place_expenses: boolean
+  share_token: string | null
+  share_expires_at: string | null
+  user_id: string
+  photo_album_url: string | null
+}
 
-  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
-  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
-    res.status(410).json({ error: 'Link expirado' }); return
-  }
-
+// Monta o payload público da viagem (roteiro, mapa, custo se permitido) —
+// compartilhado entre GET /public/:token (visitante com o link) e
+// GET /shared/:tripId (usuário logado que veio do gate de cadastro).
+async function buildPublicTripPayload(trip: PublicTripRow) {
   const [placesRes, costRes, ownerRes, destinations] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
       .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day, destination_id')
@@ -1968,7 +1981,7 @@ router.get('/public/:token', async (req, res: Response) => {
   const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
   const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
 
-  res.json({
+  return {
     trip: {
       title: trip.title, destination: trip.destination, country: trip.country,
       cover_image_url: trip.cover_image_url, cover_image_position: trip.cover_image_position,
@@ -1979,7 +1992,25 @@ router.get('/public/:token', async (req, res: Response) => {
     places: publicPlaces,
     cost: costRes,
     destinations,
-  })
+  }
+}
+
+// ── GET /api/voyage/public/:token  (página pública — sem auth) ───────────────
+router.get('/public/:token', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select(PUBLIC_TRIP_FIELDS)
+    .eq('share_token', token)
+    .single<PublicTripRow>()
+
+  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
+    res.status(410).json({ error: 'Link expirado' }); return
+  }
+
+  res.json(await buildPublicTripPayload(trip))
 })
 
 // ── GET /api/voyage/public/:token/kml  (download KML para Google Maps) ────────
@@ -2024,6 +2055,220 @@ router.get('/public/:token/kml', async (req, res: Response) => {
   res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml')
   res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^a-z0-9]/gi, '_')}.kml"`)
   res.send(kml)
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Lead magnet do YouTube — gate de cadastro por viagem (migration 074)
+// ══════════════════════════════════════════════════════════════════════════════
+// Espelho do mecanismo de Recursos (resources.ts + lib/leads.ts): a rota
+// /voyage/shared/:tripId no frontend mostra o gate de cadastro pro visitante
+// deslogado e o roteiro completo pra quem está logado. Só existe quando o
+// dono habilitou compartilhamento (share_token não nulo) — o link público
+// por token (/public/:token) continua intocado e independente.
+
+// Busca comum dos endpoints do gate: viagem por id, exigindo share habilitado
+// e não expirado. 'expired' vira 410 nos handlers, null vira 404.
+async function getGatedTrip(tripId: number): Promise<PublicTripRow | 'expired' | null> {
+  if (!Number.isInteger(tripId)) return null
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select(PUBLIC_TRIP_FIELDS)
+    .eq('id', tripId)
+    .not('share_token', 'is', null)
+    .maybeSingle<PublicTripRow>()
+  if (!trip) return null
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) return 'expired'
+  return trip
+}
+
+// Nunca lança: perder um evento de métrica não pode derrubar o request.
+async function recordGateEvent(tripId: number, userId: string | null, utm: UtmFields): Promise<void> {
+  try {
+    await supabaseAdmin.from('trip_share_events').insert({
+      trip_id: tripId,
+      user_id: userId,
+      event_type: 'view',
+      ...utm,
+    })
+  } catch (err) {
+    console.warn('[voyage] failed to record gate event:', err)
+  }
+}
+
+// ── GET /api/voyage/gate/:tripId  (preview do gate — sem auth) ────────────────
+// Só o que o card de convite mostra: capa, título, destino, datas, resumo e
+// um teaser quantitativo ("12 lugares"). Sem roteiro, sem custos. Registra o
+// evento 'view' com os utm_* da query string.
+router.get('/gate/:tripId', async (req, res: Response) => {
+  const trip = await getGatedTrip(Number(req.params.tripId))
+  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
+  if (trip === 'expired') { res.status(410).json({ error: 'Link expirado' }); return }
+
+  const [placesCountRes, ownerRes, destinations] = await Promise.all([
+    // kind null = lugar (linhas anteriores à migration 042), igual ao
+    // fallback (p.kind ?? 'place') que o frontend usa.
+    supabaseAdmin.from('voyage_trip_places')
+      .select('id', { count: 'exact', head: true })
+      .eq('trip_id', trip.id)
+      .or('kind.is.null,kind.eq.place'),
+    supabaseAdmin.auth.admin.getUserById(trip.user_id),
+    getDestinations(trip.id),
+  ])
+
+  await recordGateEvent(trip.id, null, pickUtm({ ...req.query, referrer: req.headers.referer }))
+
+  const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
+  const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
+
+  res.json({
+    title: trip.title,
+    destination: trip.destination,
+    country: trip.country,
+    cover_image_url: trip.cover_image_url,
+    cover_image_position: trip.cover_image_position,
+    start_date: trip.start_date,
+    end_date: trip.end_date,
+    summary: trip.summary,
+    owner_name: ownerName,
+    place_count: placesCountRes.count ?? 0,
+    destinations: destinations.map(d => ({ city: d.city, country: d.country })),
+  })
+})
+
+// ── GET /api/voyage/shared/:tripId  (visão logada do gate) ────────────────────
+// Mesmo payload do /public/:token (mesmo builder), mas keyed por trip id e
+// atrás de login — é a recompensa do cadastro. share_token vai junto só pro
+// download do KML (o endpoint de KML é público por token).
+router.get('/shared/:tripId', requireAuth, async (req, res: Response) => {
+  const trip = await getGatedTrip(Number(req.params.tripId))
+  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
+  if (trip === 'expired') { res.status(410).json({ error: 'Link expirado' }); return }
+
+  // Mesma rede de segurança do unlock de recursos: garante que o cadastro
+  // recém-criado tenha signup_source copiado pro perfil.
+  await backfillSignupSource(uid(req))
+
+  res.json({ ...(await buildPublicTripPayload(trip)), share_token: trip.share_token })
+})
+
+// ── Links de divulgação (admin, espelho dos de resources.ts) ──────────────────
+
+// GET /api/voyage/trips/:id/share-links — o modal Compartilhar consulta se o
+// usuário é admin e quais links existem. Não devolve 403 pra não-admin: o
+// modal abre pra qualquer dono de viagem e só esconde o bloco.
+router.get('/trips/:id/share-links', requireAuth, async (req, res: Response) => {
+  if (!(await isAdmin(uid(req)))) { res.json({ is_admin: false, links: [] }); return }
+  const { data: links } = await supabaseAdmin
+    .from('trip_share_links').select('id, label, utm_campaign, created_at')
+    .eq('trip_id', Number(req.params.id))
+    .order('created_at', { ascending: false })
+  res.json({ is_admin: true, links: links ?? [] })
+})
+
+// POST /api/voyage/trips/:id/share-links — gera um link de divulgação (UTM
+// pronto pra colar na descrição de um vídeo) com um rótulo de referência.
+router.post('/trips/:id/share-links', requireAuth, async (req, res: Response) => {
+  if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
+  const tripId = Number(req.params.id)
+  const label = typeof req.body?.label === 'string' ? req.body.label.trim() : ''
+  if (!label) { res.status(400).json({ error: 'Rótulo obrigatório' }); return }
+
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('id').eq('id', tripId).maybeSingle()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  let campaign = slugifyLabel(label) || 'video'
+  // Garante utm_campaign único dentro da viagem — duas campanhas iguais se
+  // misturariam nas estatísticas de origem.
+  const { count } = await supabaseAdmin
+    .from('trip_share_links').select('id', { count: 'exact', head: true })
+    .eq('trip_id', tripId).eq('utm_campaign', campaign)
+  if (count && count > 0) campaign = `${campaign}-${count + 1}`
+
+  const { data: link, error } = await supabaseAdmin
+    .from('trip_share_links')
+    .insert({ trip_id: tripId, label, utm_campaign: campaign })
+    .select('id, label, utm_campaign, created_at')
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(link)
+})
+
+// DELETE /api/voyage/trips/:id/share-links/:linkId
+router.delete('/trips/:id/share-links/:linkId', requireAuth, async (req, res: Response) => {
+  if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
+  await supabaseAdmin.from('trip_share_links').delete()
+    .eq('id', Number(req.params.linkId)).eq('trip_id', Number(req.params.id))
+  res.json({ ok: true })
+})
+
+// ── GET /api/voyage/admin/acquisition — funil por viagem compartilhada ────────
+// Pra seção "Viagens" da aba Recursos do /admin: cada viagem com share
+// habilitado do próprio admin, com views do gate, cadastros atribuídos via
+// profiles.signup_source = 'trip:<id>' e quebra por campanha. Espelha o
+// by_source do /resources/admin/list, mas contando 'view' — aqui não existe
+// unlock: o "unlock" da viagem é o próprio cadastro.
+router.get('/admin/acquisition', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  if (!(await isAdmin(userId))) { res.status(403).json({ error: 'admin only' }); return }
+
+  const { data: trips } = await supabaseAdmin
+    .from('voyage_trips')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, created_at')
+    .eq('user_id', userId)
+    .not('share_token', 'is', null)
+    .order('created_at', { ascending: false })
+
+  const tripIds = (trips ?? []).map(t => t.id as number)
+
+  const eventsByTrip = new Map<number, { views: number; by_source: Record<string, number> }>()
+  let links: { id: number; trip_id: number; label: string; utm_campaign: string; created_at: string }[] = []
+  if (tripIds.length) {
+    const [{ data: events }, { data: linkRows }] = await Promise.all([
+      supabaseAdmin.from('trip_share_events')
+        .select('trip_id, event_type, utm_source, utm_campaign, utm_content')
+        .in('trip_id', tripIds),
+      supabaseAdmin.from('trip_share_links')
+        .select('id, trip_id, label, utm_campaign, created_at')
+        .in('trip_id', tripIds)
+        .order('created_at', { ascending: false }),
+    ])
+    links = linkRows ?? []
+    for (const e of events ?? []) {
+      if (e.event_type !== 'view') continue
+      const agg = eventsByTrip.get(e.trip_id) ?? { views: 0, by_source: {} }
+      agg.views += 1
+      // Mesmo agrupamento do by_source de resources: campanha/conteúdo
+      // identificam o vídeo; utm_source sozinho ('youtube' pra todo mundo)
+      // não diferencia nada.
+      const video = e.utm_campaign || e.utm_content
+      const source = video ? (e.utm_source ? `${e.utm_source}/${video}` : video) : (e.utm_source || 'sem_origem')
+      agg.by_source[source] = (agg.by_source[source] ?? 0) + 1
+      eventsByTrip.set(e.trip_id, agg)
+    }
+  }
+
+  const result = []
+  for (const t of trips ?? []) {
+    const { count: signups } = await supabaseAdmin
+      .from('profiles').select('id', { count: 'exact', head: true })
+      .eq('signup_source', `trip:${t.id}`)
+    const agg = eventsByTrip.get(t.id)
+    result.push({
+      id: t.id,
+      title: t.title,
+      destination: t.destination,
+      country: t.country,
+      cover_image_url: t.cover_image_url,
+      cover_image_position: t.cover_image_position,
+      stats: {
+        views: agg?.views ?? 0,
+        signups: signups ?? 0,
+        by_source: agg?.by_source ?? {},
+      },
+      links: links.filter(l => l.trip_id === t.id),
+    })
+  }
+  res.json(result)
 })
 
 function escapeXml(str: string | null | undefined): string {

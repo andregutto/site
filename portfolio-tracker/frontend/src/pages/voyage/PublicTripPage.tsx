@@ -72,7 +72,7 @@ interface PublicCost {
   currency: string
 }
 
-interface PageData {
+export interface PageData {
   trip: PublicTrip
   owner_name: string
   places: PublicPlace[]
@@ -216,7 +216,7 @@ function fmtDate(d: string, intlLocale: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(intlLocale, { day: '2-digit', month: 'short', year: '2-digit' })
 }
 
-function fmtDateRange(start: string | null, end: string | null, intlLocale: string, tv: any) {
+export function fmtDateRange(start: string | null, end: string | null, intlLocale: string, tv: any) {
   if (!start && !end) return null
   if (start && end && start === end) return fmtDate(start, intlLocale)
   if (start && end) return `${fmtDate(start, intlLocale)} – ${fmtDate(end, intlLocale)}`
@@ -227,14 +227,14 @@ function fmtDateRange(start: string | null, end: string | null, intlLocale: stri
 // Lista de destinos, condensando em "+N" só quando passa do limite — o
 // hero tem espaço horizontal de sobra pra mostrar mais que 2 antes de
 // condensar (limite maior no desktop, menor no mobile via maxMobile/maxDesktop).
-function destinationsLabel(destinations: { city: string | null; country: string | null }[], max: number): string | null {
+export function destinationsLabel(destinations: { city: string | null; country: string | null }[], max: number): string | null {
   const names = destinations.map(d => d.city ?? d.country).filter(Boolean) as string[]
   if (names.length === 0) return null
   if (names.length <= max) return names.join(' · ')
   return `${names.slice(0, max).join(' · ')} +${names.length - max}`
 }
 
-function tripDurationDays(start: string | null, end: string | null): number | null {
+export function tripDurationDays(start: string | null, end: string | null): number | null {
   if (!start || !end) return null
   const ms = new Date(end + 'T00:00:00').getTime() - new Date(start + 'T00:00:00').getTime()
   return Math.max(1, Math.round(ms / 86400000) + 1)
@@ -388,15 +388,16 @@ function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, on
   )
 }
 
-export default function PublicTripPage() {
-  const { token } = useParams<{ token: string }>()
+// Miolo compartilhável da página pública da viagem: hero + stats + roteiro +
+// mapa. Usado pela própria PublicTripPage (link por token, sem auth) e pela
+// SharedTripViewPage (visão logada do gate /voyage/shared/:tripId, dentro do
+// AppLayout). embedded esconde o que o app já provê em volta: badge Arvo,
+// seletor de idioma, CTA final e rodapé.
+export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageData; kmlUrl: string | null; embedded?: boolean }) {
   const { resolvedTheme } = useTheme()
   const { t, locale } = useI18n()
   const tv = (t as any).voyage ?? {}
   const intlLocale = intlLocaleFor(locale)
-  const [data, setData] = useState<PageData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [selectedDay, setSelectedDay] = useState<number | 'none' | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null)
   const [showKmlHelp, setShowKmlHelp] = useState(false)
@@ -408,45 +409,7 @@ export default function PublicTripPage() {
   const [mapActive, setMapActive] = useState(false)
   const currentLocation = useCurrentLocation()
 
-  useEffect(() => {
-    if (!token) return
-    fetch(`/api/voyage/public/${token}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.error) setError(d.error)
-        else setData(d)
-      })
-      .catch(() => setError(tv.public?.loadError ?? 'Error loading page'))
-      .finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
-
   const themeClass = resolvedTheme === 'dark' ? 'dark' : ''
-
-  if (loading) {
-    return (
-      <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <ArvoLoader size={48} style={{ color: 'var(--arvo-gold)' }} />
-      </div>
-    )
-  }
-
-  if (error || !data) {
-    return (
-      <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(200,184,154,0.25)" strokeWidth="1.3">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 34l12-20 14 10 10-16 12 8"/>
-          <path strokeLinecap="round" d="M4 42h40"/>
-        </svg>
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
-          {error || tv.public?.notFound || 'Page not found'}
-        </p>
-        <a href="/" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: RED, textDecoration: 'none' }}>
-          {tv.public?.discoverArvo ?? 'Discover Arvo →'}
-        </a>
-      </div>
-    )
-  }
 
   const { trip, owner_name, places, cost } = data
   const dateStr = fmtDateRange(trip.start_date, trip.end_date, intlLocale, tv)
@@ -479,7 +442,7 @@ export default function PublicTripPage() {
     : withCoords.filter(p => p.day_number === selectedDay)
 
   return (
-    <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)' }}>
+    <div className={embedded ? undefined : themeClass} style={embedded ? undefined : { minHeight: '100vh', background: 'var(--arvo-bg)' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: 300, background: '#1a1a18', overflow: 'hidden' }}>
         {trip.cover_image_url ? (
@@ -500,27 +463,31 @@ export default function PublicTripPage() {
         {/* Top scrim — sem isso o logo/seletor de idioma sumiam em fotos claras no topo */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, transparent 100%)' }} />
 
-        {/* Arvo badge */}
-        <div style={{ position: 'absolute', top: 18, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/brand/logo/arvo-symbol-gold.svg" width="16" height="17" alt="" />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.85)' }}>arvo voyage</span>
-        </div>
+        {!embedded && (
+          <>
+            {/* Arvo badge */}
+            <div style={{ position: 'absolute', top: 18, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" width="16" height="17" alt="" />
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.85)' }}>arvo voyage</span>
+            </div>
 
-        {/* Language selector — overrides the theme CSS vars the shared
-            component reads, since the hero is always a dark photo overlay
-            regardless of light/dark theme (its own text is hardcoded white,
-            not theme-driven). */}
-        <div
-          style={{
-            position: 'absolute', top: 14, right: 24,
-            ['--arvo-fg' as any]: '#fff',
-            ['--arvo-fg-soft' as any]: 'rgba(255,255,255,0.55)',
-            ['--arvo-fg-faint' as any]: 'rgba(255,255,255,0.3)',
-            ['--arvo-gold' as any]: '#C8B89A',
-          }}
-        >
-          <LanguageSelector />
-        </div>
+            {/* Language selector — overrides the theme CSS vars the shared
+                component reads, since the hero is always a dark photo overlay
+                regardless of light/dark theme (its own text is hardcoded white,
+                not theme-driven). */}
+            <div
+              style={{
+                position: 'absolute', top: 14, right: 24,
+                ['--arvo-fg' as any]: '#fff',
+                ['--arvo-fg-soft' as any]: 'rgba(255,255,255,0.55)',
+                ['--arvo-fg-faint' as any]: 'rgba(255,255,255,0.3)',
+                ['--arvo-gold' as any]: '#C8B89A',
+              }}
+            >
+              <LanguageSelector />
+            </div>
+          </>
+        )}
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -535,7 +502,7 @@ export default function PublicTripPage() {
             </h1>
             <div className="flex flex-col" style={{ gap: 6 }}>
               {(() => {
-                const dests = data!.destinations ?? []
+                const dests = data.destinations ?? []
                 const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
                 const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
                 const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
@@ -617,22 +584,24 @@ export default function PublicTripPage() {
         {/* Download + import actions — uma linha limpa: KML (primário),
             Maps (dropdown quando há vários destinos) e um "?" de ajuda. */}
         {withCoords.length > 0 && (() => {
-          const dests = (data!.destinations ?? []).filter(d => d.city || d.country)
+          const dests = (data.destinations ?? []).filter(d => d.city || d.country)
           const mapsQuery = (s: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s)}`
           const destText = (d: { city: string | null; country: string | null }) => [d.city, d.country].filter(Boolean).join(', ')
           return (
           <div style={{ marginBottom: 32, marginTop: 16 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              <a
-                href={`/api/voyage/public/${token}/kml`}
-                download
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.02em' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
-                </svg>
-                {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
-              </a>
+              {kmlUrl && (
+                <a
+                  href={kmlUrl}
+                  download
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.02em' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
+                  </svg>
+                  {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
+                </a>
+              )}
 
               {/* Maps: 0/1 destino → link direto; vários → dropdown por destino */}
               {dests.length > 1 ? (
@@ -832,6 +801,7 @@ export default function PublicTripPage() {
         )}
 
         {/* CTA — convite para criar o próprio roteiro */}
+        {!embedded && (
         <div style={{
           marginTop: 48, padding: '24px 28px', borderRadius: 16,
           background: 'linear-gradient(135deg, rgba(200,184,154,0.10), rgba(214,59,47,0.05))',
@@ -847,8 +817,10 @@ export default function PublicTripPage() {
             {tv.public?.ctaButton ?? 'Create my itinerary on Arvo Voyage →'}
           </a>
         </div>
+        )}
 
         {/* Footer */}
+        {!embedded && (
         <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/brand/logo/arvo-symbol-gold.svg" width="14" height="15" alt="" style={{ opacity: 0.6 }} />
@@ -858,9 +830,62 @@ export default function PublicTripPage() {
           </div>
           <LanguageSelector />
         </div>
+        )}
       </div>
     </div>
   )
+}
+
+export default function PublicTripPage() {
+  const { token } = useParams<{ token: string }>()
+  const { resolvedTheme } = useTheme()
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const [data, setData] = useState<PageData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!token) return
+    fetch(`/api/voyage/public/${token}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error)
+        else setData(d)
+      })
+      .catch(() => setError(tv.public?.loadError ?? 'Error loading page'))
+      .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
+
+  const themeClass = resolvedTheme === 'dark' ? 'dark' : ''
+
+  if (loading) {
+    return (
+      <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ArvoLoader size={48} style={{ color: 'var(--arvo-gold)' }} />
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(200,184,154,0.25)" strokeWidth="1.3">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 34l12-20 14 10 10-16 12 8"/>
+          <path strokeLinecap="round" d="M4 42h40"/>
+        </svg>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
+          {error || tv.public?.notFound || 'Page not found'}
+        </p>
+        <a href="/" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: RED, textDecoration: 'none' }}>
+          {tv.public?.discoverArvo ?? 'Discover Arvo →'}
+        </a>
+      </div>
+    )
+  }
+
+  return <TripShareView data={data} kmlUrl={`/api/voyage/public/${token}/kml`} />
 }
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {

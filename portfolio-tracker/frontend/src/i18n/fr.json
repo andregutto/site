@@ -2511,7 +2511,22 @@
       "expiry7": "7 jours",
       "expiry30": "30 jours",
       "expiry90": "90 jours",
-      "expiryNone": "Sans expiration"
+      "expiryNone": "Sans expiration",
+      "gatedLink": "Lien avec inscription",
+      "gatedLinkDesc": "Les visiteurs doivent créer un compte gratuit pour voir l’itinéraire",
+      "promoTitle": "Liens de diffusion (admin)",
+      "promoEmpty": "Aucun lien de diffusion pour le moment",
+      "promoPlaceholder": "Où allez-vous l’utiliser ? Ex : vidéo itinéraire Lisbonne",
+      "promoGenerate": "Générer",
+      "promoDelete": "Supprimer"
+    },
+    "gate": {
+      "eyebrow": "Accès à l’itinéraire",
+      "placesOne": "1 lieu",
+      "placesMany": "{n} lieux",
+      "daysOne": "1 jour",
+      "daysMany": "{n} jours",
+      "unlockHint": "Connectez-vous ou créez votre compte gratuit à côté pour voir l’itinéraire complet, avec la carte et tous les lieux."
     },
     "expenses": {
       "label": "DÉPENSES",
@@ -2813,7 +2828,10 @@
       "uploadCover": "Choisir la couverture",
       "changeCover": "Changer la couverture",
       "uploadCoverError": "Échec de l'envoi de la photo de couverture",
-      "dragHint": "Faites glisser pour repositionner"
+      "dragHint": "Faites glisser pour repositionner",
+      "tripsTitle": "Voyages",
+      "tripsSubtitle": "Voyages partagés derrière le portail d’inscription. Générez les liens de diffusion dans la fenêtre Partager du voyage.",
+      "tripOpen": "Ouvrir le voyage"
     },
     "gateEyebrow": "Accès à la ressource",
     "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer.",
