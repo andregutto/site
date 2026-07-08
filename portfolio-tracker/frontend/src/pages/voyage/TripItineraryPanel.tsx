@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { LibraryPicker } from './TripPlacesPanel'
@@ -28,22 +28,6 @@ function inferredDateForDay(day: number, tripStartDate: string | null | undefine
   const d = new Date(start)
   d.setDate(d.getDate() + (day - 1))
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-}
-
-// This app never sets overflow on <html>/<body> elsewhere, so it's safe to
-// just set/clear 'hidden' directly without saving a previous value.
-let pageScrollLockCount = 0
-function lockPageScroll() {
-  pageScrollLockCount++
-  document.documentElement.style.overflow = 'hidden'
-  document.body.style.overflow = 'hidden'
-}
-function unlockPageScroll() {
-  pageScrollLockCount = Math.max(0, pageScrollLockCount - 1)
-  if (pageScrollLockCount === 0) {
-    document.documentElement.style.overflow = ''
-    document.body.style.overflow = ''
-  }
 }
 
 type Kind = 'place' | 'note' | 'transport'
@@ -297,25 +281,15 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
   )
 }
 
-// Long-press (anywhere on the row) starts a reorder, same gesture used by
-// Things/Notion/Trello — easier to hit than a small grip icon and works
-// identically with mouse or touch. A quick tap is left alone so the row's own
-// buttons (visited, despesas, Mais…) keep working normally.
-const LONG_PRESS_MS = 380
-const MOVE_CANCEL_PX = 8
-
-function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload, routeMode, routeSelected, onToggleRoute }: {
+function ItemRow({ item, tripId, canEdit, isOwner, destinations, autoOpenStay, selected, onSelect, onPatch, onDelete, onReload, routeMode, routeSelected, onToggleRoute }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
   isOwner?: boolean
-  dragging: boolean
-  dropTarget: boolean
   destinations: TripDestination[]
   autoOpenStay?: boolean
   selected?: boolean
   onSelect?: () => void
-  onStartDrag: () => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
   onReload: () => void
@@ -349,70 +323,6 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
   const dayDestCount = destinationsForDay(item.day_number, destinations).length
   const showDestinationPicker = destinations.length > 1 && (dayDestCount > 1 || item.destination_id != null)
 
-  // Long-press anywhere on the row to start a reorder. A quick tap clears the
-  // timer before it fires, so the row's own buttons keep working normally.
-  //
-  // touch-action is 'none' on the row (below) so the browser never claims the
-  // touch as a native scroll mid-gesture — that's the only reliable way to
-  // hand long-press movement to JS instead of the page (touch-action set
-  // dynamically once dragging starts is too late: browsers decide gesture
-  // ownership from the first touch contact, not on a later re-render). The
-  // cost is that native scroll no longer happens for a touch that starts on a
-  // row, so if the move turns out to be a scroll (not a long-press), we drive
-  // the scroll ourselves via scrollBy for the rest of that touch.
-  const pressTimerRef = useRef<number | null>(null)
-  const pressStartRef = useRef<{ x: number; y: number } | null>(null)
-  const manualScrollRef = useRef(false)
-  const lastYRef = useRef(0)
-
-  function clearPress() {
-    if (pressTimerRef.current != null) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null }
-    pressStartRef.current = null
-  }
-  function endTouch() {
-    clearPress()
-    manualScrollRef.current = false
-  }
-  function handlePointerDown(e: React.PointerEvent) {
-    if (!canEdit) return
-    pressStartRef.current = { x: e.clientX, y: e.clientY }
-    lastYRef.current = e.clientY
-    manualScrollRef.current = false
-    // Mouse has no scroll-vs-drag ambiguity (that's a touch-only problem —
-    // a finger moving could mean "scroll the page" or "drag the row").
-    // Requiring a long-press before allowing movement made sense for touch,
-    // but for mouse it meant any normal click-and-drag got cancelled by
-    // handlePointerMove below before the 380ms timer ever fired, so drag
-    // never started on desktop. Mouse instead starts on first move past
-    // the threshold, like any native drag.
-    if (e.pointerType === 'mouse') return
-    pressTimerRef.current = window.setTimeout(() => {
-      pressTimerRef.current = null
-      navigator.vibrate?.(10)
-      onStartDrag()
-    }, LONG_PRESS_MS)
-  }
-  function handlePointerMove(e: React.PointerEvent) {
-    if (manualScrollRef.current) {
-      window.scrollBy(0, lastYRef.current - e.clientY)
-      lastYRef.current = e.clientY
-      return
-    }
-    if (!pressStartRef.current) return
-    const dx = e.clientX - pressStartRef.current.x
-    const dy = e.clientY - pressStartRef.current.y
-    if (Math.hypot(dx, dy) <= MOVE_CANCEL_PX) return
-    if (e.pointerType === 'mouse') {
-      pressStartRef.current = null
-      onStartDrag()
-      return
-    }
-    if (pressTimerRef.current == null) return
-    clearPress()
-    manualScrollRef.current = true
-    lastYRef.current = e.clientY
-  }
-
   async function del() {
     if (!confirm((tv.confirm?.removePlaceFromTrip ?? 'Remover "{name}" da viagem?').replace('{name}', item.name))) return
     await apiFetch(`/voyage/trips/${tripId}/places/${item.id}`, { method: 'DELETE' })
@@ -421,39 +331,13 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
 
   return (
     <div
-      data-row-id={item.id}
       className="itin-row"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endTouch}
-      onPointerCancel={endTouch}
       style={{
         borderRadius: 8,
         background: selected ? 'rgba(200,184,154,0.10)' : item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
-        border: dropTarget ? `1px dashed ${RED}` : selected ? `1px solid ${GOLD}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
+        border: selected ? `1px solid ${GOLD}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
         overflow: 'hidden',
-        opacity: dragging ? 0.88 : 1,
-        // 'none' (not 'scale(1)') when idle — any transform other than none
-        // creates a new containing block, which trapped the PlaceExpensesPanel
-        // modal's position:fixed overlay inside this row instead of the viewport.
-        transform: dragging ? 'scale(1.02) rotate(0.6deg)' : 'none',
-        boxShadow: dragging ? 'var(--arvo-shadow-lg)' : 'none',
-        cursor: canEdit ? 'grab' : 'default',
         transition: 'opacity 120ms, border-color 120ms, transform 120ms, box-shadow 120ms',
-        // Holding still over text is also the OS gesture for text selection
-        // (iOS callout / Android select-text bubble) — without this, that
-        // native gesture wins the race against the long-press timer below.
-        ...(canEdit && {
-          userSelect: 'none' as const,
-          WebkitUserSelect: 'none' as const,
-          WebkitTouchCallout: 'none' as const,
-        }),
-        // Must be 'none' from the start of the touch, not toggled on once
-        // dragging begins — browsers decide gesture ownership (scroll vs JS)
-        // at the first touch contact, so setting this reactively was always
-        // too late. The manual scrollBy in handlePointerMove compensates for
-        // native scroll being unavailable on these rows.
-        touchAction: canEdit ? 'none' as const : 'auto' as const,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
@@ -485,7 +369,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           onClick={() => { if (onSelect && item.lat != null && item.lng != null) onSelect() }}
         >
           {editingName ? (
-            <div style={{ marginBottom: 4 }} onPointerDown={e => e.stopPropagation()}>
+            <div style={{ marginBottom: 4 }}>
               <NoteEditor value={item.name} placeholder="Nome do lugar…"
                 onSave={v => { if (v?.trim()) onPatch({ name: v.trim() }); setEditingName(false) }} />
             </div>
@@ -914,14 +798,6 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
     setRouteSelection(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id])
   }
 
-  // Pointer-events-based drag (works with mouse AND touch, unlike native HTML5
-  // drag-and-drop which iOS/Android browsers don't support via touch).
-  const itemsRef = useRef<PlanItem[]>([])
-  itemsRef.current = items
-  const dragIdRef = useRef<number | null>(null)
-  const overIdRef = useRef<number | null>(null)
-  const [dragVisual, setDragVisual] = useState<{ dragId: number | null; overId: number | null }>({ dragId: null, overId: null })
-
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -954,67 +830,6 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
     Promise.all(updates.map(u =>
       apiFetch(`/voyage/trips/${tripId}/places/${u.id}`, { method: 'PATCH', body: JSON.stringify({ sort_order: u.sort_order }) })
     )).catch(() => load())
-  }
-
-  function doReorder(draggedId: number, targetId: number) {
-    const list = itemsRef.current
-    const dragItem = list.find(i => i.id === draggedId)
-    const targetItem = list.find(i => i.id === targetId)
-    if (!dragItem || !targetItem || dragItem.day_number !== targetItem.day_number) return
-    const group = list.filter(i => i.day_number === dragItem.day_number).slice().sort((a, b) => a.sort_order - b.sort_order)
-    const without = group.filter(i => i.id !== draggedId)
-    const targetIdx = without.findIndex(i => i.id === targetId)
-    without.splice(targetIdx, 0, dragItem)
-    persistOrder(without.map((it, idx) => ({ id: it.id, sort_order: idx })))
-  }
-
-  useEffect(() => {
-    function rowIdAt(x: number, y: number): number | null {
-      const el = document.elementFromPoint(x, y) as HTMLElement | null
-      const rowEl = el?.closest('[data-row-id]') as HTMLElement | null
-      return rowEl ? Number(rowEl.dataset.rowId) : null
-    }
-    function onMove(e: PointerEvent) {
-      if (dragIdRef.current == null) return
-      if (e.cancelable) e.preventDefault()
-      const id = rowIdAt(e.clientX, e.clientY)
-      if (id !== overIdRef.current) {
-        overIdRef.current = id
-        setDragVisual(v => ({ ...v, overId: id }))
-      }
-    }
-    function finishDrag() {
-      const draggedId = dragIdRef.current
-      const targetId = overIdRef.current
-      dragIdRef.current = null
-      overIdRef.current = null
-      setDragVisual({ dragId: null, overId: null })
-      unlockPageScroll()
-      if (draggedId != null && targetId != null && draggedId !== targetId) {
-        doReorder(draggedId, targetId)
-      }
-    }
-    window.addEventListener('pointermove', onMove, { passive: false })
-    window.addEventListener('pointerup', finishDrag)
-    window.addEventListener('pointercancel', finishDrag)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', finishDrag)
-      window.removeEventListener('pointercancel', finishDrag)
-      unlockPageScroll()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  function startDrag(id: number) {
-    dragIdRef.current = id
-    overIdRef.current = null
-    setDragVisual({ dragId: id, overId: null })
-    // preventDefault() on pointermove alone isn't reliably honored by Safari/iOS
-    // for blocking scroll on Pointer Events, so lock the page outright while a
-    // drag is active — otherwise the page scrolls under the finger instead of
-    // the row following it.
-    lockPageScroll()
   }
 
   function sortDayByTime(day: number | null) {
@@ -1067,11 +882,8 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
       <ItemRow
         key={it.id} item={it} tripId={tripId} canEdit={canEdit} isOwner={isOwner} destinations={destinations}
         autoOpenStay={it.id === pendingStayItemId}
-        dragging={dragVisual.dragId === it.id}
-        dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
         selected={selectedPlaceId === it.id}
         onSelect={onSelectPlace ? () => onSelectPlace(selectedPlaceId === it.id ? null : it.id) : undefined}
-        onStartDrag={() => startDrag(it.id)}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
         onReload={load}
@@ -1238,12 +1050,6 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
             </div>
           )}
         </div>
-      )}
-
-      {canEdit && items.length > 0 && !routeMode && (
-        <p style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
-          {tv.dragHint ?? 'Toque e segure uma atividade para reordenar dentro do mesmo dia'}
-        </p>
       )}
 
       {/* Barra flutuante do modo de seleção — some quando não há nada marcado. */}
