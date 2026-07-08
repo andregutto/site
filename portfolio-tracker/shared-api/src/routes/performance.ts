@@ -1439,7 +1439,7 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
 // whole portfolio, applied per asset, so a mid-period contribution is not reported as gain.
 // price = computeAssetReturns' price variation (what the asset itself did in the period).
 // Manual assets get position=null (their "value" is a typed-in number, not a return).
-export interface AssetReturnPair { position: number | null; price: number | null }
+export interface AssetReturnPair { position: number | null; price: number | null; changeBrl: number | null }
 
 export async function computeAssetPositionReturns(
   userId: string, fromStr: string, toStr: string
@@ -1506,6 +1506,7 @@ export async function computeAssetPositionReturns(
   for (const a of data.assets) {
     const price = priceReturns[a.id] ?? null
     let position: number | null = null
+    let changeBrl: number | null = null
     if (a.asset_type !== 'manual') {
       const vs = vsMap[a.id] ?? 0
       const ve = veMap[a.id] ?? 0
@@ -1513,9 +1514,10 @@ export async function computeAssetPositionReturns(
       const denom = vs + 0.5 * cf
       if ((vs > 0 || cf > 0) && denom > 0) {
         position = Math.round(((ve - vs - cf) / denom) * 10000) / 100
+        changeBrl = ve - vs - cf
       }
     }
-    out[a.id] = { position, price }
+    out[a.id] = { position, price, changeBrl }
   }
   return out
 }

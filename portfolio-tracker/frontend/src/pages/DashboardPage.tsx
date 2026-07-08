@@ -207,6 +207,21 @@ export default function DashboardPage() {
     : (dashPosReturns
         ? Object.fromEntries(Object.entries(dashPosReturns).map(([id, r]) => [Number(id), r.position]))
         : null)
+  // Gain/loss in BRL for the selected period — NOT the position's total current
+  // value (that number doesn't move with the period selector and was previously
+  // shown next to the % by mistake). "Início" derives it client-side from
+  // by_asset (value - cost basis); other periods come from the Dietz calc's
+  // internal (ve - vs - cf) delta, exposed by the API as changeBrl.
+  const dashChangeBrl: Record<number, number | null> | null = periodMode === 'inception'
+    ? Object.fromEntries((data?.by_asset ?? []).map(a => [
+        a.id,
+        (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0 && a.value_brl > 0)
+          ? a.value_brl - a.invested_brl
+          : null,
+      ]))
+    : (dashPosReturns
+        ? Object.fromEntries(Object.entries(dashPosReturns).map(([id, r]) => [Number(id), r.changeBrl]))
+        : null)
   const dashReturnsLoading = periodMode === 'inception' ? false : dashPosLoading
 
   const divFrom = (() => {
@@ -258,7 +273,7 @@ export default function DashboardPage() {
   const tdd = t.dashboard as unknown as Record<string, string>
   const movingAssets = (data.by_asset ?? [])
     .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
-    .map(a => ({ ...a, ret: dashReturns![a.id]! }))
+    .map(a => ({ ...a, ret: dashReturns![a.id]!, changeBrl: dashChangeBrl?.[a.id] ?? null }))
     .sort((a, b) => b.ret - a.ret)
   const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 5)
   const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
@@ -398,7 +413,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-sm font-bold" style={{ color: 'var(--arvo-green)' }}>+{a.ret.toFixed(2)}%</div>
-                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
+                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{a.changeBrl != null ? `+${fmt(a.changeBrl)}` : '-'}</div>
                         </div>
                       </div>
                     ))}
@@ -421,7 +436,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-sm font-bold" style={{ color: 'var(--arvo-red)' }}>{a.ret.toFixed(2)}%</div>
-                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
+                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{a.changeBrl != null ? fmt(a.changeBrl) : '-'}</div>
                         </div>
                       </div>
                     ))}

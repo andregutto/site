@@ -139,7 +139,7 @@ export interface PerformanceDaily {
 export type AssetReturns = Record<number, number | null>
 // position = Simple Dietz return of the user's position in the period;
 // price = the asset's own price variation in the same period.
-export type AssetPositionReturns = Record<number, { position: number | null; price: number | null }>
+export type AssetPositionReturns = Record<number, { position: number | null; price: number | null; changeBrl: number | null }>
 
 export interface Asset {
   id: number
