@@ -126,11 +126,16 @@ router.get('/', requireAuth, async (req, res: Response) => {
   const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId)
   if (error || !user) { res.status(404).json({ error: 'Usuário não encontrado' }); return }
   const meta = user.user_metadata ?? {}
-  const { data: handle } = await supabaseAdmin
-    .from('user_handles').select('username').eq('user_id', userId).single()
+  const [{ data: handle }, { data: profileRow }] = await Promise.all([
+    supabaseAdmin.from('user_handles').select('username').eq('user_id', userId).single(),
+    // Visibilidade do perfil público (migration 077) — linha pode não existir
+    // em contas antigas, e aí vale o default (true)
+    supabaseAdmin.from('profiles').select('public_profile').eq('id', userId).maybeSingle(),
+  ])
   res.json({
     email:                user.email ?? '',
     username:             handle?.username ?? '',
+    public_profile:       profileRow?.public_profile !== false,
     first_name:           meta.first_name           ?? '',
     last_name:            meta.last_name             ?? '',
     country:              meta.country               ?? '',

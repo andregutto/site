@@ -807,11 +807,12 @@ router.get('/users/:username', async (req: any, res: any) => {
       targetId = handle.user_id as string
     }
 
-    const [display, authRes, adminIds, statuses, topicsRes, tripsRes] = await Promise.all([
+    const [display, authRes, adminIds, statuses, profileRow, topicsRes, tripsRes] = await Promise.all([
       userDisplay(targetId),
       supabaseAdmin.auth.admin.getUserById(targetId),
       getAdminIds(),
       getFriendshipStatuses(userId, [targetId]),
+      supabaseAdmin.from('profiles').select('bio, public_profile').eq('id', targetId).maybeSingle(),
       supabaseAdmin
         .from('community_topics')
         .select('id, title, category_id, created_at, reply_count, last_post_at')
@@ -829,6 +830,14 @@ router.get('/users/:username', async (req: any, res: any) => {
 
     // No caminho por UUID o usuário pode não existir — o getUserById é a checagem
     if (!authRes.data?.user) { res.status(404).json({ error: 'user not found' }); return }
+
+    // Perfil desativado (public_profile = false, migration 077): não encontrável
+    // pra ninguém — mesmo 404 de usuário inexistente, pra não vazar que a conta
+    // existe. Exceções: o próprio dono (vê a página com aviso) e admins.
+    const isPublic = profileRow.data?.public_profile !== false
+    if (!isPublic && targetId !== userId && !adminIds.has(userId)) {
+      res.status(404).json({ error: 'user not found' }); return
+    }
 
     const topics = topicsRes.data ?? []
     const categoryIds = [...new Set(topics.map((t: any) => t.category_id))]
@@ -848,6 +857,10 @@ router.get('/users/:username', async (req: any, res: any) => {
         avatar_url: display.avatar_url ?? null,
         member_since: authRes.data?.user?.created_at ?? null,
         is_admin: adminIds.has(targetId),
+        bio: profileRow.data?.bio ?? null,
+        // false só chega ao cliente pro dono/admin (visitante recebe 404 acima) —
+        // é o que dispara o aviso "perfil desativado" na própria página
+        public_profile: isPublic,
       },
       friendship_status: friendship,
       topics: topics.map((t: any) => ({
@@ -860,6 +873,41 @@ router.get('/users/:username', async (req: any, res: any) => {
       })),
       trips: await buildCommunityTripCards(tripsRes.data ?? []),
     })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── PATCH /api/community/users/me  ({ bio?, public_profile? }) ───────────────
+// Escrita única dos dois campos da migration 077: a bio editada inline no
+// próprio perfil (/u/:handle) e o switch "Perfil público" das configurações.
+// Upsert porque contas antigas podem não ter linha em profiles (o trigger
+// handle_new_user só cobre cadastros novos).
+const BIO_MAX = 280
+router.patch('/users/me', async (req: any, res: any) => {
+  const userId = uid(req)
+  const { bio, public_profile } = req.body as { bio?: unknown; public_profile?: unknown }
+
+  const patch: Record<string, any> = {}
+  if (bio !== undefined) {
+    if (typeof bio !== 'string') { res.status(400).json({ error: 'bio must be a string' }); return }
+    const trimmed = bio.trim()
+    // Limite em code points (não UTF-16 units) pra não penalizar emoji/acentos
+    if ([...trimmed].length > BIO_MAX) { res.status(400).json({ error: `bio must be at most ${BIO_MAX} characters` }); return }
+    patch.bio = trimmed || null
+  }
+  if (public_profile !== undefined) {
+    if (typeof public_profile !== 'boolean') { res.status(400).json({ error: 'public_profile must be a boolean' }); return }
+    patch.public_profile = public_profile
+  }
+  if (!Object.keys(patch).length) { res.status(400).json({ error: 'nothing to update' }); return }
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .upsert({ id: userId, ...patch, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ ok: true, ...patch })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }

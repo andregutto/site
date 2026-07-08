@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
 import PageHeaderTabs from '../components/PageHeaderTabs'
 import * as XLSX from 'xlsx'
@@ -12,6 +12,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { Icon } from '../components/icons'
 import { DatePicker } from '../components/ui'
+import { Switch } from '../components/ui/Switch'
 import GoogleLogo from '../components/GoogleLogo'
 import { supabase } from '../lib/supabase'
 import { normalizeStorageUrl } from '../lib/storageUrl'
@@ -33,6 +34,7 @@ interface ProfileData {
   saida_fiscal_brasil: boolean
   tax_country: string
   budget_reminder_freq: number
+  public_profile?: boolean
 }
 
 const COUNTRY_OPTIONS = [
@@ -146,6 +148,11 @@ export default function ProfilePage() {
   }
 
   const [taxCountry, setTaxCountry] = useState('BR')
+  // Perfil público (/u/:handle) — link + switch de visibilidade (migration 077)
+  const navigate = useNavigate()
+  const [publicProfile, setPublicProfile] = useState(true)
+  const [publicSaving,  setPublicSaving]  = useState(false)
+  const [linkCopied,    setLinkCopied]    = useState(false)
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { check: checkSyncStatus, loading: checkingStatus, status: syncStatus } = useSyncStatus()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
@@ -166,10 +173,37 @@ export default function ProfilePage() {
         setMonthCycleDay(d.month_cycle_day ?? 1)
         setTaxCountry(d.tax_country || 'BR')
         setBudgetReminderFreq(d.budget_reminder_freq ?? 0)
+        setPublicProfile(d.public_profile !== false)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
   }, [])
+
+  // Liga/desliga a visibilidade do perfil público — otimista (o switch anima na
+  // hora), com rollback se o PATCH falhar. Mesmo endpoint da bio (community).
+  async function handleTogglePublicProfile(next: boolean) {
+    if (publicSaving) return
+    const prev = publicProfile
+    setPublicProfile(next)
+    setPublicSaving(true)
+    try {
+      await apiFetch('/community/users/me', { method: 'PATCH', body: JSON.stringify({ public_profile: next }) })
+    } catch {
+      setPublicProfile(prev)
+    } finally {
+      setPublicSaving(false)
+    }
+  }
+
+  async function handleCopyProfileLink(handle: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/u/${handle}`)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch {
+      // Clipboard indisponível (contexto não seguro) — sem feedback mesmo
+    }
+  }
 
   useEffect(() => {
     const value = usernameInput.trim().toLowerCase()
@@ -768,6 +802,80 @@ export default function ProfilePage() {
             </svg>
           </Link>
           </div>
+
+          {/* Perfil público: link pro /u/:handle + switch de visibilidade */}
+          {(() => {
+            const publicHandle = username || user?.id || ''
+            return (
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.publicProfileTitle}</h2>
+            <p className="text-xs mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{t.profile.publicProfileDesc}</p>
+
+            <div
+              role="link"
+              tabIndex={0}
+              onClick={() => navigate(`/u/${publicHandle}`)}
+              onKeyDown={e => { if (e.key === 'Enter') navigate(`/u/${publicHandle}`) }}
+              className="mt-4 flex items-center gap-3 rounded-xl px-4 py-3 group hover:shadow-sm"
+              style={{
+                border: '1px solid var(--arvo-border)', cursor: 'pointer',
+                opacity: publicProfile ? 1 : 0.55,
+                transition: 'opacity 280ms cubic-bezier(0.35, 0, 0.65, 1), box-shadow 280ms cubic-bezier(0.35, 0, 0.65, 1)',
+              }}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]">
+                  {avatarInitials}
+                </div>
+              )}
+              <span className="flex-1 min-w-0 truncate text-sm" style={{ fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg)' }}>
+                <span style={{ color: 'var(--arvo-fg-faint)' }}>/u/</span>{publicHandle}
+              </span>
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); handleCopyProfileLink(publicHandle) }}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs"
+                style={{
+                  border: '1px solid var(--arvo-border)', background: 'transparent', cursor: 'pointer',
+                  color: linkCopied ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)',
+                  transition: 'color 280ms cubic-bezier(0.35, 0, 0.65, 1)',
+                }}
+              >
+                {linkCopied ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                  </svg>
+                )}
+                {linkCopied ? t.profile.linkCopied : t.profile.copyLink}
+              </button>
+              <svg className="w-3.5 h-3.5 shrink-0 text-[var(--arvo-fg-faint)] group-hover:text-[var(--arvo-fg)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-[var(--arvo-fg)]">{t.profile.publicProfileSwitch}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>
+                  {publicProfile ? t.profile.publicProfileOnHint : t.profile.publicProfileOffHint}
+                </p>
+              </div>
+              <Switch
+                checked={publicProfile}
+                onChange={handleTogglePublicProfile}
+                disabled={publicSaving}
+                label={t.profile.publicProfileSwitch}
+              />
+            </div>
+          </div>
+            )
+          })()}
 
           {/* Row: Dados pessoais | Senha + Zona de perigo */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
