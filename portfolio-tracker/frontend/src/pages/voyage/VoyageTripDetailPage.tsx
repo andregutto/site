@@ -9,7 +9,7 @@ import MembersPanel from './MembersPanel'
 import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
-import TripInfoCardsPanel from './TripInfoCardsPanel'
+import TripInfoCardsPanel, { EyeIcon } from './TripInfoCardsPanel'
 import Avatar from './_shared/Avatar'
 import type { Trip, TripCost, TripMember, TripDestination, TripInfoCard } from './types'
 
@@ -257,15 +257,16 @@ export default function VoyageTripDetailPage() {
           )}
           {/* Ver como visitante — só quando a viagem já está acessível via
               /voyage/shared/:tripId (link de compartilhamento OU visível na
-              Comunidade). Link secundário e discreto ao lado do Compartilhar,
-              que é a ação primária. */}
+              Comunidade). Mesma pill visual de Editar/Compartilhar, pra ficar
+              lado a lado com a mesma cara em vez de destoar como link solto. */}
           {trip.user_id === user?.id && (trip.share_token || trip.community_visible) && (
             <a
               href={`/voyage/shared/${trip.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-faint)', textDecoration: 'none', flexShrink: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', textDecoration: 'none', flexShrink: 0 }}
             >
+              <EyeIcon size={11} />
               {tv.viewAsVisitor ?? 'Ver como visitante'}
             </a>
           )}

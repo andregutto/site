@@ -2369,6 +2369,7 @@
       "bodyPlaceholder": "Detalhes, referências, instruções…",
       "phoneLabel": "Telefone",
       "urlLabel": "Link",
+      "linkLabel": "Link",
       "includeInShare": "Incluir no compartilhamento",
       "includeInShareDesc": "Aparece no link público, no link com cadastro e na Comunidade",
       "save": "Salvar",

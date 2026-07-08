@@ -32,20 +32,23 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
   onClose: () => void
 }) {
   return (
-    <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 140, position: 'relative' }}>
-      <button
-        type="button"
-        onClick={onClose}
-        style={{ position: 'absolute', top: -3, right: -3, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 3, lineHeight: 1, fontSize: 13 }}
-      >✕</button>
-      {p.day_number != null && (
-        <span style={{ display: 'inline-block', fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 2 }}>
-          {dayLabel(p.day_number)}
-        </span>
-      )}
-      <p style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 1, lineHeight: 1.25 }}>{p.name}</p>
+    <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 140 }}>
+      {/* Cabeçalho: nome + X na mesma linha (em vez de X flutuando por cima
+          via position:absolute e o badge de dia isolado acima do nome) —
+          nome começa imediatamente à esquerda, X fixo à direita. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+        <p style={{
+          fontWeight: 600, fontSize: 13.5, lineHeight: 1.25, flex: 1, minWidth: 0,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{p.name}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0, lineHeight: 1, fontSize: 13, flexShrink: 0 }}
+        >✕</button>
+      </div>
       {p.category && (
-        <p style={{ fontSize: 10, color: '#999', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <p style={{ fontSize: 10, color: '#999', marginTop: 2, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {categoryLabel ? categoryLabel(p.category) : p.category}
         </p>
       )}
@@ -55,10 +58,21 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
       {(p.expense_total ?? 0) > 0 && (
         <p style={{ fontSize: 11.5, color: '#444', marginTop: 2, marginBottom: 2 }}>{spentLabel} <strong>{formatCurrency(p.expense_total!)}</strong></p>
       )}
-      {p.google_maps_url && (
-        <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: '#555', textDecoration: 'none', display: 'inline-block', marginTop: 2 }}>
-          {openInMapsLabel}
-        </a>
+      {/* Rodapé: dia + Abrir no Maps juntos, em vez do dia sozinho ocupando
+          uma linha inteira no topo. */}
+      {(p.day_number != null || p.google_maps_url) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          {p.day_number != null ? (
+            <span style={{ display: 'inline-block', fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number) }}>
+              {dayLabel(p.day_number)}
+            </span>
+          ) : <span />}
+          {p.google_maps_url && (
+            <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: '#555', textDecoration: 'none' }}>
+              {openInMapsLabel}
+            </a>
+          )}
+        </div>
       )}
     </div>
   )

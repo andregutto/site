@@ -23,6 +23,14 @@
 .leaflet-container .leaflet-control      { z-index: 9 !important; }
 .leaflet-container .leaflet-top, .leaflet-container .leaflet-bottom { z-index: 10 !important; }
 
+/* Leaflet aplica uma margem própria generosa em .leaflet-popup-content
+   (~13px 24px por padrão), por fora do que PlacePopup.tsx controla — é a
+   causa principal do balão parecer uma "carta grande" com respiro nas
+   bordas mesmo com o conteúdo já compacto. Reduzida bastante aqui, junto
+   com o padding/raio do wrapper, pra um visual mais compacto. */
+.leaflet-popup-content-wrapper { padding: 2px !important; border-radius: 10px !important; }
+.leaflet-popup-content         { margin: 8px 10px !important; }
+
 @theme {
   /* Base palette */
   --color-arvo-black:      #0D0D0D;

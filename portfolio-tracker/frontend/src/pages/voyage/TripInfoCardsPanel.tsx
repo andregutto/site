@@ -477,14 +477,14 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
             {c.url && (
               <a
                 href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-gold-text)', textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-gold-text)', textDecoration: 'none' }}
               >
                 <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
                   <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
                 </svg>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {c.url.replace(/^https?:\/\/(www\.)?/, '')}
-                </span>
+                {/* Texto fixo em vez da URL crua — o nome/título do card já dá
+                    contexto, e URLs longas ficavam feias truncadas no card. */}
+                {ic.linkLabel ?? 'Link'}
               </a>
             )}
           </div>
