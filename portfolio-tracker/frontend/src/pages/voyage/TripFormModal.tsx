@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
-import { DateRangePicker } from '../../components/ui'
+import { DateRangePicker, Switch } from '../../components/ui'
 import DestinationsEditor from './DestinationsEditor'
 import type { Trip, TripStatus, TripDestination } from './types'
 
@@ -258,21 +258,11 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
                   {tv.autoCreateMomentHint ?? 'Você poderá lançar e organizar os gastos da viagem'}
                 </p>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={autoCreateMoment}
-                onClick={() => setAutoCreateMoment(v => !v)}
-                style={{
-                  flexShrink: 0, width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer',
-                  padding: 2, display: 'flex', alignItems: 'center',
-                  justifyContent: autoCreateMoment ? 'flex-end' : 'flex-start',
-                  background: autoCreateMoment ? RED : 'var(--arvo-border)',
-                  transition: 'background 160ms ease',
-                }}
-              >
-                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', display: 'block' }} />
-              </button>
+              <Switch
+                checked={autoCreateMoment}
+                onChange={v => setAutoCreateMoment(v)}
+                label={tv.autoCreateMoment ?? 'Criar momento financeiro para esta viagem'}
+              />
             </div>
           )}
 

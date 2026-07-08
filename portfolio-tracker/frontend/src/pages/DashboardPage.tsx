@@ -12,7 +12,7 @@ import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import MarketIndicesCard from '../components/MarketIndicesCard'
 import DividendsCard from '../components/DividendsCard'
-import { PageTitle, Segmented, Button, Banner } from '../components/ui'
+import { PageTitle, Segmented, Button, Banner, Switch } from '../components/ui'
 import { Icon } from '../components/icons'
 
 type PeriodMode = 'last_5d' | 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
@@ -525,12 +525,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.showValues}</div>
                 <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
               </div>
-              <button
-                onClick={handleToggleShowValues}
-                style={{ width: 40, height: 22, borderRadius: 11, background: shareShowValues ? '#1B4FD8' : '#D1D5DB', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
-              >
-                <div style={{ position: 'absolute', top: 3, left: shareShowValues ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-              </button>
+              <Switch checked={shareShowValues} onChange={handleToggleShowValues} label={s.showValues} />
             </div>
 
             {/* Hide holdings toggle */}
@@ -539,12 +534,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.hideHoldings}</div>
                 <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.hideHoldingsHint}</div>
               </div>
-              <button
-                onClick={handleToggleHideHoldings}
-                style={{ width: 40, height: 22, borderRadius: 11, background: shareHideHoldings ? '#1B4FD8' : '#D1D5DB', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
-              >
-                <div style={{ position: 'absolute', top: 3, left: shareHideHoldings ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-              </button>
+              <Switch checked={shareHideHoldings} onChange={handleToggleHideHoldings} label={s.hideHoldings} />
             </div>
 
             {/* Period selector */}

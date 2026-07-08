@@ -2544,7 +2544,12 @@
       "promoEmpty": "No promo links yet",
       "promoPlaceholder": "Where will you use it? E.g. Lisbon itinerary video",
       "promoGenerate": "Generate",
-      "promoDelete": "Delete"
+      "promoDelete": "Delete",
+      "publicLinkOffDesc": "Turn on to create an open link: anyone with the link sees places and notes, and can import them to Google Maps.",
+      "gatedLinkNeedsShare": "Available while the public link is active",
+      "communityTitle": "Community",
+      "communityCostsNote": "Costs follow the public link settings above",
+      "viewAsVisitor": "View as a visitor"
     },
     "gate": {
       "eyebrow": "Itinerary access",

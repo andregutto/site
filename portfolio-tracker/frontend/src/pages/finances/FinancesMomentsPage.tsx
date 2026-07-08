@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
-import { SearchBox, FormSection, DateRangePicker } from '../../components/ui'
+import { SearchBox, FormSection, DateRangePicker, Switch } from '../../components/ui'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from '../voyage/_shared/Avatar'
@@ -347,21 +347,11 @@ export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormPr
               <p className="text-sm text-[var(--arvo-fg)]">{t.finances.momentAutoCreateTrip}</p>
               <p className="text-xs text-[var(--arvo-fg-muted)] mt-0.5">{t.finances.momentAutoCreateTripHint}</p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={autoCreateTrip}
-              onClick={() => setAutoCreateTrip(v => !v)}
-              style={{
-                flexShrink: 0, width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer',
-                padding: 2, display: 'flex', alignItems: 'center',
-                justifyContent: autoCreateTrip ? 'flex-end' : 'flex-start',
-                background: autoCreateTrip ? '#D63B2F' : 'var(--arvo-border)',
-                transition: 'background 160ms ease',
-              }}
-            >
-              <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', display: 'block' }} />
-            </button>
+            <Switch
+              checked={autoCreateTrip}
+              onChange={v => setAutoCreateTrip(v)}
+              label={t.finances.momentAutoCreateTrip}
+            />
           </div>
         )}
       </FormSection>
@@ -550,19 +540,18 @@ export function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalPr
               </div>
             </div>
 
-            {/* Hide descriptions */}
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={info?.share_hide_descriptions ?? false}
-                onChange={e => updateSetting({ hide_descriptions: e.target.checked })}
-                className="mt-0.5 w-4 h-4 accent-[#0D0D0D]"
-              />
+            {/* Hide descriptions — Switch (regra da plataforma: liga/desliga nunca é checkbox) */}
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-[var(--arvo-fg)] font-medium">{t.finances.shareHideDesc}</p>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.shareHideDescSub}</p>
               </div>
-            </label>
+              <Switch
+                checked={info?.share_hide_descriptions ?? false}
+                onChange={v => updateSetting({ hide_descriptions: v })}
+                label={t.finances.shareHideDesc}
+              />
+            </div>
 
             {/* Expiry */}
             <div>

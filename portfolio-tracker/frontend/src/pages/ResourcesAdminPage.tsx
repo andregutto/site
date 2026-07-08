@@ -6,7 +6,7 @@ import { normalizeStorageUrl } from '../lib/storageUrl'
 import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
-import { FormSection } from '../components/ui'
+import { FormSection, Switch } from '../components/ui'
 
 // Painel de admin dos Recursos (lead magnets). Espelha CommunityAdminPage:
 // protegido no servidor (community_admins via isAdmin() em resources.ts),
@@ -77,27 +77,6 @@ function slugifyTitle(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80)
-}
-
-function Toggle({ checked, onChange, activeColor = 'var(--arvo-fg)' }: { checked: boolean; onChange: (v: boolean) => void; activeColor?: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      style={{
-        position: 'relative', width: 36, height: 21, borderRadius: 999, border: 'none', padding: 0,
-        background: checked ? activeColor : 'var(--arvo-border)', transition: 'background 180ms ease',
-        cursor: 'pointer', flexShrink: 0,
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 2, left: checked ? 17 : 2, width: 17, height: 17, borderRadius: '50%',
-        background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 180ms cubic-bezier(0.4,0,0.2,1)',
-      }} />
-    </button>
-  )
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12 }
@@ -420,7 +399,7 @@ export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: P
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
                 {form.is_published ? (ra.publishedYes ?? 'Publicado') : (ra.publishedNo ?? 'Rascunho')}
               </span>
-              <Toggle checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} activeColor="var(--arvo-green, #1F8A5B)" />
+              <Switch checked={form.is_published} onChange={v => setForm(f => ({ ...f, is_published: v }))} label={ra.publishedYes ?? 'Publicado'} />
             </label>
           </div>
 

@@ -2544,7 +2544,12 @@
       "promoEmpty": "Nenhum link de divulgação ainda",
       "promoPlaceholder": "Onde vai usar? Ex: Vídeo roteiro Lisboa",
       "promoGenerate": "Gerar",
-      "promoDelete": "Excluir"
+      "promoDelete": "Excluir",
+      "publicLinkOffDesc": "Ative para gerar um link aberto: quem tiver o link vê lugares e notas, e pode importar para o Google Maps.",
+      "gatedLinkNeedsShare": "Disponível enquanto o link público estiver ativo",
+      "communityTitle": "Comunidade",
+      "communityCostsNote": "Custos seguem a configuração do link público acima",
+      "viewAsVisitor": "Ver como visitante"
     },
     "gate": {
       "eyebrow": "Acesso ao roteiro",

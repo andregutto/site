@@ -12,6 +12,7 @@ import ExpensesPanel from './finances/ExpensesPanel'
 import { _fmt } from './finances/FinancesMomentsPage'
 import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from '../components/SharedGroupModals'
 import GroupSplitSection from '../components/GroupSplitSection'
+import { Switch } from '../components/ui'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -77,31 +78,6 @@ interface Trip { id: number; title: string }
 interface Group { id: number; name: string }
 interface MomentOption { id: number; name: string }
 interface UserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
-
-// Toggle estilo iOS — usado no lugar de <input type="checkbox"> (que destoa
-// do resto do app, sempre estilizado com pills/switches próprios).
-function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button" role="switch" aria-checked={checked}
-      onClick={onChange} disabled={disabled}
-      style={{
-        position: 'relative', width: 36, height: 21, borderRadius: 999, flexShrink: 0,
-        border: 'none', cursor: disabled ? 'default' : 'pointer', padding: 0,
-        background: checked ? 'var(--arvo-fg)' : 'var(--arvo-border)',
-        opacity: disabled ? 0.5 : 1,
-        transition: 'background 180ms ease',
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 2, left: checked ? 17 : 2,
-        width: 17, height: 17, borderRadius: '50%', background: '#fff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-        transition: 'left 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-      }} />
-    </button>
-  )
-}
 
 // Bloco recolhível genérico — os cards de contato viviam ficando enormes com
 // várias viagens/momentos/categorias compartilhadas todas abertas ao mesmo
@@ -766,7 +742,8 @@ function ContactCard({
           que é uma opção só de Momentos. */}
       {isConnected && contact.user_id && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, padding: '12px', borderRadius: 10, background: 'var(--arvo-hover-bg)' }}>
-          <Toggle
+          <Switch
+            label={t.people.autoAcceptLabel}
             checked={auto} disabled={togglingAutoAccept}
             onChange={() => toggleAutoAccept(mineFriendCtx ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
           />
