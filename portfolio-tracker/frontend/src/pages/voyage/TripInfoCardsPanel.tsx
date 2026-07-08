@@ -15,7 +15,6 @@ import CategoryIcon, { ICON_KEYS } from '../community/_shared/CategoryIcon'
 // - Visões compartilhadas (TripShareView): só os cards shared, sem controles
 //   (o payload público já vem filtrado do servidor).
 
-const GOLD = '#C8B89A'
 const RED = '#D63B2F'
 const EASE = 'cubic-bezier(0.35, 0, 0.65, 1)' // curva quase linear padrão do app (~280ms)
 
@@ -135,7 +134,7 @@ function KindPill({ kind, ic }: { kind: string; ic: any }) {
   return (
     <span style={{
       fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.10em', textTransform: 'uppercase',
-      color: GOLD, background: 'rgba(200,184,154,0.14)', padding: '2px 7px', borderRadius: 999,
+      color: 'var(--arvo-gold-text)', background: 'rgba(200,184,154,0.14)', padding: '2px 7px', borderRadius: 999,
       flexShrink: 0, whiteSpace: 'nowrap',
     }}>
       {kindLabel(kind, ic)}
@@ -446,7 +445,7 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
 
       <span style={{
         width: 34, height: 34, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(200,184,154,0.18)', color: GOLD, flexShrink: 0,
+        background: 'rgba(200,184,154,0.18)', color: 'var(--arvo-gold-text)', flexShrink: 0,
       }}>
         <CardIcon kind={c.kind} iconKey={c.icon_key} size={17} />
       </span>
@@ -467,7 +466,7 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
             {c.phone && (
               <a
                 href={`tel:${c.phone.replace(/[^\d+]/g, '')}`} onClick={e => e.stopPropagation()}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-gold-text)', textDecoration: 'none' }}
               >
                 <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4.2 2.8h3l1.4 3.7-1.9 1.4a11.5 11.5 0 005.4 5.4l1.4-1.9 3.7 1.4v3a1.5 1.5 0 01-1.6 1.5C8.6 16.7 3.3 11.4 2.7 4.4a1.5 1.5 0 011.5-1.6z" />
@@ -478,7 +477,7 @@ function InfoCard({ card: c, canEdit, hiddenLabel, onEdit, onDelete }: {
             {c.url && (
               <a
                 href={c.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: GOLD, textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-gold-text)', textDecoration: 'none', maxWidth: 200, overflow: 'hidden' }}
               >
                 <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
                   <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />

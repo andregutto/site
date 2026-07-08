@@ -255,6 +255,20 @@ export default function VoyageTripDetailPage() {
               ) : (tv.shareTripBtn ?? 'Compartilhar')}
             </button>
           )}
+          {/* Ver como visitante — só quando a viagem já está acessível via
+              /voyage/shared/:tripId (link de compartilhamento OU visível na
+              Comunidade). Link secundário e discreto ao lado do Compartilhar,
+              que é a ação primária. */}
+          {trip.user_id === user?.id && (trip.share_token || trip.community_visible) && (
+            <a
+              href={`/voyage/shared/${trip.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-faint)', textDecoration: 'none', flexShrink: 0 }}
+            >
+              {tv.viewAsVisitor ?? 'Ver como visitante'}
+            </a>
+          )}
         </div>
       </div>
 
@@ -373,7 +387,10 @@ export default function VoyageTripDetailPage() {
                 </span>
               )}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
+                // Mesmo tratamento do chip de status (fundo escuro translúcido
+                // + blur) em vez de claro/translúcido — o claro ficava
+                // ilegível sobre fotos de fundo mais claras.
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'rgba(255,255,255,0.85)', background: 'rgba(13,13,13,0.45)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}

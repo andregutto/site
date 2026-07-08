@@ -505,69 +505,66 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            {/* Linha de assinatura — avatar (se houver) ANTES do texto "Roteiro
-                de {Nome}", com a data alinhada à direita na mesma linha. No
-                mobile, se o nome for longo, a data desce pra uma segunda
-                linha (flex-wrap) em vez de espremer/cortar — só a partir de
-                sm: é que garantimos a mesma linha com justify-content. */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center sm:justify-between" style={{ gap: '4px 10px', marginBottom: 8 }}>
-              <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', minWidth: 0, flex: '1 1 auto' }}>
-                {(() => {
-                  const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
-                  // Avatar pequeno inline antes do nome do dono — só quando ele
-                  // tiver optado por perfil público e tiver @username (senão
-                  // não há pra onde linkar, e fica só o nome em texto puro).
-                  const showOwnerLink = data.owner_public_profile && !!data.owner_username
-                  return (
-                    <>
-                      {showOwnerLink && (
-                        <ProfileLink username={data.owner_username} style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
-                          <Avatar name={owner_name} avatarUrl={data.owner_avatar_url ?? undefined} size={20} />
-                        </ProfileLink>
-                      )}
-                      {/* No mobile o texto pode quebrar linha (sem nowrap/ellipsis)
-                          — nome muito longo empurra a data pra baixo em vez de
-                          truncar ou espremer. A partir de sm: (mesma linha
-                          garantida pelo container acima) volta a truncar com
-                          ellipsis, já que ali sempre há espaço reservado. */}
-                      <span className="sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap" style={{ minWidth: 0 }}>
-                        {pre}
-                        {showOwnerLink ? (
-                          <ProfileLink username={data.owner_username} style={{ display: 'inline' }}>
-                            <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
-                          </ProfileLink>
-                        ) : (
+            {/* Linha de assinatura — avatar (se houver) + texto "Roteiro de
+                {Nome}", sozinha (sem a data, que volta pra linha do destino
+                abaixo). */}
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)', minWidth: 0, marginBottom: 8 }}>
+              {(() => {
+                const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
+                // Avatar pequeno inline antes do nome do dono — só quando ele
+                // tiver optado por perfil público e tiver @username (senão
+                // não há pra onde linkar, e fica só o nome em texto puro).
+                const showOwnerLink = data.owner_public_profile && !!data.owner_username
+                return (
+                  <>
+                    {showOwnerLink && (
+                      <ProfileLink username={data.owner_username} style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                        <Avatar name={owner_name} avatarUrl={data.owner_avatar_url ?? undefined} size={20} />
+                      </ProfileLink>
+                    )}
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap" style={{ minWidth: 0 }}>
+                      {pre}
+                      {showOwnerLink ? (
+                        <ProfileLink username={data.owner_username} style={{ display: 'inline' }}>
                           <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
-                        )}
-                        {post}
-                      </span>
-                    </>
-                  )
-                })()}
-              </p>
+                        </ProfileLink>
+                      ) : (
+                        <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+                      )}
+                      {post}
+                    </span>
+                  </>
+                )
+              })()}
+            </p>
+            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 6 }}>
+              {trip.title}
+            </h1>
+            {/* Destino e data na mesma linha, data alinhada à direita — como
+                era antes da mudança que moveu a data pra linha de assinatura. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              {(() => {
+                const dests = data.destinations ?? []
+                const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
+                const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
+                const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
+                if (!mobileLabel) return <span />
+                return (
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="sm:hidden">{mobileLabel}</span>
+                    <span className="hidden sm:inline">{desktopLabel}</span>
+                  </p>
+                )
+              })()}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
+                // Mesmo tratamento do chip de status do hero do dono (fundo
+                // escuro translúcido + blur) em vez de claro/translúcido —
+                // o claro ficava ilegível sobre fotos de fundo mais claras.
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.85)', background: 'rgba(13,13,13,0.45)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, flexShrink: 0 }}>
                   {dateStr}
                 </span>
               )}
             </div>
-            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 6 }}>
-              {trip.title}
-            </h1>
-            {/* Destino sozinho — não compartilha mais linha com a data */}
-            {(() => {
-              const dests = data.destinations ?? []
-              const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
-              const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
-              const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
-              if (!mobileLabel) return null
-              return (
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <span className="sm:hidden">{mobileLabel}</span>
-                  <span className="hidden sm:inline">{desktopLabel}</span>
-                </p>
-              )
-            })()}
           </div>
         </div>
       </div>

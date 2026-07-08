@@ -500,29 +500,30 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
               {item.google_maps_url && (
                 <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
                   onClick={e => e.stopPropagation()}
-                  style={{ flexShrink: 0, color: GOLD, display: 'flex', alignItems: 'center' }}>
+                  style={{ flexShrink: 0, color: 'var(--arvo-gold-text)', display: 'flex', alignItems: 'center' }}>
                   <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
                   </svg>
                 </a>
               )}
               {isStay && (
-                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', flexShrink: 0 }}>
                   {itemIcon(item)} {item.checkout_day! - item.checkin_day! + 1} dias
                 </span>
               )}
-              {/* Cluster de indicadores de estado — destaque (estrela, agora
-                  clicável e sem texto "destaque" ao lado) + "Oculto", ambos
-                  empurrados pro extremo direito da linha do título, em vez de
-                  espalhados/duplicados com a fileira de ações debaixo. */}
+              {/* Cluster de indicadores de estado — lápis de renomear (hover-
+                  reveal, cabe bem aqui porque o cluster já tem outros
+                  elementos ao redor) + "Oculto", empurrados pro extremo
+                  direito da linha do título. */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
                 {canEdit && isPlace && (
-                  <button type="button" onClick={e => { e.stopPropagation(); onPatch({ is_highlight: !item.is_highlight }) }}
-                    title={tv.highlightTitle ?? 'Destaque'}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', fontSize: 13, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-faint)' }}>★</button>
-                )}
-                {!canEdit && item.is_highlight && (
-                  <span style={{ fontSize: 13, lineHeight: 1, color: RED }}>★</span>
+                  <button type="button" title={tv.editName ?? 'Editar nome'} className="itin-hover-reveal"
+                    onClick={e => { e.stopPropagation(); setEditingName(true) }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: 'var(--arvo-fg-faint)', flexShrink: 0 }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+                    </svg>
+                  </button>
                 )}
                 {isOwner && item.shared === false && (
                   <HiddenFromShareBadge label={tv.partialShare?.hiddenBadge ?? 'Oculto'} />
@@ -546,7 +547,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           )}
           {item.rating != null && isPlace && <StarRating value={item.rating} />}
           {item.trip_note && !editingNote && (
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: 'var(--arvo-gold-text)', marginTop: 2 }}>{item.trip_note}</p>
           )}
           {/* Place kind: note is optional, toggled via the "Nota" action below */}
           {isPlace && editingNote && (
@@ -556,18 +557,17 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
             </div>
           )}
         </div>
-        {/* Lápis discreto no canto superior direito — renomeia o lugar aqui
-            e sincroniza com a biblioteca (mesmo lugar, mesmo nome em todo
-            lugar). Renomear é seguro: o KML usa as coordenadas pro pin, o
-            nome é só rótulo. */}
+        {/* Estrela de destaque no canto superior direito — indicador de
+            estado permanente (sem hover-reveal), então preenche melhor esse
+            slot fixo do que um botão de ação que aparece/some. Clicável só
+            pra quem pode editar; pra quem não pode, é só indicador estático. */}
         {canEdit && isPlace && (
-          <button type="button" title={tv.editName ?? 'Editar nome'} className="itin-hover-reveal"
-            onClick={e => { e.stopPropagation(); setEditingName(true) }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, marginTop: 1, display: 'flex', color: 'var(--arvo-fg-faint)', flexShrink: 0 }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-            </svg>
-          </button>
+          <button type="button" onClick={e => { e.stopPropagation(); onPatch({ is_highlight: !item.is_highlight }) }}
+            title={tv.highlightTitle ?? 'Destaque'}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, marginTop: 1, display: 'flex', fontSize: 13, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-faint)', flexShrink: 0 }}>★</button>
+        )}
+        {!canEdit && item.is_highlight && (
+          <span style={{ padding: 2, marginTop: 1, display: 'flex', fontSize: 13, lineHeight: 1, color: RED, flexShrink: 0 }}>★</span>
         )}
       </div>
 
@@ -637,7 +637,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           )}
           {canEdit && hasExpenses && (
             <button type="button" onClick={() => setShowExpenses(true)} title={tv.expensesTitle ?? 'Despesas'}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, lineHeight: 1 }}>
               $
             </button>
           )}
@@ -684,7 +684,7 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           {isPlace && (isStay || showStayFields) && (
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD }}>
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)' }}>
                   {itemIcon(item)} {tv.stay ?? 'Estadia'}
                 </p>
                 <button type="button" onClick={() => { onPatch({ checkin_day: null, checkout_day: null }); setShowStayFields(false) }}
@@ -1178,7 +1178,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
           {[1, 2, 3].map(i => <div key={i} style={{ height: 42, borderRadius: 8, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite', animationDelay: `${i * 80}ms` }} />)}
         </div>
       ) : items.length === 0 ? (
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, textAlign: 'center', padding: '16px 0' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-gold-text)', textAlign: 'center', padding: '16px 0' }}>
           {tv.places?.empty ?? 'Adicione lugares à viagem para montar o roteiro'}
         </p>
       ) : (
