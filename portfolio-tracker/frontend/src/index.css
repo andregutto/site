@@ -32,14 +32,22 @@
 .leaflet-popup-content         { margin: 6px 4px !important; }
 
 /* O CSS padrão do Leaflet define `.leaflet-popup-content p { margin: 18px 0; }`
-   com especificidade maior que qualquer reset genérico. Antes disso era
-   preciso lembrar de zerar marginTop/marginBottom em cada <p> do PlacePopup
-   manualmente — bastava esquecer um dos dois lados que os 18px vazavam e
-   colapsavam com a margem do elemento vizinho, criando buracos grandes no
-   balão. Zera aqui pra qualquer <p> dentro de popups do Leaflet, de uma vez
-   por todas — o espaçamento interno passa a ser controlado só pelo
-   flex+gap dos componentes (ver PlacePopup.tsx). */
-.leaflet-popup-content p       { margin: 0 !important; }
+   (na prática ~1.3em) com o MESMO seletor textual que a regra abaixo. O
+   build (Vite/Lightning CSS) mescla blocos com seletor idêntico vindos de
+   arquivos diferentes (leaflet.css importado depois deste arquivo) e, ao
+   mesclar, descartava esta declaração com !important — só leaflet.css
+   sobrevivia no CSS final (confirmado inspecionando o bundle de produção:
+   `.leaflet-popup-content p{margin:1.3em 0}` sem nenhum !important nosso).
+   Resultado real em produção: ~17-18px de margem topo+baixo em CADA <p> do
+   balão (nome, categoria, endereço, nota, gasto) — balão gigante, estourando
+   pra fora do mapa em mobile, exatamente o "balão horrível" reportado. Mesma
+   causa-raiz do bug de z-index acima (comentário logo acima): resolvido do
+   mesmo jeito, aumentando a especificidade com o prefixo `.leaflet-container`
+   pra este seletor não ter mais texto idêntico ao de leaflet.css e não ser
+   mesclado/descartado. Zera pra qualquer <p> dentro de popups do Leaflet —
+   o espaçamento interno passa a ser controlado só pelo flex+gap dos
+   componentes (ver PlacePopup.tsx). */
+.leaflet-container .leaflet-popup-content p { margin: 0 !important; }
 
 @theme {
   /* Base palette */
