@@ -231,18 +231,25 @@ export default function VoyageTripDetailPage() {
           {canEdit && (
             <button
               onClick={() => setShowEditPanel(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
+              title={tv.editTripBtn ?? 'Editar'}
+              className="gap-0 sm:gap-1.5 px-2 sm:px-2.5"
+              style={{ display: 'flex', alignItems: 'center', background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, paddingTop: 5, paddingBottom: 5, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
               </svg>
-              {tv.editTripBtn ?? 'Editar'}
+              {/* Texto some no mobile (fileira de 3 botões não cabe em uma
+                  linha só com texto) — ícone continua identificando a ação;
+                  title cobre acessibilidade/hover. */}
+              <span className="hidden sm:inline">{tv.editTripBtn ?? 'Editar'}</span>
             </button>
           )}
           {trip.user_id === user?.id && (
             <button
               onClick={() => setShowShare(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
+              title={trip.share_token ? (tv.sharedTripBtn ?? 'Compartilhado') : (tv.shareTripBtn ?? 'Compartilhar')}
+              className="gap-0 sm:gap-1.5 px-2 sm:px-2.5"
+              style={{ display: 'flex', alignItems: 'center', background: 'none', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, paddingTop: 5, paddingBottom: 5, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}
             >
               <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="11" cy="3" r="1.5"/>
@@ -251,23 +258,26 @@ export default function VoyageTripDetailPage() {
                 <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
               </svg>
               {trip.share_token ? (
-                <>{tv.sharedTripBtn ?? 'Compartilhado'}<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
-              ) : (tv.shareTripBtn ?? 'Compartilhar')}
+                <><span className="hidden sm:inline">{tv.sharedTripBtn ?? 'Compartilhado'}</span><span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block' }} /></>
+              ) : <span className="hidden sm:inline">{tv.shareTripBtn ?? 'Compartilhar'}</span>}
             </button>
           )}
           {/* Ver como visitante — só quando a viagem já está acessível via
               /voyage/shared/:tripId (link de compartilhamento OU visível na
               Comunidade). Mesma pill visual de Editar/Compartilhar, pra ficar
-              lado a lado com a mesma cara em vez de destoar como link solto. */}
+              lado a lado com a mesma cara em vez de destoar como link solto.
+              Texto some no mobile pelo mesmo motivo dos outros dois. */}
           {trip.user_id === user?.id && (trip.share_token || trip.community_visible) && (
             <a
               href={`/voyage/shared/${trip.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', textDecoration: 'none', flexShrink: 0 }}
+              title={tv.viewAsVisitor ?? 'Ver como visitante'}
+              className="gap-0 sm:gap-1.5 px-2 sm:px-2.5"
+              style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--arvo-border)', borderRadius: 7, paddingTop: 5, paddingBottom: 5, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', textDecoration: 'none', flexShrink: 0 }}
             >
               <EyeIcon size={11} />
-              {tv.viewAsVisitor ?? 'Ver como visitante'}
+              <span className="hidden sm:inline">{tv.viewAsVisitor ?? 'Ver como visitante'}</span>
             </a>
           )}
         </div>
