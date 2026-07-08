@@ -32,7 +32,7 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
   onClose: () => void
 }) {
   return (
-    <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 140 }}>
+    <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 90 }}>
       {/* Cabeçalho: nome + X na mesma linha (em vez de X flutuando por cima
           via position:absolute e o badge de dia isolado acima do nome) —
           nome começa imediatamente à esquerda, X fixo à direita. */}
@@ -47,21 +47,27 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 0, lineHeight: 1, fontSize: 13, flexShrink: 0 }}
         >✕</button>
       </div>
-      {p.category && (
-        <p style={{ fontSize: 10, color: '#999', marginTop: 2, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {categoryLabel ? categoryLabel(p.category) : p.category}
-        </p>
-      )}
-      {p.address && <p style={{ fontSize: 11.5, color: '#666', marginBottom: 2, lineHeight: 1.3 }}>{p.address}</p>}
-      <OpeningHoursBlock hours={p.opening_hours} />
-      {p.trip_note && <p style={{ fontSize: 11.5, fontStyle: 'italic', color: '#888', marginTop: 2, marginBottom: 2 }}>{p.trip_note}</p>}
-      {(p.expense_total ?? 0) > 0 && (
-        <p style={{ fontSize: 11.5, color: '#444', marginTop: 2, marginBottom: 2 }}>{spentLabel} <strong>{formatCurrency(p.expense_total!)}</strong></p>
-      )}
+      {/* Miolo: categoria, endereço, horário, nota e gasto num flex-column
+          com gap — o espaçamento entre os blocos vem só do gap, não de
+          margem por parágrafo. Mais simples e imune a buracos de espaço se
+          um campo novo for adicionado aqui no futuro sem setar margem. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 3 }}>
+        {p.category && (
+          <p style={{ fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {categoryLabel ? categoryLabel(p.category) : p.category}
+          </p>
+        )}
+        {p.address && <p style={{ fontSize: 12.5, color: '#555', lineHeight: 1.3 }}>{p.address}</p>}
+        <OpeningHoursBlock hours={p.opening_hours} />
+        {p.trip_note && <p style={{ fontSize: 11.5, fontStyle: 'italic', color: '#888' }}>{p.trip_note}</p>}
+        {(p.expense_total ?? 0) > 0 && (
+          <p style={{ fontSize: 11.5, color: '#444' }}>{spentLabel} <strong>{formatCurrency(p.expense_total!)}</strong></p>
+        )}
+      </div>
       {/* Rodapé: dia + Abrir no Maps juntos, em vez do dia sozinho ocupando
           uma linha inteira no topo. */}
       {(p.day_number != null || p.google_maps_url) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 5 }}>
           {p.day_number != null ? (
             <span style={{ display: 'inline-block', fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number) }}>
               {dayLabel(p.day_number)}

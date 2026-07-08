@@ -14,7 +14,7 @@ export default function OpeningHoursBlock({ hours }: { hours: string[] | null | 
   const today = hours[idx] ?? null
 
   return (
-    <div style={{ marginBottom: 4 }}>
+    <div>
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}

@@ -29,7 +29,17 @@
    bordas mesmo com o conteúdo já compacto. Reduzida bastante aqui, junto
    com o padding/raio do wrapper, pra um visual mais compacto. */
 .leaflet-popup-content-wrapper { padding: 2px !important; border-radius: 10px !important; }
-.leaflet-popup-content         { margin: 8px 10px !important; }
+.leaflet-popup-content         { margin: 6px 4px !important; }
+
+/* O CSS padrão do Leaflet define `.leaflet-popup-content p { margin: 18px 0; }`
+   com especificidade maior que qualquer reset genérico. Antes disso era
+   preciso lembrar de zerar marginTop/marginBottom em cada <p> do PlacePopup
+   manualmente — bastava esquecer um dos dois lados que os 18px vazavam e
+   colapsavam com a margem do elemento vizinho, criando buracos grandes no
+   balão. Zera aqui pra qualquer <p> dentro de popups do Leaflet, de uma vez
+   por todas — o espaçamento interno passa a ser controlado só pelo
+   flex+gap dos componentes (ver PlacePopup.tsx). */
+.leaflet-popup-content p       { margin: 0 !important; }
 
 @theme {
   /* Base palette */
