@@ -808,8 +808,18 @@ export default function ProfilePage() {
             const publicHandle = username || user?.id || ''
             return (
           <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm">
-            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.publicProfileTitle}</h2>
-            <p className="text-xs mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{t.profile.publicProfileDesc}</p>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.publicProfileTitle}</h2>
+              <Switch
+                checked={publicProfile}
+                onChange={handleTogglePublicProfile}
+                disabled={publicSaving}
+                label={t.profile.publicProfileSwitch}
+              />
+            </div>
+            <p className="text-xs mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>
+              {publicProfile ? t.profile.publicProfileOnHint : t.profile.publicProfileOffHint}
+            </p>
 
             <div
               role="link"
@@ -857,21 +867,6 @@ export default function ProfilePage() {
               <svg className="w-3.5 h-3.5 shrink-0 text-[var(--arvo-fg-faint)] group-hover:text-[var(--arvo-fg)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm text-[var(--arvo-fg)]">{t.profile.publicProfileSwitch}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>
-                  {publicProfile ? t.profile.publicProfileOnHint : t.profile.publicProfileOffHint}
-                </p>
-              </div>
-              <Switch
-                checked={publicProfile}
-                onChange={handleTogglePublicProfile}
-                disabled={publicSaving}
-                label={t.profile.publicProfileSwitch}
-              />
             </div>
           </div>
             )

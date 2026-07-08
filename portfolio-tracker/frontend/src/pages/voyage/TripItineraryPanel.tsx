@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
-import { Switch } from '../../components/ui'
 import { LibraryPicker } from './TripPlacesPanel'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
-import { HiddenFromShareBadge } from './TripInfoCardsPanel'
+import { HiddenFromShareBadge, EyeIcon, EyeOffIcon } from './TripInfoCardsPanel'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
 import { openDirections } from './_shared/googleMapsRoute'
@@ -546,7 +545,27 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
           breathe on narrow screens instead of competing with 4-5 icons.
           O dia (pill clicável pra editar) fica junto das demais ações à
           direita em vez de isolado à esquerda. */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, padding: '0 10px 8px 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isOwner && isPlace ? 'space-between' : 'flex-end', gap: 6, padding: '0 10px 8px 10px' }}>
+        {/* Visível no compartilhamento — canto inferior esquerdo do card,
+            mesmo ícone de olho usado nos custos e nos cards de informações
+            úteis (nunca switch aqui: precisa caber no espaço apertado do
+            card e ficar reconhecível de relance). Vale pra TODAS as
+            superfícies externas: público, gate e comunidade. */}
+        {isOwner && isPlace && (
+          <button
+            type="button"
+            onClick={() => onPatch({ shared: item.shared === false })}
+            title={item.shared === false ? (tv.partialShare?.visibleInShare ?? 'Visível no compartilhamento') : (tv.partialShare?.hiddenBadge ?? 'Oculto no compartilhamento')}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              width: 22, height: 22, borderRadius: 999, background: 'none', border: 'none', cursor: 'pointer',
+              color: item.shared === false ? 'var(--arvo-fg-muted)' : 'var(--arvo-fg-faint)',
+              transition: 'color 280ms cubic-bezier(0.35, 0, 0.65, 1)',
+            }}
+          >
+            {item.shared === false ? <EyeOffIcon size={13} /> : <EyeIcon size={13} />}
+          </button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
           {isStay ? (
             <span style={{
@@ -722,22 +741,6 @@ function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destina
               <NoteEditor value={item.trip_note} placeholder={tv.notePlaceholder ?? 'Detalhes (opcional)…'}
                 onSave={v => onPatch({ trip_note: v })} />
             </>
-          )}
-
-          {/* Visível no compartilhamento — só pro dono (configuração de
-              compartilhamento, mesma regra do modal Compartilhar). Vale pra
-              TODAS as superfícies externas: público, gate e comunidade. */}
-          {isOwner && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 2 }} onPointerDown={e => e.stopPropagation()}>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
-                {tv.partialShare?.visibleInShare ?? 'Visível no compartilhamento'}
-              </span>
-              <Switch
-                checked={item.shared !== false}
-                onChange={v => onPatch({ shared: v })}
-                label={tv.partialShare?.visibleInShare ?? 'Visível no compartilhamento'}
-              />
-            </div>
           )}
 
           {/* Row actions */}
