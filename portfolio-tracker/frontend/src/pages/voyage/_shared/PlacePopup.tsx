@@ -37,9 +37,15 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
           via position:absolute e o badge de dia isolado acima do nome) —
           nome começa imediatamente à esquerda, X fixo à direita. */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+        {/* Truncamento em 1 linha só (não 2) — -webkit-line-clamp dentro de um
+            item flex tem um bug conhecido no Safari/WebKit: ele calcula a
+            altura intrínseca errada (às vezes gigante), o que quebra o
+            espaçamento dos blocos seguintes e força scroll interno no balão.
+            Nome de lugar num popup pequeno não precisa de 2 linhas; trunca
+            com "..." numa linha só, robusto em todos os navegadores. */}
         <p style={{
           fontWeight: 600, fontSize: 13.5, lineHeight: 1.25, flex: 1, minWidth: 0,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{p.name}</p>
         <button
           type="button"
@@ -69,7 +75,7 @@ export default function PlacePopup({ place: p, dayLabel, categoryLabel, spentLab
       {(p.day_number != null || p.google_maps_url) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 5 }}>
           {p.day_number != null ? (
-            <span style={{ display: 'inline-block', fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number) }}>
+            <span style={{ display: 'inline-block', fontSize: 10.5, padding: '2px 8px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number) }}>
               {dayLabel(p.day_number)}
             </span>
           ) : <span />}
