@@ -2817,7 +2817,10 @@
     },
     "gateEyebrow": "Resource access",
     "unlockHint": "Log in or create your account on the side to unlock.",
-    "aboutTitle": "About this resource"
+    "aboutTitle": "About this resource",
+    "searchPlaceholder": "Search resources",
+    "filterAll": "All",
+    "noResults": "No resources match this filter."
   },
   "community": {
     "eyebrow": "ARVO COMMUNITY",

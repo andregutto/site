@@ -2817,7 +2817,10 @@
     },
     "gateEyebrow": "Accès à la ressource",
     "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer.",
-    "aboutTitle": "À propos de cette ressource"
+    "aboutTitle": "À propos de cette ressource",
+    "searchPlaceholder": "Rechercher une ressource",
+    "filterAll": "Tous",
+    "noResults": "Aucune ressource ne correspond à ce filtre."
   },
   "community": {
     "eyebrow": "ARVO COMMUNAUTÉ",

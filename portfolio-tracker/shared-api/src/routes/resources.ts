@@ -72,6 +72,25 @@ function pickUtm(src: Record<string, unknown>): UtmFields {
   }
 }
 
+// Fallback de atribuição: se o trigger não gravou (conta criada antes da
+// migration, ou fluxo sem metadata), copia signup_source do user_metadata.
+// Nunca lança.
+async function backfillSignupSource(userId: string): Promise<void> {
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles').select('signup_source').eq('id', userId).maybeSingle()
+    if (profile && !profile.signup_source) {
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
+      const metaSource = userData?.user?.user_metadata?.signup_source
+      if (typeof metaSource === 'string' && metaSource) {
+        await supabaseAdmin.from('profiles').update({ signup_source: metaSource }).eq('id', userId)
+      }
+    }
+  } catch (err) {
+    console.warn('[resources] signup_source backfill failed:', err)
+  }
+}
+
 // Nunca lança: perder um evento de métrica não pode derrubar o request.
 async function recordEvent(
   resourceId: number,
@@ -118,18 +137,40 @@ router.get('/public/:slug', async (req: Request, res: Response) => {
 // GET /api/resources/:slug — detalhe de um recurso pra quem já está logado
 // (página /resources/:slug dentro do app, com header/nav normais — diferente
 // do preview público, que é só título/descrição pro gate de cadastro).
+// O gate real é o login: pra quem tem direito (free, ou tier suficiente) o
+// conteúdo já vem pronto na resposta, sem clique de "Liberar" — o evento
+// 'unlock' é registrado server-side na primeira abertura, com os utm_* da
+// query string (a atribuição por vídeo continua funcionando igual).
 router.get('/:slug', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { slug } = req.params
   if (!SLUG_RE.test(slug)) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
 
   const { data: resource } = await supabaseAdmin
-    .from('resources')
-    .select('id, slug, title, description, resource_type, preview_image_url, cover_image_position, visibility')
+    .from('resources').select('*')
     .eq('slug', slug).eq('is_published', true)
-    .maybeSingle()
+    .maybeSingle() as { data: ResourceRow | null }
 
   if (!resource) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
+
+  const preview = {
+    slug: resource.slug,
+    title: resource.title,
+    description: resource.description,
+    resource_type: resource.resource_type,
+    preview_image_url: resource.preview_image_url,
+    cover_image_position: resource.cover_image_position,
+    visibility: resource.visibility,
+  }
+
+  const requiredRank = TIER_RANK[resource.visibility] ?? 0
+  if (requiredRank > 0) {
+    const userRank = TIER_RANK[await getUserTier(userId)] ?? 0
+    if (userRank < requiredRank) {
+      res.json({ ...preview, unlocked: false, required_tier: resource.visibility })
+      return
+    }
+  }
 
   const { data: events } = await supabaseAdmin
     .from('resource_events')
@@ -137,8 +178,26 @@ router.get('/:slug', requireAuth, async (req, res: Response) => {
     .eq('user_id', userId).eq('event_type', 'unlock').eq('resource_id', resource.id)
     .limit(1)
 
-  const { id, ...preview } = resource
-  res.json({ ...preview, unlocked: (events ?? []).length > 0 })
+  if (!(events ?? []).length) {
+    await backfillSignupSource(userId)
+    await recordEvent(resource.id, 'unlock', userId, pickUtm(req.query as Record<string, unknown>))
+    if (resource.resource_type === 'file') await recordEvent(resource.id, 'download', userId, {})
+  }
+
+  let content: Record<string, string> | null = null
+  if (resource.resource_type === 'file' && resource.file_path) {
+    const fileName = resource.file_path.split('/').pop() ?? 'download'
+    const { data: signed } = await supabaseAdmin.storage
+      .from('resources')
+      .createSignedUrl(resource.file_path, 3600, { download: fileName })
+    if (signed) content = { type: 'file', download_url: signed.signedUrl, file_name: fileName }
+  } else if (resource.resource_type === 'link' && resource.external_url) {
+    content = { type: 'link', external_url: resource.external_url }
+  } else if (resource.resource_type === 'content') {
+    content = { type: 'content', content_md: resource.content_md ?? '' }
+  }
+
+  res.json({ ...preview, unlocked: true, content })
 })
 
 // GET /api/resources — listagem no app, com flag de já-liberado por usuário
@@ -198,22 +257,7 @@ router.post('/:slug/unlock', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Fallback de atribuição: se o trigger não gravou (conta criada antes da
-  // migration, ou fluxo sem metadata), copia signup_source do user_metadata.
-  try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('signup_source').eq('id', userId).maybeSingle()
-    if (profile && !profile.signup_source) {
-      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
-      const metaSource = userData?.user?.user_metadata?.signup_source
-      if (typeof metaSource === 'string' && metaSource) {
-        await supabaseAdmin.from('profiles').update({ signup_source: metaSource }).eq('id', userId)
-      }
-    }
-  } catch (err) {
-    console.warn('[resources] signup_source backfill failed:', err)
-  }
-
+  await backfillSignupSource(userId)
   await recordEvent(resource.id, 'unlock', userId, pickUtm(req.body ?? {}))
 
   if (resource.resource_type === 'file') {

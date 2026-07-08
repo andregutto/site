@@ -3,15 +3,27 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { PageLoader } from '../components/ArvoLoader'
+import { linkifyText } from './community/_shared/linkify'
 
 // Página de um Recurso pra quem JÁ ESTÁ LOGADO — dentro do AppLayout (mesmo
 // header/nav do resto do app). Layout espelha a referência real que o André
-// mandou (epic.new/.../resources/:id): breadcrumb > título > tag > imagem
-// contida num card (sem texto por cima) > card de link/ação com botão
-// pequeno > "Sobre este recurso". Diferente da ResourcePublicPage (fora do
-// AppLayout, só pro gate de cadastro) — ver o roteamento condicional em
-// App.tsx: só uma das duas existe na árvore de rotas por vez, dependendo
-// de `user`.
+// mandou (epic.new/.../resources/:id): título serif centralizado acima do
+// card > imagem autoral com gradiente na base fundindo na superfície > card
+// de ação com o destino visível (nome do arquivo ou URL) + botão pill >
+// "Sobre este recurso". O gate é o login: o GET já devolve o conteúdo pronto
+// (sem clique de "Liberar" — ver resources.ts no shared-api); o evento de
+// unlock/atribuição é registrado server-side na primeira abertura.
+// Diferente da ResourcePublicPage (fora do AppLayout, só pro gate de
+// cadastro) — ver o roteamento condicional em App.tsx: só uma das duas
+// existe na árvore de rotas por vez, dependendo de `user`.
+
+interface ResourceContent {
+  type: 'file' | 'link' | 'content'
+  download_url?: string
+  external_url?: string
+  content_md?: string
+  file_name?: string
+}
 
 interface ResourceDetail {
   slug: string
@@ -22,21 +34,15 @@ interface ResourceDetail {
   cover_image_position: string | null
   visibility: 'free' | 'plus' | 'beta'
   unlocked: boolean
-}
-
-interface UnlockResult {
-  type: 'file' | 'link' | 'content'
-  download_url?: string
-  external_url?: string
-  content_md?: string
+  content?: ResourceContent | null
 }
 
 // Quem já tem conta nunca passa pela ResourcePublicPage (é ela quem grava
 // sessionStorage['resource_utm'], só rodada pra usuário deslogado — ver
 // roteamento condicional em App.tsx). Sem isso, todo clique de um usuário já
-// logado num link com UTM perdia a atribuição no unlock. Por isso lê a URL
-// desta própria página primeiro; sessionStorage só sobra como fallback do
-// fluxo pós-redirect do Google (ver AuthContext.bootstrapResourceSignupSource).
+// logado num link com UTM perdia a atribuição. Por isso lê a URL desta
+// própria página primeiro; sessionStorage só sobra como fallback do fluxo
+// pós-redirect do Google (ver AuthContext.bootstrapResourceSignupSource).
 function getStoredUtm(): Record<string, string> {
   const params = new URLSearchParams(window.location.search)
   const fromUrl: Record<string, string> = {}
@@ -76,52 +82,18 @@ export default function ResourceDetailPage() {
   const [resource, setResource] = useState<ResourceDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [unlocking, setUnlocking] = useState(false)
-  const [result, setResult] = useState<UnlockResult | null>(null)
-  const [unlockError, setUnlockError] = useState('')
 
   useEffect(() => {
     if (!slug) return
-    apiFetch<ResourceDetail>(`/resources/${slug}`)
+    // pending_resource_slug era o retomar-unlock do fluxo pós-Google; com o
+    // conteúdo vindo direto no GET ele só precisa ser limpo.
+    if (sessionStorage.getItem('pending_resource_slug') === slug) sessionStorage.removeItem('pending_resource_slug')
+    const utm = new URLSearchParams(getStoredUtm()).toString()
+    apiFetch<ResourceDetail>(`/resources/${slug}${utm ? `?${utm}` : ''}`)
       .then(setResource)
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [slug])
-
-  async function handleUnlock() {
-    if (unlocking) return
-    setUnlocking(true)
-    setUnlockError('')
-    try {
-      const res = await apiFetch<UnlockResult>(`/resources/${slug}/unlock`, {
-        method: 'POST',
-        body: JSON.stringify(getStoredUtm()),
-      })
-      setResult(res)
-      setResource(prev => prev ? { ...prev, unlocked: true } : prev)
-      if (res.type === 'file' && res.download_url) window.location.assign(res.download_url)
-    } catch (ex: unknown) {
-      setUnlockError((ex as Error).message)
-    } finally {
-      setUnlocking(false)
-    }
-  }
-
-  // Auto-libera sem precisar clicar de novo quando: (a) voltou logado do Google
-  // direto pra esta URL (ver AuthContext.signInWithGoogle e handleGoogle da
-  // ResourcePublicPage), ou (b) o usuário já liberou este recurso antes
-  // (resource.unlocked) — nesse caso não faz sentido reexibir o botão "Liberar".
-  useEffect(() => {
-    if (!resource) return
-    const pending = sessionStorage.getItem('pending_resource_slug')
-    if (pending && pending === slug) {
-      sessionStorage.removeItem('pending_resource_slug')
-      handleUnlock()
-    } else if (resource.unlocked) {
-      handleUnlock()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource])
 
   if (loading) return <PageLoader />
 
@@ -136,18 +108,28 @@ export default function ResourceDetailPage() {
     )
   }
 
-  const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14 }
-  const btnSmall: React.CSSProperties = {
-    padding: '9px 20px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em', whiteSpace: 'nowrap',
-    border: 'none', borderRadius: 8, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-  }
-
-  const actionLabel = unlocking ? r.unlocking : resource.resource_type === 'file' ? r.download : resource.resource_type === 'link' ? r.open : r.view
+  const content = resource.content ?? null
   const tierLabel = resource.visibility === 'free' ? r.free : resource.visibility === 'plus' ? r.plus : r.beta
+  // O destino visível no card de ação (padrão da referência): nome do
+  // arquivo pro tipo file, URL completa pro tipo link, título pro texto.
+  const targetLabel = content?.type === 'file' ? (content.file_name ?? resource.title)
+    : content?.type === 'link' ? (content.external_url ?? resource.title)
+    : resource.title
+
+  const btnPill: React.CSSProperties = {
+    padding: '10px 22px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em', whiteSpace: 'nowrap',
+    border: 'none', borderRadius: 999, cursor: 'pointer', textDecoration: 'none',
+    display: 'inline-flex', alignItems: 'center', gap: 7, justifyContent: 'center',
+  }
+  const extIcon = (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 13, height: 13 }}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 3.5H3.5v9h9V9.5M9.5 3h3.5v3.5M12.5 3.5L7.5 8.5"/>
+    </svg>
+  )
 
   return (
-    <div className="py-6 space-y-4" style={{ maxWidth: 640, margin: '0 auto' }}>
+    <div className="py-6 space-y-5" style={{ maxWidth: 680, margin: '0 auto' }}>
       <button
         onClick={() => navigate('/resources')}
         style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 0 }}
@@ -155,79 +137,58 @@ export default function ResourceDetailPage() {
         {r.title} <span style={{ opacity: 0.5 }}>/</span> <span style={{ color: 'var(--arvo-fg)' }}>{resource.title}</span>
       </button>
 
-      {/* Um card só — foto como header (mesma faixa de altura da página sem
-          login), título/tag/descrição/ação dentro do mesmo corpo. */}
-      <div style={{ ...card, overflow: 'hidden' }}>
-        {resource.preview_image_url ? (
-          <div style={{ height: 180 }}>
-            <img
-              src={resource.preview_image_url}
-              alt={resource.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: resource.cover_image_position ?? '50% 50%', display: 'block' }}
-            />
-          </div>
-        ) : (
-          // Recursos hoje sempre vivem sob o pilar Aprender (é onde a
-          // navegação vai listá-los quando a área de educação existir), daí
-          // usar sempre essa imagem como fallback em vez de precisar de um
-          // seletor de pilar por recurso.
-          <div style={{ height: 120 }}>
-            <img src="/brand/imagery/arvo-fallback-recurso.jpg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 30%', display: 'block' }} />
-          </div>
-        )}
+      {/* Título grande em serifa, centralizado, fora do card (referência Epic) */}
+      <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(26px, 4vw, 36px)', color: 'var(--arvo-fg)', margin: '4px 0 0', lineHeight: 1.18, textAlign: 'center' }}>
+        {resource.title}
+      </h1>
 
-        <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <span style={{
-              display: 'inline-block', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, letterSpacing: '0.10em', textTransform: 'uppercase',
-              color: 'var(--arvo-gold-text, #8C6A28)', background: 'var(--arvo-beige, #F1EDE5)', padding: '4px 12px', borderRadius: 999, marginBottom: 10,
-            }}>
-              {tierLabel}
-            </span>
-            <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
-              {resource.title}
-            </h1>
-          </div>
+      <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, overflow: 'hidden' }}>
+        {/* Imagem autoral com gradiente na base fundindo na superfície do
+            card — a foto "escorre" pro painel de ação, sem borda seca. */}
+        <div style={{ position: 'relative', height: resource.preview_image_url ? 230 : 140 }}>
+          <img
+            src={resource.preview_image_url || '/brand/imagery/arvo-fallback-recurso.jpg'}
+            alt={resource.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: resource.preview_image_url ? (resource.cover_image_position ?? '50% 50%') : '50% 30%', display: 'block' }}
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 55%, var(--arvo-surface) 100%)', pointerEvents: 'none' }} />
+        </div>
 
-          {result?.type === 'content' && (
-            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', maxHeight: 360, overflowY: 'auto', padding: '14px 16px', background: 'var(--arvo-bg, var(--arvo-offwhite))', borderRadius: 10, border: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
-              {result.content_md}
-            </div>
-          )}
-
-          {/* Linha de ação — ícone + tipo à esquerda, botão pequeno à direita */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 4, borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))', marginTop: 4 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--arvo-beige, #F1EDE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-gold-text, #8C6A28)', flexShrink: 0, marginTop: 12 }}>
+        <div style={{ padding: '4px 24px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Card de ação: ícone do tipo + destino visível + botão pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--arvo-beige, #F1EDE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-gold-text, #8C6A28)', flexShrink: 0 }}>
               <TypeIcon type={resource.resource_type} />
             </div>
-            <div style={{ flex: 1, minWidth: 0, marginTop: 12 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, color: 'var(--arvo-fg)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {resource.title}
               </p>
-              {unlockError && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-red)', margin: '2px 0 0' }}>{unlockError}</p>}
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {resource.unlocked ? targetLabel : tierLabel}
+              </p>
             </div>
-            <div style={{ marginTop: 12 }}>
-              {result ? (
-                result.type === 'link' ? (
-                  // Link real (não window.open após await) — evita o bloqueio de popup
-                  <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={btnSmall}>{r.openLink}</a>
-                ) : result.type === 'file' ? (
-                  <a href={result.download_url} style={btnSmall}>{r.downloadAgain}</a>
-                ) : (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)' }}>{r.contentUnlocked}</span>
-                )
-              ) : resource.visibility !== 'free' ? (
+            <div style={{ flexShrink: 0 }}>
+              {content?.type === 'link' ? (
+                <a href={content.external_url} target="_blank" rel="noopener noreferrer" style={btnPill}>{extIcon}{r.open}</a>
+              ) : content?.type === 'file' ? (
+                <a href={content.download_url} style={btnPill}>{r.download}</a>
+              ) : content?.type === 'content' ? null : (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{r.membersSoon}</span>
-              ) : (
-                <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnSmall, opacity: unlocking ? 0.6 : 1 }}>{actionLabel}</button>
               )}
             </div>
           </div>
 
+          {content?.type === 'content' && (
+            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', padding: '16px 18px', background: 'var(--arvo-bg, var(--arvo-offwhite))', borderRadius: 12, border: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
+              {linkifyText(content.content_md ?? '')}
+            </div>
+          )}
+
           {resource.description && (
-            <div style={{ paddingTop: 4, borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
-              <h2 style={{ fontFamily: 'var(--arvo-font-display, var(--arvo-font-body))', fontSize: 15, color: 'var(--arvo-fg)', margin: '10px 0 6px' }}>{r.aboutTitle}</h2>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: 0 }}>
+            <div style={{ borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))', paddingTop: 14 }}>
+              <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 20, color: 'var(--arvo-fg)', margin: '0 0 8px' }}>{r.aboutTitle}</h2>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>
                 {resource.description}
               </p>
             </div>

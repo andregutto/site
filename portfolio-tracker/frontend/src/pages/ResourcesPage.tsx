@@ -54,6 +54,8 @@ export default function ResourcesPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [tierFilter, setTierFilter] = useState<'all' | ResourceItem['visibility']>('all')
 
   useEffect(() => {
     apiFetch<{ resources: ResourceItem[]; is_admin: boolean }>('/resources')
@@ -62,6 +64,12 @@ export default function ResourcesPage() {
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const q = search.trim().toLowerCase()
+  const filtered = items.filter(item =>
+    (tierFilter === 'all' || item.visibility === tierFilter) &&
+    (!q || item.title.toLowerCase().includes(q) || (item.description ?? '').toLowerCase().includes(q)),
+  )
 
   return (
     <div className="space-y-6">
@@ -84,15 +92,53 @@ export default function ResourcesPage() {
         )}
       </div>
 
+      {/* Busca + filtro por tier (referência: All/Free/Max da listagem da
+          Epic). Os pills de tier só aparecem pros tiers presentes na lista. */}
+      {!loading && !error && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 320 }}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--arvo-fg-soft)', pointerEvents: 'none' }}>
+              <circle cx="7" cy="7" r="4.5"/><path strokeLinecap="round" d="M10.5 10.5L14 14"/>
+            </svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={r.searchPlaceholder}
+              style={{ width: '100%', padding: '9px 14px 9px 34px', fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 999, outline: 'none' }}
+            />
+          </div>
+          {(['all', 'free', 'plus', 'beta'] as const)
+            .filter(tier => tier === 'all' || items.some(i => i.visibility === tier))
+            .map(tier => (
+              <button
+                key={tier}
+                onClick={() => setTierFilter(tier)}
+                style={{
+                  padding: '8px 16px', borderRadius: 999, cursor: 'pointer',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em',
+                  border: '1px solid var(--arvo-border)',
+                  background: tierFilter === tier ? 'var(--arvo-black)' : 'var(--arvo-surface)',
+                  color: tierFilter === tier ? 'var(--arvo-offwhite, #F6F3EC)' : 'var(--arvo-fg-soft)',
+                  transition: 'background 280ms, color 280ms',
+                }}
+              >
+                {tier === 'all' ? r.filterAll : tierLabel(r, tier)}
+              </button>
+            ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-16"><ArvoLoader size={32} style={{ color: 'var(--arvo-gold)' }} /></div>
       ) : error ? (
         <p className="text-sm" style={{ color: 'var(--arvo-red, #D63B2F)' }}>{error}</p>
       ) : !items.length ? (
         <p className="text-sm py-8" style={{ color: 'var(--arvo-fg-soft)' }}>{r.empty}</p>
+      ) : !filtered.length ? (
+        <p className="text-sm py-8" style={{ color: 'var(--arvo-fg-soft)' }}>{r.noResults}</p>
       ) : (
-        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-          {items.map(item => (
+        <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+          {filtered.map(item => (
             <Link key={item.slug} to={`/resources/${item.slug}`} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}>
               <img
                 src={item.preview_image_url || '/brand/imagery/arvo-fallback-recurso.jpg'}
@@ -121,7 +167,7 @@ export default function ResourcesPage() {
                   <span className="inline-block w-full text-center py-2.5 rounded-lg text-xs"
                     style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase', background: item.visibility !== 'free' && !item.unlocked ? 'transparent' : 'var(--arvo-black, #0D0D0D)', color: item.visibility !== 'free' && !item.unlocked ? 'var(--arvo-fg-soft)' : 'var(--arvo-offwhite, #F6F3EC)' }}
                   >
-                    {item.unlocked ? (item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view) : item.visibility !== 'free' ? r.membersSoon : r.unlockCta}
+                    {item.visibility !== 'free' && !item.unlocked ? r.membersSoon : item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view}
                   </span>
                 </div>
               </div>

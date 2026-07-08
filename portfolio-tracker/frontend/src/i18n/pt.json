@@ -2817,7 +2817,10 @@
     },
     "gateEyebrow": "Acesso ao recurso",
     "unlockHint": "Faça login ou crie sua conta ao lado para liberar.",
-    "aboutTitle": "Sobre este recurso"
+    "aboutTitle": "Sobre este recurso",
+    "searchPlaceholder": "Buscar recurso",
+    "filterAll": "Todos",
+    "noResults": "Nenhum recurso encontrado com esse filtro."
   },
   "community": {
     "eyebrow": "ARVO COMUNIDADE",
