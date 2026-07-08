@@ -786,18 +786,26 @@ router.get('/trips', async (req: any, res: any) => {
 })
 
 // ── GET /api/community/users/:username  (perfil público, /u/:username) ────────
+// Aceita @username OU UUID do usuário — nem todo mundo tem handle, então o
+// ProfileLink cai pro id quando o autor não tem @ (perfil continua acessível).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 router.get('/users/:username', async (req: any, res: any) => {
   const userId = uid(req)
-  const username = String(req.params.username ?? '').trim().toLowerCase().replace(/^@/, '')
-  if (!username) { res.status(400).json({ error: 'username required' }); return }
+  const param = String(req.params.username ?? '').trim().toLowerCase().replace(/^@/, '')
+  if (!param) { res.status(400).json({ error: 'username required' }); return }
 
   try {
     await ensureMember(userId)
 
-    const { data: handle } = await supabaseAdmin
-      .from('user_handles').select('user_id').eq('username', username).maybeSingle()
-    if (!handle) { res.status(404).json({ error: 'user not found' }); return }
-    const targetId = handle.user_id as string
+    let targetId: string
+    if (UUID_RE.test(param)) {
+      targetId = param
+    } else {
+      const { data: handle } = await supabaseAdmin
+        .from('user_handles').select('user_id').eq('username', param).maybeSingle()
+      if (!handle) { res.status(404).json({ error: 'user not found' }); return }
+      targetId = handle.user_id as string
+    }
 
     const [display, authRes, adminIds, statuses, topicsRes, tripsRes] = await Promise.all([
       userDisplay(targetId),
@@ -819,6 +827,9 @@ router.get('/users/:username', async (req: any, res: any) => {
         .order('created_at', { ascending: false }),
     ])
 
+    // No caminho por UUID o usuário pode não existir — o getUserById é a checagem
+    if (!authRes.data?.user) { res.status(404).json({ error: 'user not found' }); return }
+
     const topics = topicsRes.data ?? []
     const categoryIds = [...new Set(topics.map((t: any) => t.category_id))]
     const { data: categories } = categoryIds.length
@@ -831,7 +842,8 @@ router.get('/users/:username', async (req: any, res: any) => {
     res.json({
       profile: {
         id: targetId,
-        username,
+        // Pode ser null quando o perfil foi aberto por UUID e o usuário não tem handle
+        username: display.username ?? null,
         name: display.name ?? display.email,
         avatar_url: display.avatar_url ?? null,
         member_since: authRes.data?.user?.created_at ?? null,

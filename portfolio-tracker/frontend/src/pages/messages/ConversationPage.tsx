@@ -230,11 +230,11 @@ export default function ConversationPage() {
       <div className="flex items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--arvo-border)' }}>
         <button onClick={() => navigate('/messages')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 18, padding: 4 }}>←</button>
         {/* Avatar/nome levam pro perfil público do contato */}
-        <ProfileLink username={conversation.peer.username}>
+        <ProfileLink username={conversation.peer.username} userId={conversation.peer.user_id}>
           <Avatar name={conversation.peer.name} avatarUrl={conversation.peer.avatar_url} size={34} />
         </ProfileLink>
         <div>
-          <ProfileLink username={conversation.peer.username}>
+          <ProfileLink username={conversation.peer.username} userId={conversation.peer.user_id}>
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{conversation.peer.name ?? conversation.peer.username}</p>
           </ProfileLink>
           {peerTyping ? (

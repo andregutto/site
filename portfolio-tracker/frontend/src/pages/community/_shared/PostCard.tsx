@@ -46,13 +46,13 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
       <div className="flex items-start gap-3">
-        {/* Avatar e nome levam pro perfil público quando o autor tem @username */}
-        <ProfileLink username={post.author.username}>
+        {/* Avatar e nome levam pro perfil público (por @username ou, sem handle, pelo id) */}
+        <ProfileLink username={post.author.username} userId={post.author.id}>
           <Avatar name={post.author.name} avatarUrl={post.author.avatar_url} size={32} />
         </ProfileLink>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <ProfileLink username={post.author.username}>
+            <ProfileLink username={post.author.username} userId={post.author.id}>
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>
                 {post.author.name}
               </span>
@@ -63,7 +63,7 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
               </span>
             )}
             {post.author.username && (
-              <ProfileLink username={post.author.username}>
+              <ProfileLink username={post.author.username} userId={post.author.id}>
                 <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>@{post.author.username}</span>
               </ProfileLink>
             )}

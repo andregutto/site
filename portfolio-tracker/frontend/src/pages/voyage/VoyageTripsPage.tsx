@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import ArvoLoader from '../../components/ArvoLoader'
 import TripFormModal from './TripFormModal'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 import MomentPickerModal from './MomentPickerModal'
@@ -125,11 +126,7 @@ export default function VoyageTripsPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-[14px] overflow-hidden" style={{ background: 'var(--arvo-hover-bg)', height: 260, animation: 'pulse 1.5s ease infinite' }} />
-          ))}
-        </div>
+        <div className="flex justify-center py-16"><ArvoLoader size={32} style={{ color: 'var(--arvo-gold)' }} /></div>
       ) : trips.length === 0 ? (
         <div className="flex flex-col items-center justify-center" style={{ minHeight: 320, gap: 16 }}>
           <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="rgba(200,184,154,0.30)" strokeWidth="1.5" style={{ marginBottom: 8 }}>

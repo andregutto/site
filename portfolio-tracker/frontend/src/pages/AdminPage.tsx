@@ -5,6 +5,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
 import CommunityAdminPage from './community/CommunityAdminPage'
 import ResourcesAdminPage from './ResourcesAdminPage'
+import AcquisitionAdminPage from './AcquisitionAdminPage'
 
 // Admin consolidado: um único ponto de entrada (menu do avatar → "Administração",
 // só visível pra quem é community_admin) em vez de dois espalhados (antigo
@@ -14,7 +15,7 @@ import ResourcesAdminPage from './ResourcesAdminPage'
 
 const OCRE = '#E8A020'
 
-type Tab = 'community' | 'resources'
+type Tab = 'community' | 'resources' | 'acquisition'
 
 export default function AdminPage() {
   const { t } = useI18n()
@@ -25,7 +26,8 @@ export default function AdminPage() {
   const [resourcesEditing, setResourcesEditing] = useState(false)
   const newResourceRef = useRef<() => void>(() => {})
 
-  const tab: Tab = searchParams.get('tab') === 'resources' ? 'resources' : 'community'
+  const rawTab = searchParams.get('tab')
+  const tab: Tab = rawTab === 'resources' ? 'resources' : rawTab === 'acquisition' ? 'acquisition' : 'community'
 
   useEffect(() => {
     apiFetch<{ is_admin: boolean }>('/community/is-admin')
@@ -51,7 +53,7 @@ export default function AdminPage() {
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1 rounded-full p-1" style={{ background: 'var(--arvo-chip-bg)', width: 'fit-content' }}>
-          {(['community', 'resources'] as Tab[]).map(k => (
+          {(['community', 'resources', 'acquisition'] as Tab[]).map(k => (
             <button
               key={k}
               onClick={() => setTab(k)}
@@ -62,7 +64,11 @@ export default function AdminPage() {
                 color: tab === k ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
               }}
             >
-              {k === 'community' ? ((t as any).admin?.tabCommunity ?? 'Comunidade') : ((t as any).admin?.tabResources ?? 'Recursos')}
+              {k === 'community'
+                ? ((t as any).admin?.tabCommunity ?? 'Comunidade')
+                : k === 'resources'
+                  ? ((t as any).admin?.tabResources ?? 'Recursos')
+                  : ((t as any).admin?.tabAcquisition ?? 'Aquisição')}
             </button>
           ))}
         </div>
@@ -79,6 +85,8 @@ export default function AdminPage() {
 
       {tab === 'community' ? (
         <CommunityAdminPage />
+      ) : tab === 'acquisition' ? (
+        <AcquisitionAdminPage />
       ) : (
         <ResourcesAdminPage
           onRegisterNew={fn => { newResourceRef.current = fn }}

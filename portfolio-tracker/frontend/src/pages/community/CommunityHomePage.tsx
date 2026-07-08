@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
-import { SearchBox } from '../../components/ui'
+import { Eyebrow, SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
+import TripCard from '../voyage/_shared/TripCard'
 import ProfileLink from '../../components/ProfileLink'
 import PullToRefresh from '../../components/PullToRefresh'
 import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
 import { catName } from './_shared/catName'
+import { tripDurationLabel } from './_shared/tripHelpers'
 import NewTopicModal from './NewTopicModal'
-import type { CommunityCategory, CommunityTopicSummary } from './types'
+import type { CommunityCategory, CommunityTopicSummary, CommunityTripCard } from './types'
 
 function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -38,7 +40,7 @@ function TopicResultsList({ topics, tc, navigate }: {
           style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
         >
           {/* Avatar/@ do autor levam pro perfil; o resto do card continua abrindo o tópico */}
-          <ProfileLink username={topic.author.username}>
+          <ProfileLink username={topic.author.username} userId={topic.author.id}>
             <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
           </ProfileLink>
           <div className="flex-1 min-w-0">
@@ -47,7 +49,7 @@ function TopicResultsList({ topics, tc, navigate }: {
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
-              <ProfileLink username={topic.author.username}>@{topic.author.username ?? topic.author.name}</ProfileLink>
+              <ProfileLink username={topic.author.username} userId={topic.author.id}>@{topic.author.username ?? topic.author.name}</ProfileLink>
               {' · '}{timeAgo(topic.last_post_at)}
               {topic.matched_in_body && ` · ${tc?.matchedInBody ?? 'encontrado numa resposta'}`}
             </div>
@@ -78,6 +80,8 @@ export default function CommunityHomePage() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<CommunityCategory[] | null>(null)
   const [recent, setRecent] = useState<CommunityTopicSummary[]>([])
+  // Últimas viagens compartilhadas — slider horizontal na home (null = carregando)
+  const [trips, setTrips] = useState<CommunityTripCard[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
@@ -92,6 +96,10 @@ export default function CommunityHomePage() {
 
   async function loadCategoriesAndRecent() {
     setLoading(true)
+    // Slider de viagens carrega em paralelo sem segurar a página; falha vira lista vazia
+    apiFetch<{ trips: CommunityTripCard[] }>('/community/trips')
+      .then(res => setTrips(res.trips.slice(0, 10)))
+      .catch(() => setTrips([]))
     try {
       const data = await apiFetch<{ categories: CommunityCategory[]; is_admin?: boolean }>('/community/categories')
       setCategories(data.categories)
@@ -102,7 +110,7 @@ export default function CommunityHomePage() {
         )
       )
       const merged = lists.flat().sort((a, b) => new Date(b.last_post_at).getTime() - new Date(a.last_post_at).getTime())
-      setRecent(merged.slice(0, 8))
+      setRecent(merged.slice(0, 5))
     } finally {
       setLoading(false)
     }
@@ -175,15 +183,41 @@ export default function CommunityHomePage() {
     </div>
   )
 
+  // Chips de temas (categorias) — ficam na mesma faixa do título no desktop;
+  // no mobile não cabem lá e descem pra uma linha rolável abaixo do título.
+  const categoryChips = (categories ?? []).map((c) => (
+    <button
+      key={c.id}
+      onClick={() => navigate(`/community/${c.slug}`)}
+      className="flex items-center gap-1.5"
+      style={{
+        fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '6px 12px', borderRadius: 999,
+        background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+        color: 'var(--arvo-fg)', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+        transition: 'border-color 200ms ease, background 200ms ease',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
+    >
+      <span style={{ lineHeight: 0, color: 'var(--arvo-fg-muted)' }}><CategoryIcon slug={c.slug} iconKey={c.icon_key} /></span>
+      {catName(tc, c)}
+    </button>
+  ))
+
   return (
     <PullToRefresh onRefresh={loadCategoriesAndRecent}>
     <div className="space-y-7">
+      {/* Topo compacto: título + chips de temas + novo tópico numa faixa só */}
       <div>
         <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
           {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
+        <div className="flex items-center gap-3">
+          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: 'var(--arvo-fg)', flexShrink: 0 }}>{tc?.title ?? 'Comunidade'}</h1>
+          <div className="hidden md:flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            {categoryChips}
+          </div>
+          <div className="flex-1 md:hidden" />
           {!showSearch && (
             <button
               type="button"
@@ -200,9 +234,10 @@ export default function CommunityHomePage() {
             >+</button>
           )}
         </div>
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
-          {tc?.subtitle}
-        </p>
+        {/* Fallback mobile: chips numa linha rolável horizontal abaixo do título */}
+        <div className="flex md:hidden items-center gap-2 overflow-x-auto" style={{ marginTop: 10, scrollbarWidth: 'none' }}>
+          {categoryChips}
+        </div>
       </div>
 
       {showSearch && (
@@ -255,48 +290,6 @@ export default function CommunityHomePage() {
       )}
 
       {!debouncedSearch && !showMine && <>
-      {/* Compact category chips — replaced the big 2×4 card grid */}
-      <div className="flex gap-2 flex-wrap">
-        {(categories ?? []).map((c) => (
-          <button
-            key={c.id}
-            onClick={() => navigate(`/community/${c.slug}`)}
-            className="flex items-center gap-2"
-            style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 16px', borderRadius: 999,
-              background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-              color: 'var(--arvo-fg)', cursor: 'pointer',
-              transition: 'border-color 200ms ease, background 200ms ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
-          >
-            <span style={{ lineHeight: 0, color: 'var(--arvo-fg-muted)' }}><CategoryIcon slug={c.slug} iconKey={c.icon_key} /></span>
-            {catName(tc, c)}
-          </button>
-        ))}
-        {/* Galeria de viagens da comunidade — mesma navegação por chip das categorias */}
-        <button
-          onClick={() => navigate('/community/trips')}
-          className="flex items-center gap-2"
-          style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 14, padding: '8px 16px', borderRadius: 999,
-            background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-            color: 'var(--arvo-fg)', cursor: 'pointer',
-            transition: 'border-color 200ms ease, background 200ms ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
-        >
-          <span style={{ lineHeight: 0, color: 'var(--arvo-fg-muted)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-            </svg>
-          </span>
-          {tc?.trips?.chip ?? 'Viagens'}
-        </button>
-      </div>
-
       <div>
         <div className="flex items-center justify-between gap-3 flex-wrap" style={{ marginBottom: 10 }}>
           <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
@@ -320,7 +313,7 @@ export default function CommunityHomePage() {
                 style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
               >
                 {/* Avatar/nome do autor levam pro perfil; o card continua abrindo o tópico */}
-                <ProfileLink username={topic.author.username}>
+                <ProfileLink username={topic.author.username} userId={topic.author.id}>
                   <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
                 </ProfileLink>
                 <div className="flex-1 min-w-0">
@@ -330,7 +323,7 @@ export default function CommunityHomePage() {
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)' }}>
-                    <ProfileLink username={topic.author.username}>{topic.author.name ?? topic.author.username}</ProfileLink>
+                    <ProfileLink username={topic.author.username} userId={topic.author.id}>{topic.author.name ?? topic.author.username}</ProfileLink>
                     {' · '}{timeAgo(topic.last_post_at)}
                   </div>
                 </div>
@@ -345,6 +338,47 @@ export default function CommunityHomePage() {
           </div>
         )}
       </div>
+
+      {/* Viagens compartilhadas — slider horizontal com os mesmos cards da
+          galeria (/community/trips); o card abre a viagem, o link no header
+          da seção leva pra galeria completa. */}
+      {trips !== null && (
+        <div>
+          <div className="flex items-baseline justify-between gap-3" style={{ marginBottom: 12 }}>
+            <Eyebrow>{tc?.trips?.sectionEyebrow ?? 'Viagens compartilhadas'}</Eyebrow>
+            <Link
+              to="/community/trips"
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: OCRE, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {tc?.trips?.seeAll ?? 'Ver todas'} →
+            </Link>
+          </div>
+          {trips.length === 0 ? (
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', color: 'var(--arvo-gold)', fontSize: 14 }}>
+              {tc?.trips?.emptyTitle ?? 'Nenhuma viagem compartilhada ainda'}
+            </p>
+          ) : (
+            <div
+              className="flex gap-4 overflow-x-auto pb-2"
+              style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+            >
+              {trips.map((trip) => (
+                <div key={trip.id} style={{ flex: '0 0 auto', width: 270, scrollSnapAlign: 'start' }}>
+                  <TripCard
+                    trip={trip}
+                    t={t}
+                    showCost={false}
+                    durationLabel={tripDurationLabel(trip, tc)}
+                    owner={trip.owner}
+                    onOwnerClick={() => navigate(`/u/${trip.owner.username ?? trip.owner.id}`)}
+                    onClick={() => navigate(`/voyage/shared/${trip.id}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       </>}
 
       {showNewTopic && (

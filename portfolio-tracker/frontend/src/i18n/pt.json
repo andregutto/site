@@ -37,7 +37,31 @@
     "eyebrow": "ADMINISTRAÇÃO",
     "title": "Painel de administração",
     "tabCommunity": "Comunidade",
-    "tabResources": "Recursos"
+    "tabResources": "Recursos",
+    "tabAcquisition": "Aquisição",
+    "acquisition": {
+      "kpiLeads": "Leads totais",
+      "kpiLeadsMonth": "Leads este mês",
+      "kpiViews": "Visitas a gates",
+      "kpiConversion": "Conversão",
+      "chartTitle": "Evolução mensal",
+      "chartSubtitle": "Cadastros atribuídos e visitas a gates nos últimos 12 meses",
+      "seriesResources": "Recursos",
+      "seriesTrips": "Viagens",
+      "seriesViews": "Visitas",
+      "magnetsTitle": "Ímãs de leads",
+      "magnetsSubtitle": "Recursos e viagens compartilhadas, ordenados por cadastros",
+      "colViews": "Visitas",
+      "colSignups": "Cadastros",
+      "colConversion": "Conv.",
+      "typeResource": "Recurso",
+      "typeTrip": "Viagem",
+      "draft": "Rascunho",
+      "byCampaign": "Origem por campanha",
+      "noCampaign": "Nenhuma origem registrada ainda",
+      "empty": "Nenhum ímã de leads ainda. Crie um recurso ou compartilhe uma viagem.",
+      "loadError": "Não foi possível carregar as métricas"
+    }
   },
   "currency": {
     "label": "Moeda"
@@ -2809,11 +2833,7 @@
       "deleteConfirm": "Excluir o recurso \"{title}\"? Essa ação não pode ser desfeita.",
       "copyLink": "Copiar link público",
       "linkCopied": "Link copiado!",
-      "views": "views",
-      "unlocks": "liberações",
-      "downloads": "downloads",
-      "signups": "cadastros",
-      "bySource": "Origem:",
+      "viewMetrics": "Ver métricas",
       "manageLinks": "Links de divulgação",
       "directLink": "Link direto (sem origem)",
       "linkLabelPlaceholder": "Onde vai usar esse link? Ex: Vídeo custo de vida Paris",
@@ -2830,10 +2850,7 @@
       "uploadCover": "Escolher capa",
       "changeCover": "Trocar capa",
       "uploadCoverError": "Erro ao enviar a foto de capa",
-      "dragHint": "Arraste pra reposicionar",
-      "tripsTitle": "Viagens",
-      "tripsSubtitle": "Viagens compartilhadas com gate de cadastro. Gere os links de divulgação no modal Compartilhar da viagem.",
-      "tripOpen": "Abrir viagem"
+      "dragHint": "Arraste pra reposicionar"
     },
     "gateEyebrow": "Acesso ao recurso",
     "unlockHint": "Faça login ou crie sua conta ao lado para liberar.",
@@ -2869,7 +2886,8 @@
     "linkedTripCard": "Viagem vinculada",
     "viewTrip": "Ver viagem",
     "trips": {
-      "chip": "Viagens",
+      "sectionEyebrow": "Viagens compartilhadas",
+      "seeAll": "Ver todas",
       "title": "Viagens",
       "subtitle": "Roteiros que membros da comunidade compartilharam",
       "allCountries": "Todos",

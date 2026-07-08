@@ -105,7 +105,7 @@ export default function CommunityCategoryPage() {
               style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
             >
               {/* Avatar/@ do autor levam pro perfil; o card continua abrindo o tópico */}
-              <ProfileLink username={topic.author.username}>
+              <ProfileLink username={topic.author.username} userId={topic.author.id}>
                 <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={32} />
               </ProfileLink>
               <div className="flex-1 min-w-0">
@@ -117,7 +117,7 @@ export default function CommunityCategoryPage() {
                   </span>
                 </div>
                 <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
-                  <ProfileLink username={topic.author.username}>
+                  <ProfileLink username={topic.author.username} userId={topic.author.id}>
                     {topic.author.username ? `@${topic.author.username}` : topic.author.name}
                   </ProfileLink>
                   {' · '}{timeAgo(topic.last_post_at)}

@@ -239,8 +239,10 @@ router.post('/:slug/unlock', requireAuth, async (req, res: Response) => {
 
 // ── Admin (community_admins) ─────────────────────────────────────────────────
 
-// GET /api/resources/admin/list — todos os recursos + funil por recurso
-// (views, unlocks, downloads, cadastros atribuídos via profiles.signup_source)
+// GET /api/resources/admin/list — todos os recursos + links de divulgação.
+// O funil por recurso (views/unlocks/downloads/cadastros/origem) que se
+// montava aqui migrou pro GET /admin/acquisition (routes/acquisition.ts),
+// consumido pela aba Aquisição do /admin — métricas num lugar só.
 router.get('/admin/list', requireAuth, async (req, res: Response) => {
   if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
 
@@ -249,30 +251,6 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
   if (error) { res.status(500).json({ error: error.message }); return }
-
-  const { data: events } = await supabaseAdmin
-    .from('resource_events').select('resource_id, event_type, utm_source, utm_campaign, utm_content')
-
-  const counts = new Map<number, Record<string, number>>()
-  // Origem do lead (qual vídeo) — só olha 'unlock', que é o evento que vale
-  // como "gerou lead", não 'view' (curioso que só passou de raspão). Agrupa
-  // por utm_campaign/utm_content (o identificador do vídeo específico), não
-  // por utm_source (que tende a ser sempre 'youtube' pra todo mundo e não
-  // diferencia nada sozinho).
-  const bySource = new Map<number, Record<string, number>>()
-  for (const e of events ?? []) {
-    const c = counts.get(e.resource_id) ?? {}
-    c[e.event_type] = (c[e.event_type] ?? 0) + 1
-    counts.set(e.resource_id, c)
-
-    if (e.event_type === 'unlock') {
-      const video = e.utm_campaign || e.utm_content
-      const source = video ? (e.utm_source ? `${e.utm_source}/${video}` : video) : (e.utm_source || 'sem_origem')
-      const s = bySource.get(e.resource_id) ?? {}
-      s[source] = (s[source] ?? 0) + 1
-      bySource.set(e.resource_id, s)
-    }
-  }
 
   const { data: links } = await supabaseAdmin
     .from('resource_links').select('id, resource_id, label, utm_campaign, created_at')
@@ -284,25 +262,10 @@ router.get('/admin/list', requireAuth, async (req, res: Response) => {
     linksByResource.set(lk.resource_id, arr)
   }
 
-  const result = []
-  for (const r of (resources ?? []) as ResourceRow[]) {
-    const { count: signups } = await supabaseAdmin
-      .from('profiles').select('id', { count: 'exact', head: true })
-      .eq('signup_source', `resource:${r.slug}`)
-    const c = counts.get(r.id) ?? {}
-    result.push({
-      ...r,
-      stats: {
-        views:     c.view ?? 0,
-        unlocks:   c.unlock ?? 0,
-        downloads: c.download ?? 0,
-        signups:   signups ?? 0,
-        by_source: bySource.get(r.id) ?? {},
-      },
-      links: linksByResource.get(r.id) ?? [],
-    })
-  }
-  res.json(result)
+  res.json(((resources ?? []) as ResourceRow[]).map(r => ({
+    ...r,
+    links: linksByResource.get(r.id) ?? [],
+  })))
 })
 
 // POST /api/resources/admin/:slug/links — gera um link de divulgação (UTM

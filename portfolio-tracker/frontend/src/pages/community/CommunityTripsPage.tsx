@@ -49,9 +49,11 @@ export default function CommunityTripsPage() {
 
       <div>
         <div className="flex items-center gap-2">
+          {/* Globo — o avião de papel é o ícone de mensagens, não cabe aqui */}
           <span style={{ color: OCRE, display: 'inline-flex' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              <circle cx="12" cy="12" r="9" />
+              <path strokeLinecap="round" d="M3 12h18M12 3c2.5 2.4 3.9 5.6 3.9 9s-1.4 6.6-3.9 9c-2.5-2.4-3.9-5.6-3.9-9S9.5 5.4 12 3z" />
             </svg>
           </span>
           <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: 'var(--arvo-fg)' }}>
@@ -113,7 +115,7 @@ export default function CommunityTripsPage() {
                 showCost={false}
                 durationLabel={tripDurationLabel(trip, tc)}
                 owner={trip.owner}
-                onOwnerClick={trip.owner.username ? () => navigate(`/u/${trip.owner.username}`) : undefined}
+                onOwnerClick={() => navigate(`/u/${trip.owner.username ?? trip.owner.id}`)}
                 onClick={() => navigate(`/voyage/shared/${trip.id}`)}
               />
             </div>

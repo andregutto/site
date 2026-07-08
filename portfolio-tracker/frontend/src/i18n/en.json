@@ -37,7 +37,31 @@
     "eyebrow": "ADMIN",
     "title": "Admin panel",
     "tabCommunity": "Community",
-    "tabResources": "Resources"
+    "tabResources": "Resources",
+    "tabAcquisition": "Acquisition",
+    "acquisition": {
+      "kpiLeads": "Total leads",
+      "kpiLeadsMonth": "Leads this month",
+      "kpiViews": "Gate visits",
+      "kpiConversion": "Conversion",
+      "chartTitle": "Monthly evolution",
+      "chartSubtitle": "Attributed signups and gate visits over the last 12 months",
+      "seriesResources": "Resources",
+      "seriesTrips": "Trips",
+      "seriesViews": "Visits",
+      "magnetsTitle": "Lead magnets",
+      "magnetsSubtitle": "Resources and shared trips, sorted by signups",
+      "colViews": "Visits",
+      "colSignups": "Signups",
+      "colConversion": "Conv.",
+      "typeResource": "Resource",
+      "typeTrip": "Trip",
+      "draft": "Draft",
+      "byCampaign": "Source by campaign",
+      "noCampaign": "No source recorded yet",
+      "empty": "No lead magnets yet. Create a resource or share a trip.",
+      "loadError": "Could not load the metrics"
+    }
   },
   "currency": {
     "label": "Currency"
@@ -2809,11 +2833,7 @@
       "deleteConfirm": "Delete resource \"{title}\"? This can't be undone.",
       "copyLink": "Copy public link",
       "linkCopied": "Link copied!",
-      "views": "views",
-      "unlocks": "unlocks",
-      "downloads": "downloads",
-      "signups": "signups",
-      "bySource": "Source:",
+      "viewMetrics": "View metrics",
       "manageLinks": "Promo links",
       "directLink": "Direct link (no source)",
       "linkLabelPlaceholder": "Where will you use this link? E.g. Paris cost of living video",
@@ -2830,10 +2850,7 @@
       "uploadCover": "Choose cover",
       "changeCover": "Change cover",
       "uploadCoverError": "Failed to upload cover photo",
-      "dragHint": "Drag to reposition",
-      "tripsTitle": "Trips",
-      "tripsSubtitle": "Shared trips behind the sign-up gate. Generate promo links in the trip's Share modal.",
-      "tripOpen": "Open trip"
+      "dragHint": "Drag to reposition"
     },
     "gateEyebrow": "Resource access",
     "unlockHint": "Log in or create your account on the side to unlock.",
@@ -2869,7 +2886,8 @@
     "linkedTripCard": "Linked trip",
     "viewTrip": "View trip",
     "trips": {
-      "chip": "Trips",
+      "sectionEyebrow": "Shared trips",
+      "seeAll": "See all",
       "title": "Trips",
       "subtitle": "Itineraries shared by community members",
       "allCountries": "All",

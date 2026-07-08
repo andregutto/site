@@ -37,7 +37,31 @@
     "eyebrow": "ADMINISTRATION",
     "title": "Panneau d'administration",
     "tabCommunity": "Communauté",
-    "tabResources": "Ressources"
+    "tabResources": "Ressources",
+    "tabAcquisition": "Acquisition",
+    "acquisition": {
+      "kpiLeads": "Leads au total",
+      "kpiLeadsMonth": "Leads ce mois-ci",
+      "kpiViews": "Visites des gates",
+      "kpiConversion": "Conversion",
+      "chartTitle": "Évolution mensuelle",
+      "chartSubtitle": "Inscriptions attribuées et visites des gates sur les 12 derniers mois",
+      "seriesResources": "Ressources",
+      "seriesTrips": "Voyages",
+      "seriesViews": "Visites",
+      "magnetsTitle": "Aimants à leads",
+      "magnetsSubtitle": "Ressources et voyages partagés, triés par inscriptions",
+      "colViews": "Visites",
+      "colSignups": "Inscriptions",
+      "colConversion": "Conv.",
+      "typeResource": "Ressource",
+      "typeTrip": "Voyage",
+      "draft": "Brouillon",
+      "byCampaign": "Origine par campagne",
+      "noCampaign": "Aucune origine enregistrée pour le moment",
+      "empty": "Aucun aimant à leads pour le moment. Créez une ressource ou partagez un voyage.",
+      "loadError": "Impossible de charger les métriques"
+    }
   },
   "currency": {
     "label": "Devise"
@@ -2809,11 +2833,7 @@
       "deleteConfirm": "Supprimer la ressource \"{title}\" ? Cette action est irréversible.",
       "copyLink": "Copier le lien public",
       "linkCopied": "Lien copié !",
-      "views": "vues",
-      "unlocks": "déblocages",
-      "downloads": "téléchargements",
-      "signups": "inscriptions",
-      "bySource": "Origine :",
+      "viewMetrics": "Voir les métriques",
       "manageLinks": "Liens de promotion",
       "directLink": "Lien direct (sans origine)",
       "linkLabelPlaceholder": "Où allez-vous utiliser ce lien ? Ex : Vidéo coût de la vie à Paris",
@@ -2830,10 +2850,7 @@
       "uploadCover": "Choisir la couverture",
       "changeCover": "Changer la couverture",
       "uploadCoverError": "Échec de l'envoi de la photo de couverture",
-      "dragHint": "Faites glisser pour repositionner",
-      "tripsTitle": "Voyages",
-      "tripsSubtitle": "Voyages partagés derrière le portail d’inscription. Générez les liens de diffusion dans la fenêtre Partager du voyage.",
-      "tripOpen": "Ouvrir le voyage"
+      "dragHint": "Faites glisser pour repositionner"
     },
     "gateEyebrow": "Accès à la ressource",
     "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer.",
@@ -2869,7 +2886,8 @@
     "linkedTripCard": "Voyage lié",
     "viewTrip": "Voir le voyage",
     "trips": {
-      "chip": "Voyages",
+      "sectionEyebrow": "Voyages partagés",
+      "seeAll": "Tout voir",
       "title": "Voyages",
       "subtitle": "Itinéraires partagés par les membres de la communauté",
       "allCountries": "Tous",

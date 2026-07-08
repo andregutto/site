@@ -2228,75 +2228,10 @@ router.delete('/trips/:id/share-links/:linkId', requireAuth, async (req, res: Re
   res.json({ ok: true })
 })
 
-// ── GET /api/voyage/admin/acquisition — funil por viagem compartilhada ────────
-// Pra seção "Viagens" da aba Recursos do /admin: cada viagem com share
-// habilitado do próprio admin, com views do gate, cadastros atribuídos via
-// profiles.signup_source = 'trip:<id>' e quebra por campanha. Espelha o
-// by_source do /resources/admin/list, mas contando 'view' — aqui não existe
-// unlock: o "unlock" da viagem é o próprio cadastro.
-router.get('/admin/acquisition', requireAuth, async (req, res: Response) => {
-  const userId = uid(req)
-  if (!(await isAdmin(userId))) { res.status(403).json({ error: 'admin only' }); return }
-
-  const { data: trips } = await supabaseAdmin
-    .from('voyage_trips')
-    .select('id, title, destination, country, cover_image_url, cover_image_position, created_at')
-    .eq('user_id', userId)
-    .not('share_token', 'is', null)
-    .order('created_at', { ascending: false })
-
-  const tripIds = (trips ?? []).map(t => t.id as number)
-
-  const eventsByTrip = new Map<number, { views: number; by_source: Record<string, number> }>()
-  let links: { id: number; trip_id: number; label: string; utm_campaign: string; created_at: string }[] = []
-  if (tripIds.length) {
-    const [{ data: events }, { data: linkRows }] = await Promise.all([
-      supabaseAdmin.from('trip_share_events')
-        .select('trip_id, event_type, utm_source, utm_campaign, utm_content')
-        .in('trip_id', tripIds),
-      supabaseAdmin.from('trip_share_links')
-        .select('id, trip_id, label, utm_campaign, created_at')
-        .in('trip_id', tripIds)
-        .order('created_at', { ascending: false }),
-    ])
-    links = linkRows ?? []
-    for (const e of events ?? []) {
-      if (e.event_type !== 'view') continue
-      const agg = eventsByTrip.get(e.trip_id) ?? { views: 0, by_source: {} }
-      agg.views += 1
-      // Mesmo agrupamento do by_source de resources: campanha/conteúdo
-      // identificam o vídeo; utm_source sozinho ('youtube' pra todo mundo)
-      // não diferencia nada.
-      const video = e.utm_campaign || e.utm_content
-      const source = video ? (e.utm_source ? `${e.utm_source}/${video}` : video) : (e.utm_source || 'sem_origem')
-      agg.by_source[source] = (agg.by_source[source] ?? 0) + 1
-      eventsByTrip.set(e.trip_id, agg)
-    }
-  }
-
-  const result = []
-  for (const t of trips ?? []) {
-    const { count: signups } = await supabaseAdmin
-      .from('profiles').select('id', { count: 'exact', head: true })
-      .eq('signup_source', `trip:${t.id}`)
-    const agg = eventsByTrip.get(t.id)
-    result.push({
-      id: t.id,
-      title: t.title,
-      destination: t.destination,
-      country: t.country,
-      cover_image_url: t.cover_image_url,
-      cover_image_position: t.cover_image_position,
-      stats: {
-        views: agg?.views ?? 0,
-        signups: signups ?? 0,
-        by_source: agg?.by_source ?? {},
-      },
-      links: links.filter(l => l.trip_id === t.id),
-    })
-  }
-  res.json(result)
-})
+// O GET /api/voyage/admin/acquisition (funil por viagem compartilhada) que
+// vivia aqui foi aposentado: a montagem migrou pro GET /admin/acquisition
+// (routes/acquisition.ts), que consolida recursos + viagens pra aba
+// Aquisição do /admin. Os links de divulgação continuam acima.
 
 function escapeXml(str: string | null | undefined): string {
   if (!str) return ''

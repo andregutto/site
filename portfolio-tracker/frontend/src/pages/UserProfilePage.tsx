@@ -31,7 +31,8 @@ interface ProfileTopic {
 interface UserProfileData {
   profile: {
     id: string
-    username: string
+    // null quando o perfil foi aberto por UUID e o usuário não tem @handle
+    username: string | null
     name: string
     avatar_url: string | null
     member_since: string | null
@@ -128,7 +129,9 @@ export default function UserProfilePage() {
                 </span>
               )}
             </div>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>@{profile.username}</p>
+            {profile.username && (
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>@{profile.username}</p>
+            )}
             {since && (
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)', marginTop: 4 }}>
                 {(tp.memberSince ?? 'Membro desde {date}').replace('{date}', since)}
@@ -147,10 +150,11 @@ export default function UserProfilePage() {
             </Link>
           ) : (
             <>
-              {status === 'none' && (
+              {/* Convite por @ exige handle — sem username o botão não aparece */}
+              {status === 'none' && profile.username && (
                 <button
                   type="button"
-                  onClick={() => invite(profile.id, profile.username)}
+                  onClick={() => invite(profile.id, profile.username!)}
                   style={{ ...actionBtnStyle, border: 'none', background: OCRE, color: '#1a1200' }}
                 >
                   {tp.addFriend ?? 'Adicionar amigo'}
@@ -162,15 +166,21 @@ export default function UserProfilePage() {
                 </span>
               )}
               {status === 'active' && (
+                // Só o ícone (mesmo do PostCard da comunidade) — mensagens exigem
+                // amizade ativa, então o botão só existe quando dá pra conversar
                 <button
                   type="button"
                   onClick={() => message(profile.id)}
-                  style={{ ...actionBtnStyle, border: 'none', background: OCRE, color: '#1a1200', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  title={tc?.message ?? 'Mensagem'}
+                  aria-label={tc?.message ?? 'Mensagem'}
+                  style={{
+                    width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', flexShrink: 0,
+                  }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                   </svg>
-                  {tc?.message ?? 'Mensagem'}
                 </button>
               )}
             </>

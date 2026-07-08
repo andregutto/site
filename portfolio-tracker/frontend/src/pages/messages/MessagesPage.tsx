@@ -249,12 +249,12 @@ export default function MessagesPage() {
                 }}
               >
                 {/* Avatar/nome levam pro perfil do contato; o resto da linha abre a conversa */}
-                <ProfileLink username={c.peer.username}>
+                <ProfileLink username={c.peer.username} userId={c.peer.user_id}>
                   <Avatar name={c.peer.name} avatarUrl={c.peer.avatar_url} size={40} />
                 </ProfileLink>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <ProfileLink username={c.peer.username}>
+                    <ProfileLink username={c.peer.username} userId={c.peer.user_id}>
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
                         {c.peer.name ?? c.peer.username ?? '-'}
                       </span>
