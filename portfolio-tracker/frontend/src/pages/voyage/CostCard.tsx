@@ -4,6 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import type { TripCost, MomentPicker, MomentTransaction } from './types'
 import Avatar from './_shared/Avatar'
+import { EyeIcon, EyeOffIcon } from './TripInfoCardsPanel'
 
 function fmtCurrency(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -30,6 +31,36 @@ interface Props {
   tripId: number
   cost: TripCost
   onCostChanged: (cost: TripCost) => void
+  // Compartilhamento parcial (só o dono vê/mexe): categorias e transações
+  // ocultas das visões externas — o valor sai dos agregados E dos totais
+  // compartilhados, mas aqui dentro o dono continua vendo tudo.
+  isOwner?: boolean
+  hiddenCategoryIds?: number[]
+  hiddenTransactionIds?: number[]
+  onShareHiddenChanged?: (fields: { share_hidden_category_ids?: number[]; share_hidden_transaction_ids?: number[] }) => void
+}
+
+// Toggle discreto de olho: visível/oculto no compartilhamento — a mesma
+// affordance usada no roteiro (lugar) e nos cards de informações úteis.
+function ShareEyeButton({ hidden, titleShow, titleHide, onToggle }: {
+  hidden: boolean; titleShow: string; titleHide: string; onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={e => { e.stopPropagation(); onToggle() }}
+      title={hidden ? titleShow : titleHide}
+      aria-label={hidden ? titleShow : titleHide}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        width: 22, height: 22, borderRadius: 999, background: 'none', border: 'none', cursor: 'pointer',
+        color: hidden ? 'var(--arvo-fg-muted)' : 'var(--arvo-fg-faint)',
+        transition: 'color 280ms cubic-bezier(0.35, 0, 0.65, 1)',
+      }}
+    >
+      {hidden ? <EyeOffIcon size={13} /> : <EyeIcon size={13} />}
+    </button>
+  )
 }
 
 function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLinked: (cost: TripCost) => void; compact?: boolean }) {
@@ -114,9 +145,30 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function CostCard({ tripId, cost, onCostChanged }: Props) {
+export default function CostCard({ tripId, cost, onCostChanged, isOwner = false, hiddenCategoryIds = [], hiddenTransactionIds = [], onShareHiddenChanged }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  const ps = tv.partialShare ?? {}
+
+  // Toggle otimista das listas de ocultos (trip-scoped, persiste no servidor)
+  async function toggleHiddenCategory(catId: number) {
+    const next = hiddenCategoryIds.includes(catId)
+      ? hiddenCategoryIds.filter(id => id !== catId)
+      : [...hiddenCategoryIds, catId]
+    onShareHiddenChanged?.({ share_hidden_category_ids: next })
+    await apiFetch(`/voyage/trips/${tripId}/share-visibility`, {
+      method: 'PATCH', body: JSON.stringify({ hidden_category_ids: next }),
+    })
+  }
+  async function toggleHiddenTransaction(txId: number) {
+    const next = hiddenTransactionIds.includes(txId)
+      ? hiddenTransactionIds.filter(id => id !== txId)
+      : [...hiddenTransactionIds, txId]
+    onShareHiddenChanged?.({ share_hidden_transaction_ids: next })
+    await apiFetch(`/voyage/trips/${tripId}/share-visibility`, {
+      method: 'PATCH', body: JSON.stringify({ hidden_transaction_ids: next }),
+    })
+  }
   const categoryNameKeys: Record<string, string> = {
     categoryTransfer:      t.finances.categoryTransfer,
     categorySalary:        t.finances.categorySalary,
@@ -230,13 +282,22 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
             {categories.map((c, i) => {
               const pct = cost.total > 0 ? Math.round((c.total / cost.total) * 100) : 0
+              const catHidden = hiddenCategoryIds.includes(c.id)
               return (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: catHidden ? 0.55 : 1, transition: 'opacity 280ms cubic-bezier(0.35, 0, 0.65, 1)' }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: ARVO_PALETTE[i % ARVO_PALETTE.length], flexShrink: 0 }} />
                   <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolveCategoryName(c.name, c.name_key, categoryNameKeys)}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(c.total)}</span>
+                  {isOwner && (
+                    <ShareEyeButton
+                      hidden={catHidden}
+                      titleShow={ps.showInShareTitle ?? 'Mostrar no compartilhamento'}
+                      titleHide={ps.hideFromShareTitle ?? 'Ocultar do compartilhamento'}
+                      onToggle={() => toggleHiddenCategory(c.id)}
+                    />
+                  )}
                 </div>
               )
             })}
@@ -342,24 +403,44 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{item.txs.length}</span>
                           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 56, textAlign: 'right' }}>{fmt(Math.abs(item.net))}</span>
                         </div>
-                        {expanded && item.txs.map(tx => (
-                          <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px 7px 26px', borderTop: '1px solid var(--arvo-border-soft)' }}>
+                        {expanded && item.txs.map(tx => {
+                          const txHidden = hiddenTransactionIds.includes(tx.id)
+                          return (
+                          <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px 7px 26px', borderTop: '1px solid var(--arvo-border-soft)', opacity: txHidden ? 0.55 : 1, transition: 'opacity 280ms cubic-bezier(0.35, 0, 0.65, 1)' }}>
                             <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                             <span style={{ fontSize: 13, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
                             <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
                             <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                            {isOwner && (
+                              <ShareEyeButton
+                                hidden={txHidden}
+                                titleShow={ps.showInShareTitle ?? 'Mostrar no compartilhamento'}
+                                titleHide={ps.hideFromShareTitle ?? 'Ocultar do compartilhamento'}
+                                onToggle={() => toggleHiddenTransaction(tx.id)}
+                              />
+                            )}
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )
                   }
                   const tx = item.tx
+                  const txHidden = hiddenTransactionIds.includes(tx.id)
                   return (
-                    <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderTop: i > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
+                    <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderTop: i > 0 ? '1px solid var(--arvo-border-soft)' : 'none', opacity: txHidden ? 0.55 : 1, transition: 'opacity 280ms cubic-bezier(0.35, 0, 0.65, 1)' }}>
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                       <span style={{ fontSize: 13, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: tx.amount < 0 ? 'var(--arvo-fg-soft)' : GREEN, fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                      {isOwner && (
+                        <ShareEyeButton
+                          hidden={txHidden}
+                          titleShow={ps.showInShareTitle ?? 'Mostrar no compartilhamento'}
+                          titleHide={ps.hideFromShareTitle ?? 'Ocultar do compartilhamento'}
+                          onToggle={() => toggleHiddenTransaction(tx.id)}
+                        />
+                      )}
                     </div>
                   )
                 })}

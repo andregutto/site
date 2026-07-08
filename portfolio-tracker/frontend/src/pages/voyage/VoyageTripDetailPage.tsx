@@ -9,8 +9,9 @@ import MembersPanel from './MembersPanel'
 import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
+import TripInfoCardsPanel from './TripInfoCardsPanel'
 import Avatar from './_shared/Avatar'
-import type { Trip, TripCost, TripMember, TripDestination } from './types'
+import type { Trip, TripCost, TripMember, TripDestination, TripInfoCard } from './types'
 
 interface HeroMember {
   id: number
@@ -119,6 +120,7 @@ interface TripDetail {
   members: TripMember[]
   destinations: TripDestination[]
   places?: { id: number; day_number: number | null }[]
+  info_cards?: TripInfoCard[]
 }
 
 function destinationsLabel(destinations: TripDestination[]): string | null {
@@ -454,6 +456,10 @@ export default function VoyageTripDetailPage() {
                 <CostCard
                   tripId={Number(id)}
                   cost={cost}
+                  isOwner={isOwner}
+                  hiddenCategoryIds={trip.share_hidden_category_ids ?? []}
+                  hiddenTransactionIds={trip.share_hidden_transaction_ids ?? []}
+                  onShareHiddenChanged={fields => setData(prev => prev ? { ...prev, trip: { ...prev.trip, ...fields } } : prev)}
                   onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
                 />
               </div>
@@ -461,6 +467,16 @@ export default function VoyageTripDetailPage() {
           </div>
         )
       })()}
+
+      {/* Informações úteis — card expansível na região do resumo de custo.
+          Membros veem todos os cards; só o dono adiciona/edita. */}
+      <TripInfoCardsPanel
+        tripId={Number(id)}
+        cards={data.info_cards ?? []}
+        isOwner={isOwner}
+        onChanged={cards => setData(prev => prev ? { ...prev, info_cards: cards as TripInfoCard[] } : prev)}
+      />
+
 
       {/* Roteiro (esquerda 40%) + mapa (direita 60%) na mesma linha no desktop —
           mesma estrutura da página pública: lista em fluxo normal (rola com a
@@ -475,6 +491,7 @@ export default function VoyageTripDetailPage() {
             tripStartDate={trip.start_date}
             destinations={destinations}
             canEdit={canEdit}
+            isOwner={isOwner}
             onPlacesChanged={bumpPlacesVersion}
             selectedDay={sharedSelectedDay}
             selectedPlaceId={selectedPlaceId}

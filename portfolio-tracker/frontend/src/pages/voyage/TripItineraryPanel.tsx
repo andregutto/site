@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { Switch } from '../../components/ui'
 import { LibraryPicker } from './TripPlacesPanel'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
+import { HiddenFromShareBadge } from './TripInfoCardsPanel'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
 import { openDirections } from './_shared/googleMapsRoute'
@@ -68,6 +70,7 @@ interface PlanItem {
   checkin_day: number | null
   checkout_day: number | null
   destination_id: number | null
+  shared: boolean
   expense_total?: number
   expense_count?: number
 }
@@ -79,6 +82,9 @@ interface Props {
   tripStartDate?: string | null
   destinations: TripDestination[]
   canEdit: boolean
+  // Compartilhamento parcial é configuração do DONO (como o modal
+  // Compartilhar) — editores não mexem na visibilidade externa dos itens.
+  isOwner?: boolean
   // Notifies the parent page whenever this panel's place list changes (add,
   // delete, reload) so sibling components fetching the same trip's places
   // independently (the map card) can refresh instead of going stale.
@@ -297,10 +303,11 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
 const LONG_PRESS_MS = 380
 const MOVE_CANCEL_PX = 8
 
-function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload, routeMode, routeSelected, onToggleRoute }: {
+function ItemRow({ item, tripId, canEdit, isOwner, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload, routeMode, routeSelected, onToggleRoute }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
+  isOwner?: boolean
   dragging: boolean
   dropTarget: boolean
   destinations: TripDestination[]
@@ -488,6 +495,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
                 <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, flexShrink: 0 }}>
                   {itemIcon(item)} {item.checkout_day! - item.checkin_day! + 1} dias
                 </span>
+              )}
+              {isOwner && item.shared === false && (
+                <HiddenFromShareBadge label={tv.partialShare?.hiddenBadge ?? 'oculto no compartilhamento'} />
               )}
             </div>
           )}
@@ -714,6 +724,22 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </>
           )}
 
+          {/* Visível no compartilhamento — só pro dono (configuração de
+              compartilhamento, mesma regra do modal Compartilhar). Vale pra
+              TODAS as superfícies externas: público, gate e comunidade. */}
+          {isOwner && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 2 }} onPointerDown={e => e.stopPropagation()}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+                {tv.partialShare?.visibleInShare ?? 'Visível no compartilhamento'}
+              </span>
+              <Switch
+                checked={item.shared !== false}
+                onChange={v => onPatch({ shared: v })}
+                label={tv.partialShare?.visibleInShare ?? 'Visível no compartilhamento'}
+              />
+            </div>
+          )}
+
           {/* Row actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4, flexWrap: 'wrap' }}>
             {isPlace && (
@@ -832,7 +858,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
   )
 }
 
-export default function TripItineraryPanel({ tripId, tripCity, tripCountry, tripStartDate, destinations, canEdit, onPlacesChanged, selectedDay, selectedPlaceId, onSelectPlace }: Props) {
+export default function TripItineraryPanel({ tripId, tripCity, tripCountry, tripStartDate, destinations, canEdit, isOwner, onPlacesChanged, selectedDay, selectedPlaceId, onSelectPlace }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
@@ -1003,7 +1029,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
     const sorted = list.slice().sort((a, b) => a.sort_order - b.sort_order)
     return sorted.map(it => (
       <ItemRow
-        key={it.id} item={it} tripId={tripId} canEdit={canEdit} destinations={destinations}
+        key={it.id} item={it} tripId={tripId} canEdit={canEdit} isOwner={isOwner} destinations={destinations}
         autoOpenStay={it.id === pendingStayItemId}
         dragging={dragVisual.dragId === it.id}
         dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}

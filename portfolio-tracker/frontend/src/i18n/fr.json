@@ -2340,6 +2340,38 @@
     "arvoWarning": "Données renseignées par la base Arvo. Vérifiez et confirmez les informations avant d'enregistrer et de générer le rapport fiscal."
   },
   "voyage": {
+    "infoCards": {
+      "title": "Informations utiles",
+      "add": "Ajouter une information",
+      "addTitle": "Nouvelle information",
+      "editTitle": "Modifier l'information",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "confirmDelete": "Supprimer \"{title}\" ?",
+      "kindLabel": "Type",
+      "kindAgency": "Agence",
+      "kindTransport": "Transport",
+      "kindTour": "Excursion",
+      "kindLodging": "Hébergement",
+      "kindRestaurant": "Restaurant",
+      "kindOther": "Autre",
+      "kindOtherPlaceholder": "Ex : Assurance voyage",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Ex : Agence Azul Voyages",
+      "bodyLabel": "Texte",
+      "bodyPlaceholder": "Détails, références, instructions…",
+      "phoneLabel": "Téléphone",
+      "urlLabel": "Lien",
+      "includeInShare": "Inclure dans le partage",
+      "includeInShareDesc": "Visible sur le lien public, le lien avec inscription et la Communauté",
+      "save": "Enregistrer"
+    },
+    "partialShare": {
+      "visibleInShare": "Visible dans le partage",
+      "hiddenBadge": "masqué du partage",
+      "hideFromShareTitle": "Masquer du partage",
+      "showInShareTitle": "Afficher dans le partage"
+    },
     "navTrips": "Voyages",
     "navPlaces": "Lieux",
     "navMap": "Carte",

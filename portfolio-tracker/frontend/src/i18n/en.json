@@ -2340,6 +2340,38 @@
     "arvoWarning": "Data filled from the Arvo database. Verify and confirm the information before saving and generating the tax report."
   },
   "voyage": {
+    "infoCards": {
+      "title": "Useful information",
+      "add": "Add information",
+      "addTitle": "New information",
+      "editTitle": "Edit information",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Delete \"{title}\"?",
+      "kindLabel": "Type",
+      "kindAgency": "Agency",
+      "kindTransport": "Transport",
+      "kindTour": "Tour",
+      "kindLodging": "Lodging",
+      "kindRestaurant": "Restaurant",
+      "kindOther": "Other",
+      "kindOtherPlaceholder": "E.g. Travel insurance",
+      "titleLabel": "Title",
+      "titlePlaceholder": "E.g. Azul Travel Agency",
+      "bodyLabel": "Text",
+      "bodyPlaceholder": "Details, references, instructions…",
+      "phoneLabel": "Phone",
+      "urlLabel": "Link",
+      "includeInShare": "Include in sharing",
+      "includeInShareDesc": "Shown on the public link, the sign-up link and the Community",
+      "save": "Save"
+    },
+    "partialShare": {
+      "visibleInShare": "Visible when shared",
+      "hiddenBadge": "hidden from sharing",
+      "hideFromShareTitle": "Hide from sharing",
+      "showInShareTitle": "Show in sharing"
+    },
     "navTrips": "Trips",
     "navPlaces": "Places",
     "navMap": "Map",

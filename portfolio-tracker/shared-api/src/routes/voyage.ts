@@ -69,9 +69,27 @@ async function syncAllTripMembersToLinkedMoments(tripId: number) {
 }
 
 // ── Cost helper ────────────────────────────────────────────────────────────────
+// Filtro de compartilhamento parcial aplicado nas visões EXTERNAS (link
+// público, gate e comunidade — todas via buildPublicTripPayload): categorias e
+// transações ocultas saem dos agregados E dos totais (senão o valor vazaria
+// pelo total), e lugares com shared=false saem do breakdown por lugar.
+// Membros da viagem nunca passam por aqui — continuam vendo tudo.
+export interface ShareFilter {
+  hiddenCategoryIds: number[]
+  hiddenTransactionIds: number[]
+  sharedPlacesOnly: boolean
+}
+
+function isTxHidden(tx: { id: number; category_id: number | null }, filter?: ShareFilter): boolean {
+  if (!filter) return false
+  if (filter.hiddenTransactionIds.includes(tx.id)) return true
+  if (tx.category_id != null && filter.hiddenCategoryIds.includes(tx.category_id)) return true
+  return false
+}
+
 // Agrega custo de todos os momentos vinculados à viagem.
 // Retorna total + breakdown por usuário (split-ready para V2).
-export async function buildCostSummary(tripId: number, requestingUserId: string) {
+export async function buildCostSummary(tripId: number, requestingUserId: string, shareFilter?: ShareFilter) {
   // Busca os momentos vinculados (service_role — valida membership via código)
   const { data: tripMoments } = await supabaseAdmin
     .from('voyage_trip_moments')
@@ -79,7 +97,7 @@ export async function buildCostSummary(tripId: number, requestingUserId: string)
     .eq('trip_id', tripId)
 
   if (!tripMoments || tripMoments.length === 0) {
-    return { total: 0, budget: null, currency: 'EUR', moments: [], by_user: [], by_category: [], by_place: await buildByPlace(tripId) }
+    return { total: 0, budget: null, currency: 'EUR', moments: [], by_user: [], by_category: [], by_place: await buildByPlace(tripId, shareFilter) }
   }
 
   const momentIds = tripMoments.map(m => m.moment_id)
@@ -93,7 +111,7 @@ export async function buildCostSummary(tripId: number, requestingUserId: string)
   // Busca transações de todos os momentos (via tabela junction)
   const { data: txRows } = await supabaseAdmin
     .from('finance_transaction_moments')
-    .select('moment_id, finance_transactions(amount, currency, is_internal_transfer, exclude_from_stats, category_id)')
+    .select('moment_id, finance_transactions(id, amount, currency, is_internal_transfer, exclude_from_stats, category_id)')
     .in('moment_id', momentIds)
 
   // Agrega por momento e por categoria
@@ -104,6 +122,7 @@ export async function buildCostSummary(tripId: number, requestingUserId: string)
     const tx = (row as any).finance_transactions
     if (!tx) continue
     if (tx.is_internal_transfer || tx.exclude_from_stats) continue
+    if (isTxHidden(tx, shareFilter)) continue
     if (tx.amount >= 0) continue // só despesas (negativos)
     const mid = (row as any).moment_id
     momentTotals[mid] = (momentTotals[mid] ?? 0) + Math.abs(tx.amount)
@@ -147,7 +166,7 @@ export async function buildCostSummary(tripId: number, requestingUserId: string)
     budget: budgetTotal > 0 ? Math.round(budgetTotal * 100) / 100 : null,
     currency,
     by_category,
-    by_place: await buildByPlace(tripId),
+    by_place: await buildByPlace(tripId, shareFilter),
     moments: (moments ?? []).map(m => ({
       ...m,
       spent: Math.round((momentTotals[m.id] ?? 0) * 100) / 100,
@@ -218,16 +237,18 @@ async function buildCostTotals(
 // ── Place-expense helpers ────────────────────────────────────────────────────
 // Soma das despesas vinculadas a cada lugar da viagem.
 // Modelo v1: apenas o dono da viagem cria vínculos, então não filtramos por user.
-async function placeExpenseTotals(placeIds: number[]): Promise<Record<number, { total: number; count: number }>> {
+async function placeExpenseTotals(placeIds: number[], shareFilter?: ShareFilter): Promise<Record<number, { total: number; count: number }>> {
   const out: Record<number, { total: number; count: number }> = {}
   if (placeIds.length === 0) return out
   const { data } = await supabaseAdmin
     .from('voyage_place_expenses')
-    .select('trip_place_id, finance_transactions(amount)')
+    .select('trip_place_id, finance_transactions(id, amount, category_id)')
     .in('trip_place_id', placeIds)
   for (const row of (data ?? []) as any[]) {
     const tx = row.finance_transactions
     if (!tx) continue
+    // Visão externa: transação/categoria oculta não pode vazar pelo total do lugar
+    if (isTxHidden(tx, shareFilter)) continue
     const pid = row.trip_place_id as number
     if (!out[pid]) out[pid] = { total: 0, count: 0 }
     out[pid].total += Math.abs(Number(tx.amount))
@@ -238,11 +259,14 @@ async function placeExpenseTotals(placeIds: number[]): Promise<Record<number, { 
 }
 
 // Breakdown por lugar para o CostCard (ordenado desc, só lugares com gasto).
-async function buildByPlace(tripId: number): Promise<{ trip_place_id: number; name: string; total: number }[]> {
-  const { data: places } = await supabaseAdmin
+async function buildByPlace(tripId: number, shareFilter?: ShareFilter): Promise<{ trip_place_id: number; name: string; total: number }[]> {
+  let query = supabaseAdmin
     .from('voyage_trip_places').select('id, name').eq('trip_id', tripId)
+  // Visão externa: lugar oculto sai do breakdown por lugar também
+  if (shareFilter?.sharedPlacesOnly) query = query.eq('shared', true)
+  const { data: places } = await query
   const placeIds = (places ?? []).map(p => p.id)
-  const totals = await placeExpenseTotals(placeIds)
+  const totals = await placeExpenseTotals(placeIds, shareFilter)
   return (places ?? [])
     .map(p => ({ trip_place_id: p.id, name: p.name, total: totals[p.id]?.total ?? 0 }))
     .filter(p => p.total > 0)
@@ -250,8 +274,8 @@ async function buildByPlace(tripId: number): Promise<{ trip_place_id: number; na
 }
 
 // Mescla expense_total/expense_count em uma lista de places (in-place, sem N+1).
-async function attachPlaceExpenses<T extends { id: number }>(places: T[]): Promise<(T & { expense_total: number; expense_count: number })[]> {
-  const totals = await placeExpenseTotals(places.map(p => p.id))
+async function attachPlaceExpenses<T extends { id: number }>(places: T[], shareFilter?: ShareFilter): Promise<(T & { expense_total: number; expense_count: number })[]> {
+  const totals = await placeExpenseTotals(places.map(p => p.id), shareFilter)
   return places.map(p => ({
     ...p,
     expense_total: totals[p.id]?.total ?? 0,
@@ -334,6 +358,102 @@ router.delete('/trips/:id/destinations/:destId', requireAuth, async (req, res: R
   // Itens que apontavam pra esse destino voltam a inferir pelo dia (não ficam órfãos)
   await supabaseAdmin.from('voyage_trip_places').update({ destination_id: null }).eq('destination_id', destId)
   await supabaseAdmin.from('voyage_trip_destinations').delete().eq('id', destId).eq('trip_id', tripId)
+  res.json({ ok: true })
+})
+
+// ── Cards de informações úteis (agência, transporte, passeio, hospedagem…) ───
+// Membros da viagem veem todos (inclusive os ocultos do compartilhamento);
+// só o dono cria/edita/exclui. As visões externas recebem só shared=true,
+// com campos públicos (kind/title/body/phone/url) — sem id/sort interno.
+interface TripInfoCard {
+  id: number
+  trip_id: number
+  kind: string
+  title: string
+  body: string | null
+  phone: string | null
+  url: string | null
+  shared: boolean
+  sort_order: number
+}
+
+async function getInfoCards(tripId: number): Promise<TripInfoCard[]> {
+  const { data } = await supabaseAdmin
+    .from('voyage_trip_info_cards').select('*').eq('trip_id', tripId)
+    .order('sort_order').order('created_at')
+  return data ?? []
+}
+
+// Guarda comum do CRUD de cards: só o dono da viagem
+async function requireTripOwner(tripId: number, userId: string, res: Response): Promise<boolean> {
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return false }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return false }
+  return true
+}
+
+// ── POST /api/voyage/trips/:id/info-cards ─────────────────────────────────────
+router.post('/trips/:id/info-cards', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  if (!(await requireTripOwner(tripId, uid(req), res))) return
+
+  const { kind, title, body, phone, url, shared } = req.body as {
+    kind?: string; title?: string; body?: string; phone?: string; url?: string; shared?: boolean
+  }
+  if (!title?.trim()) { res.status(400).json({ error: 'Título obrigatório' }); return }
+
+  const { count } = await supabaseAdmin
+    .from('voyage_trip_info_cards').select('id', { count: 'exact', head: true }).eq('trip_id', tripId)
+
+  const { data, error } = await supabaseAdmin.from('voyage_trip_info_cards').insert({
+    trip_id: tripId,
+    kind: kind?.trim().slice(0, 40) || 'other',
+    title: title.trim(),
+    body: body?.trim() || null,
+    phone: phone?.trim().slice(0, 40) || null,
+    url: url?.trim().slice(0, 500) || null,
+    shared: shared ?? true,
+    sort_order: count ?? 0,
+  }).select('*').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ card: data })
+})
+
+// ── PATCH /api/voyage/trips/:id/info-cards/:cardId ────────────────────────────
+router.patch('/trips/:id/info-cards/:cardId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  const cardId = Number(req.params.cardId)
+  if (!(await requireTripOwner(tripId, uid(req), res))) return
+
+  const update: Record<string, unknown> = {}
+  const b = req.body as Record<string, unknown>
+  if ('kind'   in b) update.kind   = String(b.kind ?? '').trim().slice(0, 40) || 'other'
+  if ('title'  in b) {
+    const title = String(b.title ?? '').trim()
+    if (!title) { res.status(400).json({ error: 'Título obrigatório' }); return }
+    update.title = title
+  }
+  if ('body'   in b) update.body   = String(b.body ?? '').trim() || null
+  if ('phone'  in b) update.phone  = String(b.phone ?? '').trim().slice(0, 40) || null
+  if ('url'    in b) update.url    = String(b.url ?? '').trim().slice(0, 500) || null
+  if ('shared' in b) update.shared = !!b.shared
+  if ('sort_order' in b) update.sort_order = Number(b.sort_order) || 0
+  if (Object.keys(update).length === 0) { res.status(400).json({ error: 'No fields' }); return }
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trip_info_cards').update(update)
+    .eq('id', cardId).eq('trip_id', tripId).select('*').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ card: data })
+})
+
+// ── DELETE /api/voyage/trips/:id/info-cards/:cardId ───────────────────────────
+router.delete('/trips/:id/info-cards/:cardId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  if (!(await requireTripOwner(tripId, uid(req), res))) return
+  await supabaseAdmin.from('voyage_trip_info_cards')
+    .delete().eq('id', Number(req.params.cardId)).eq('trip_id', tripId)
   res.json({ ok: true })
 })
 
@@ -558,11 +678,12 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     if (!member) { res.status(403).json({ error: 'Forbidden' }); return }
   }
 
-  const [cost, placesRes, membersRes, destinations] = await Promise.all([
+  const [cost, placesRes, membersRes, destinations, infoCards] = await Promise.all([
     buildCostSummary(tripId, userId),
     supabaseAdmin.from('voyage_trip_places').select('*').eq('trip_id', tripId).order('day_number', { ascending: true, nullsFirst: false }).order('sort_order'),
     supabaseAdmin.from('voyage_trip_members').select('id, user_id, invite_email, role, status, joined_at').eq('trip_id', tripId),
     getDestinations(tripId),
+    getInfoCards(tripId),
   ])
 
   // Agrega gasto por lugar (dono sempre; membros só se show_place_expenses)
@@ -570,7 +691,7 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     ? await attachPlaceExpenses(placesRes.data ?? [])
     : (placesRes.data ?? [])
 
-  res.json({ trip, cost, places, members: membersRes.data ?? [], destinations })
+  res.json({ trip, cost, places, members: membersRes.data ?? [], destinations, info_cards: infoCards })
 })
 
 // ── PATCH /api/voyage/trips/:id ───────────────────────────────────────────────
@@ -1394,7 +1515,7 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   const placeId = Number(req.params.placeId)
   const { visited, trip_note, day_number, is_highlight, rating, sort_order,
           arrive_time, depart_time, transport_mode, transport_note,
-          name, checkin_day, checkout_day, destination_id } = req.body
+          name, checkin_day, checkout_day, destination_id, shared } = req.body
 
   const update: Record<string, unknown> = {}
   if (visited        !== undefined) update.visited        = visited
@@ -1411,6 +1532,7 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   if (checkin_day    !== undefined) update.checkin_day    = checkin_day
   if (checkout_day   !== undefined) update.checkout_day   = checkout_day
   if (destination_id !== undefined) update.destination_id = destination_id
+  if (shared         !== undefined) update.shared         = !!shared
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')
@@ -1935,9 +2057,41 @@ router.delete('/trips/:id/share', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── PATCH /api/voyage/trips/:id/share-visibility  (compartilhamento parcial) ──
+// Listas trip-scoped de categorias/transações de custo ocultas das visões
+// EXTERNAS (público, gate, comunidade — um flag vale pra todas). Só o dono:
+// é configuração de compartilhamento, mesma regra do modal Compartilhar.
+router.patch('/trips/:id/share-visibility', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  if (!(await requireTripOwner(tripId, uid(req), res))) return
+
+  const update: Record<string, unknown> = {}
+  const { hidden_category_ids, hidden_transaction_ids } = req.body as {
+    hidden_category_ids?: unknown; hidden_transaction_ids?: unknown
+  }
+  if (hidden_category_ids !== undefined) {
+    update.share_hidden_category_ids = Array.isArray(hidden_category_ids)
+      ? hidden_category_ids.map(Number).filter(Number.isInteger) : []
+  }
+  if (hidden_transaction_ids !== undefined) {
+    update.share_hidden_transaction_ids = Array.isArray(hidden_transaction_ids)
+      ? hidden_transaction_ids.map(Number).filter(Number.isInteger) : []
+  }
+  if (Object.keys(update).length === 0) { res.status(400).json({ error: 'No fields' }); return }
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trips').update(update).eq('id', tripId)
+    .select('share_hidden_category_ids, share_hidden_transaction_ids').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({
+    share_hidden_category_ids: data.share_hidden_category_ids,
+    share_hidden_transaction_ids: data.share_hidden_transaction_ids,
+  })
+})
+
 // Campos que os dois endpoints de leitura pública (por token e por trip id
 // gated) precisam da voyage_trips pra montar o payload.
-const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, community_visible, user_id, photo_album_url'
+const PUBLIC_TRIP_FIELDS = 'id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_token, share_expires_at, community_visible, user_id, photo_album_url, share_hidden_category_ids, share_hidden_transaction_ids'
 
 interface PublicTripRow {
   id: number
@@ -1957,26 +2111,39 @@ interface PublicTripRow {
   community_visible: boolean
   user_id: string
   photo_album_url: string | null
+  share_hidden_category_ids: number[]
+  share_hidden_transaction_ids: number[]
 }
 
 // Monta o payload público da viagem (roteiro, mapa, custo se permitido) —
 // compartilhado entre GET /public/:token (visitante com o link) e
 // GET /shared/:tripId (usuário logado que veio do gate de cadastro).
 async function buildPublicTripPayload(trip: PublicTripRow) {
-  const [placesRes, costRes, ownerRes, destinations] = await Promise.all([
+  // Compartilhamento parcial: um flag por item vale pra TODAS as superfícies
+  // externas (link público, gate e comunidade) — lugares shared=false saem do
+  // roteiro, e categorias/transações ocultas saem dos agregados E dos totais.
+  const shareFilter: ShareFilter = {
+    hiddenCategoryIds: trip.share_hidden_category_ids ?? [],
+    hiddenTransactionIds: trip.share_hidden_transaction_ids ?? [],
+    sharedPlacesOnly: true,
+  }
+
+  const [placesRes, costRes, ownerRes, destinations, infoCards] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
       .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day, destination_id')
       .eq('trip_id', trip.id)
+      .eq('shared', true)
       .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),
-    !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
+    !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id, shareFilter) : Promise.resolve(null),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
     getDestinations(trip.id),
+    getInfoCards(trip.id),
   ])
 
   // Gasto por lugar na página pública só quando o dono ativou
   const publicPlaces = (trip.show_place_expenses && !trip.share_hide_cost)
-    ? await attachPlaceExpenses(placesRes.data ?? [])
+    ? await attachPlaceExpenses(placesRes.data ?? [], shareFilter)
     : (placesRes.data ?? [])
 
   const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
@@ -1993,6 +2160,10 @@ async function buildPublicTripPayload(trip: PublicTripRow) {
     places: publicPlaces,
     cost: costRes,
     destinations,
+    // Só os cards que o dono deixou no compartilhamento, com campos públicos
+    info_cards: infoCards
+      .filter(c => c.shared)
+      .map(c => ({ id: c.id, kind: c.kind, title: c.title, body: c.body, phone: c.phone, url: c.url })),
   }
 }
 
@@ -2028,10 +2199,12 @@ router.get('/public/:token/kml', async (req, res: Response) => {
     res.status(410).send('Expired'); return
   }
 
+  // Superfície externa: lugares ocultos do compartilhamento ficam fora do KML também
   const { data: places } = await supabaseAdmin
     .from('voyage_trip_places')
     .select('name, category, address, lat, lng, trip_note, google_maps_url, is_highlight')
     .eq('trip_id', trip.id)
+    .eq('shared', true)
     .not('lat', 'is', null).not('lng', 'is', null)
 
   const placemarks = (places ?? []).map(p => `
@@ -2114,10 +2287,12 @@ router.get('/gate/:tripId', async (req, res: Response) => {
 
   const [placesCountRes, ownerRes, destinations] = await Promise.all([
     // kind null = lugar (linhas anteriores à migration 042), igual ao
-    // fallback (p.kind ?? 'place') que o frontend usa.
+    // fallback (p.kind ?? 'place') que o frontend usa. O teaser também
+    // respeita o compartilhamento parcial (não conta lugar oculto).
     supabaseAdmin.from('voyage_trip_places')
       .select('id', { count: 'exact', head: true })
       .eq('trip_id', trip.id)
+      .eq('shared', true)
       .or('kind.is.null,kind.eq.place'),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
     getDestinations(trip.id),

@@ -8,6 +8,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import LanguageSelector from '../../components/LanguageSelector'
 import ArvoLoader from '../../components/ArvoLoader'
 import { dayColor, dayColorWash } from './_shared/dayColors'
+import TripInfoCardsPanel, { type InfoCardData } from './TripInfoCardsPanel'
 import OpeningHoursBlock from './_shared/OpeningHours'
 import CurrentLocationMarker from './_shared/CurrentLocationMarker'
 import { useCurrentLocation } from './_shared/useCurrentLocation'
@@ -78,6 +79,8 @@ export interface PageData {
   places: PublicPlace[]
   cost: PublicCost | null
   destinations?: { id: number; city: string | null; country: string | null }[]
+  // Cards de informações úteis já filtrados pelo servidor (só shared=true)
+  info_cards?: InfoCardData[]
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -552,6 +555,14 @@ export function TripShareView({ data, kmlUrl, embedded = false }: { data: PageDa
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: GOLD, lineHeight: 1.7, marginBottom: 28, textAlign: 'center', maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
             “{trip.summary}”
           </p>
+        )}
+
+        {/* Informações úteis — mesma seção expansível da página interna,
+            só com os cards compartilhados e sem controles de edição. */}
+        {(data.info_cards?.length ?? 0) > 0 && (
+          <div style={{ maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+            <TripInfoCardsPanel cards={data.info_cards!} />
+          </div>
         )}
 
         {/* Álbum de fotos — card dedicado, mesmo conteúdo da página interna */}

@@ -2340,6 +2340,38 @@
     "arvoWarning": "Dados preenchidos pela base de dados do Arvo. Verifique e confirme as informações antes de salvar e gerar o relatório de IR."
   },
   "voyage": {
+    "infoCards": {
+      "title": "Informações úteis",
+      "add": "Adicionar informação",
+      "addTitle": "Nova informação",
+      "editTitle": "Editar informação",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "confirmDelete": "Excluir \"{title}\"?",
+      "kindLabel": "Tipo",
+      "kindAgency": "Agência",
+      "kindTransport": "Transporte",
+      "kindTour": "Passeio",
+      "kindLodging": "Hospedagem",
+      "kindRestaurant": "Restaurante",
+      "kindOther": "Outro",
+      "kindOtherPlaceholder": "Ex: Seguro viagem",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Ex: Agência Azul Viagens",
+      "bodyLabel": "Texto",
+      "bodyPlaceholder": "Detalhes, referências, instruções…",
+      "phoneLabel": "Telefone",
+      "urlLabel": "Link",
+      "includeInShare": "Incluir no compartilhamento",
+      "includeInShareDesc": "Aparece no link público, no link com cadastro e na Comunidade",
+      "save": "Salvar"
+    },
+    "partialShare": {
+      "visibleInShare": "Visível no compartilhamento",
+      "hiddenBadge": "oculto no compartilhamento",
+      "hideFromShareTitle": "Ocultar do compartilhamento",
+      "showInShareTitle": "Mostrar no compartilhamento"
+    },
     "navTrips": "Viagens",
     "navPlaces": "Lugares",
     "navMap": "Mapa",

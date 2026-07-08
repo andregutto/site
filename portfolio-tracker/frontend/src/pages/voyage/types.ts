@@ -27,6 +27,10 @@ export interface Trip {
   share_hide_cost: boolean
   show_place_expenses: boolean
   community_visible?: boolean
+  // Compartilhamento parcial: categorias/transações de custo ocultas das
+  // visões externas (público, gate, comunidade) — um flag vale pra todas
+  share_hidden_category_ids?: number[]
+  share_hidden_transaction_ids?: number[]
   dest_lat: number | null
   dest_lng: number | null
   photo_album_url: string | null
@@ -129,8 +133,23 @@ export interface TripPlace {
   visited: boolean
   trip_note: string | null
   destination_id: number | null
+  shared: boolean
   expense_total?: number
   expense_count?: number
+}
+
+// Card de informação útil da viagem (agência, transporte, passeio,
+// hospedagem, restaurante ou tipo livre curto)
+export interface TripInfoCard {
+  id: number
+  trip_id: number
+  kind: string
+  title: string
+  body: string | null
+  phone: string | null
+  url: string | null
+  shared: boolean
+  sort_order: number
 }
 
 export interface MomentPicker {
