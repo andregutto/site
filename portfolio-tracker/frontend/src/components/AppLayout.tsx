@@ -473,7 +473,7 @@ export default function AppLayout() {
             {/* No mobile o glifo fica sozinho com o rótulo do plano e 22px lia
                 pequeno perto do avatar/ícones — sobe pra 27px; no desktop o
                 wordmark acompanha e 22px é a proporção certa. */}
-            <span className="sm:hidden" style={{ display: 'flex' }}>
+            <span className="flex sm:hidden">
               {headerTier ? (
                 <TierGlyph tier={headerTier} size={27} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
               ) : (
