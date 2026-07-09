@@ -11,6 +11,7 @@ import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
 import TripInfoCardsPanel, { EyeIcon } from './TripInfoCardsPanel'
 import Avatar from './_shared/Avatar'
+import { PageLoader } from '../../components/ArvoLoader'
 import type { Trip, TripCost, TripMember, TripDestination, TripInfoCard } from './types'
 
 interface HeroMember {
@@ -188,14 +189,7 @@ export default function VoyageTripDetailPage() {
 
   useEffect(() => { load() }, [load])
 
-  if (loading) {
-    return (
-      <div className="py-6">
-        <div style={{ height: 360, borderRadius: 18, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite', marginBottom: 20 }} />
-        <div style={{ height: 160, borderRadius: 14, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite' }} />
-      </div>
-    )
-  }
+  if (loading) return <PageLoader />
 
   if (!data) {
     return (
