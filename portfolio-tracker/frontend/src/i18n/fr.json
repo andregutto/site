@@ -1280,11 +1280,11 @@
     "momentSectionExpenses": "Répartition des dépenses",
     "expenseAdd": "Ajouter une dépense",
     "expenseAddPerson": "Ajouter une personne",
-    "splitPromoteHint": "En ajoutant une troisième personne, votre partage devient un moment nommé. Donnez-lui simplement un nom.",
+    "splitPromoteHint": "Cela crée un nouveau Moment (avec son propre nom) avec qui vous voulez. Votre partage avec cette personne reste ici, séparé et privé. Pour des dépenses récurrentes avec les mêmes personnes, créez un Groupe dans Personnes.",
     "splitPromoteNamePlaceholder": "Ex. : Dîner du vendredi",
     "splitPromoteNameRequired": "Donnez un nom au moment.",
     "splitPromoteNameJoin": ", ",
-    "splitInviteHint": "Invitez la nouvelle personne par @identifiant ou e-mail. Elle doit accepter pour rejoindre le partage.",
+    "splitInviteHint": "Invitez les participants. Chacun rejoint dès qu'il accepte, y compris la personne qui partage déjà avec vous ici.",
     "expenseDescription": "Description",
     "expenseAmount": "Montant",
     "expensePaidBy": "Payé par",
@@ -1318,7 +1318,9 @@
     "accountsPageOne": "1 compte",
     "accountsPageMany": "{n} comptes",
     "splitPromotedNotice": "Ce partage est maintenant un Moment avec son propre nom. Les invités rejoignent le partage dès qu'ils acceptent.",
-    "splitPendingBadge": "en attente"
+    "splitPendingBadge": "en attente",
+    "splitWithMore": "Partager avec plus de personnes",
+    "splitNewMomentNotice": "Moment créé. Votre partage 1:1 reste ici, intact. Le nouveau partage vit dans le Moment, dans votre liste de Moments."
   },
   "classes": {
     "title": "Classes d'actifs",

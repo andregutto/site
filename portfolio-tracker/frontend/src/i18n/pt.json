@@ -1280,11 +1280,11 @@
     "momentSectionExpenses": "Divisão de despesas",
     "expenseAdd": "Adicionar despesa",
     "expenseAddPerson": "Adicionar pessoa",
-    "splitPromoteHint": "Ao entrar uma terceira pessoa, sua divisão vira um momento com nome. É só dar um nome pra ele.",
+    "splitPromoteHint": "Isso cria um Momento novo (com nome próprio) com quem você escolher. Sua divisão com essa pessoa continua aqui, separada e privada. Pra despesas recorrentes com as mesmas pessoas, crie um Grupo em Pessoas.",
     "splitPromoteNamePlaceholder": "Ex.: Jantar de sexta",
     "splitPromoteNameRequired": "Dê um nome ao momento.",
     "splitPromoteNameJoin": ", ",
-    "splitInviteHint": "Convide a nova pessoa por @usuário ou e-mail. Ela precisa aceitar para entrar na divisão.",
+    "splitInviteHint": "Convide quem participa. Cada pessoa entra assim que aceitar, inclusive quem já divide com você aqui no 1:1.",
     "expenseDescription": "Descrição",
     "expenseAmount": "Valor",
     "expensePaidBy": "Pago por",
@@ -1318,7 +1318,9 @@
     "accountsPageOne": "1 conta",
     "accountsPageMany": "{n} contas",
     "splitPromotedNotice": "Essa divisão agora é um Momento com nome próprio. Convidados entram na divisão assim que aceitarem.",
-    "splitPendingBadge": "aguardando aceite"
+    "splitPendingBadge": "aguardando aceite",
+    "splitWithMore": "Dividir com mais pessoas",
+    "splitNewMomentNotice": "Momento criado. Sua divisão 1:1 continua aqui, intocada. A nova divisão vive no Momento, na sua lista de Momentos."
   },
   "classes": {
     "title": "Classes de Ativos",

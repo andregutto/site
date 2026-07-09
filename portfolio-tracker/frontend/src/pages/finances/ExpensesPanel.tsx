@@ -423,7 +423,7 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
           onClick={() => setAddPerson(true)}
           className="w-full text-center text-sm py-2.5 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
         >
-          + {t.finances.expenseAddPerson}
+          + {meta?.is_pair_default && !meta?.shared_group_id ? ((t as any).finances?.splitWithMore ?? 'Dividir com mais pessoas') : t.finances.expenseAddPerson}
         </button>
       )}
 
@@ -568,7 +568,7 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
             // Promover o par oculto o transforma num Momento nomeado visível — a lista de
             // Momentos (e o modal que embrulha este painel) precisa recarregar pra refletir.
             onPromoted?.()
-            setPromoNotice((t as any).finances?.splitPromotedNotice ?? 'Essa divisão agora é um Momento com nome próprio. Convidados entram na divisão assim que aceitarem.')
+            setPromoNotice((t as any).finances?.splitNewMomentNotice ?? 'Momento criado. Sua divisão 1:1 continua aqui, intocada; a nova divisão vive no Momento, que aparece na sua lista assim que os convites forem aceitos.')
           }}
         />
       )}
@@ -601,13 +601,18 @@ function AddPersonFlow({ momentId, meta, otherParticipantName, onClose, onDone }
   const [name, setName] = useState(defaultName)
   const [promoting, setPromoting] = useState(false)
   const [error, setError] = useState('')
+  // Modelo B (2026-07-10): o 1:1 NÃO é promovido — nasce um Momento novo e
+  // vazio (o histórico do par fica privado). Guardamos o id novo pra convidar
+  // as pessoas NELE (o amigo do 1:1 incluso: aceite explícito, regra da casa).
+  const [newMomentId, setNewMomentId] = useState<number | null>(null)
 
   async function promote() {
     if (!name.trim()) { setError(t.finances.splitPromoteNameRequired); return }
     setPromoting(true)
     setError('')
     try {
-      await apiFetch(`/finances/moments/${momentId}/promote`, { method: 'POST', body: JSON.stringify({ name: name.trim() }) })
+      const res = await apiFetch<{ moment_id: number }>(`/finances/moments/split-group`, { method: 'POST', body: JSON.stringify({ name: name.trim(), from_moment_id: momentId }) })
+      setNewMomentId(res.moment_id)
       setPromoted(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : t.finances.splitPromoteNameRequired)
@@ -624,7 +629,7 @@ function AddPersonFlow({ momentId, meta, otherParticipantName, onClose, onDone }
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <h3 className="flex-1" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 600, color: 'var(--arvo-fg)' }}>{t.finances.expenseAddPerson}</h3>
+          <h3 className="flex-1" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 600, color: 'var(--arvo-fg)' }}>{needsPromote ? ((t as any).finances?.splitWithMore ?? 'Dividir com mais pessoas') : t.finances.expenseAddPerson}</h3>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
           </button>
@@ -656,7 +661,7 @@ function AddPersonFlow({ momentId, meta, otherParticipantName, onClose, onDone }
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
               {t.finances.splitInviteHint}
             </p>
-            <MembersPanel momentId={momentId} ownerId={meta.owner_id} />
+            <MembersPanel momentId={newMomentId ?? momentId} ownerId={meta.owner_id} />
             <button onClick={onDone} className="w-full text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)]">
               {t.common.done}
             </button>

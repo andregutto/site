@@ -1280,11 +1280,11 @@
     "momentSectionExpenses": "Split expenses",
     "expenseAdd": "Add expense",
     "expenseAddPerson": "Add person",
-    "splitPromoteHint": "Adding a third person turns your split into a named moment. Just give it a name.",
+    "splitPromoteHint": "This creates a new Moment (with its own name) with whoever you choose. Your split with this person stays here, separate and private. For recurring expenses with the same people, create a Group in People.",
     "splitPromoteNamePlaceholder": "e.g. Friday dinner",
     "splitPromoteNameRequired": "Give the moment a name.",
     "splitPromoteNameJoin": ", ",
-    "splitInviteHint": "Invite the new person by @username or e-mail. They need to accept to join the split.",
+    "splitInviteHint": "Invite the participants. Each person joins once they accept, including whoever already splits with you here.",
     "expenseDescription": "Description",
     "expenseAmount": "Amount",
     "expensePaidBy": "Paid by",
@@ -1318,7 +1318,9 @@
     "accountsPageOne": "1 account",
     "accountsPageMany": "{n} accounts",
     "splitPromotedNotice": "This split is now a named Moment. Invitees join the split as soon as they accept.",
-    "splitPendingBadge": "pending"
+    "splitPendingBadge": "pending",
+    "splitWithMore": "Split with more people",
+    "splitNewMomentNotice": "Moment created. Your 1:1 split stays here, untouched. The new split lives in the Moment, in your Moments list."
   },
   "classes": {
     "title": "Asset Classes",

@@ -2733,6 +2733,32 @@ export async function getOrCreateDefaultGroupMoment(userId: string, groupId: num
 // Transforma o momento 1:1 oculto num Momento normal (visível, nomeado) —
 // disparado quando um 3º participante é adicionado a uma despesa, já que o
 // conceito de "1:1 implícito" deixa de fazer sentido com um grupo.
+// Modelo B da divisão 3+ (decisão 2026-07-10): em vez de PROMOVER o par oculto
+// (que levava o histórico 1:1 junto e expunha as despesas antigas à pessoa
+// nova), cria um Momento NOVO e vazio a partir do contexto do split. O 1:1
+// permanece intocado e privado. SEM gate moments_create: "quem divide nunca é
+// bloqueado" — o guard é exigir que o chamador seja membro de um par oculto
+// real (from_moment_id), o que impede usar isto como bypass genérico do gate.
+// O endpoint /promote acima fica dormente (nenhuma UI chama; possível uso futuro).
+router.post('/moments/split-group', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { name, from_moment_id } = req.body as { name?: string; from_moment_id?: number }
+  if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+  const fromId = Number(from_moment_id)
+  if (!fromId) { res.status(400).json({ error: 'from_moment_id obrigatório' }); return }
+  const access = await assertMomentAccess(fromId, userId)
+  if (!access.ok) { res.status(403).json({ error: 'Sem permissão' }); return }
+  const { data: fromMoment } = await supabaseAdmin
+    .from('finance_moments').select('is_pair_default').eq('id', fromId).maybeSingle()
+  if (!fromMoment?.is_pair_default) { res.status(400).json({ error: 'Só a partir de uma divisão 1:1' }); return }
+  const { data: created, error } = await supabaseAdmin
+    .from('finance_moments')
+    .insert({ user_id: userId, name: name.trim(), icon: '🤝' })
+    .select('id').single()
+  if (error || !created) { res.status(500).json({ error: error?.message ?? 'Falha ao criar momento' }); return }
+  res.json({ moment_id: created.id })
+})
+
 router.post('/moments/:id/promote', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)

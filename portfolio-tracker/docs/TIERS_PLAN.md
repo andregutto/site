@@ -74,12 +74,16 @@ ilimitado em tudo.
 - **Não gatear vertente inteira de Finanças/Voyage**: Momento é o backbone
   (viagem lê custo de `finance_moments`; splits idem). Gate é por capacidade,
   não por vertente.
-- **Promoção de split é sempre livre**: o endpoint `/moments/:id/promote`
-  exige só o nome; membros e despesas migram. Se a promoção fosse gated, a
-  divisão quebraria no meio do fluxo quando entra a 3ª pessoa. Promover para
-  *grupo* foi considerado e rejeitado: grupo = convivência recorrente (arrasta
-  categorias de orçamento); evento pontual = Momento, conforme o modelo
-  original. (UI da promoção ainda não existe — pendência abaixo.)
+- **Divisão 3+ = Momento NOVO do zero (modelo B, 2026-07-10)**: promover o
+  par oculto foi implementado e depois substituído — levava o histórico 1:1
+  junto e a pessoa nova VIA as despesas antigas do par (privacidade + modelo
+  mental confuso, apontado pelo André no teste real). Fluxo atual: botão
+  "Dividir com mais pessoas" no 1:1 cria um Momento novo e vazio via
+  `POST /finances/moments/split-group` (sem gate; guard = ser membro de um par
+  oculto real) e convida os participantes nele, aceite explícito inclusive pro
+  amigo do 1:1. O 1:1 fica intocado e privado. Naming: verbo no botão, nunca
+  "momento em grupo" (colidiria com Grupo de Pessoas). `/promote` fica
+  dormente no backend.
 - **5 despesas de divisão/dia no free**: é o que o Splitwise faz (~4/dia) e o
   produto deles provou tolerância. Conta despesas *criadas* pelo usuário;
   participar/acertar não conta.
