@@ -278,7 +278,12 @@
     "removeFromFavorites": "Remover dos favoritos",
     "totalReturnTip": "Rentabilidade total desde o primeiro aporte",
     "aiSuggested": "Sugerido por IA",
-    "priceVarTip": "Variação de preço do ativo no período"
+    "priceVarTip": "Variação de preço do ativo no período",
+    "renderErrorTitle": "Algo deu errado",
+    "renderErrorBody": "Ocorreu um erro inesperado ao exibir esta tela. Recarregar a página geralmente resolve.",
+    "renderErrorReload": "Recarregar página",
+    "renderErrorHome": "Ir para o início",
+    "renderErrorDetails": "Detalhes técnicos"
   },
   "login": {
     "subtitle": "Acompanhe seus investimentos globais",

@@ -278,7 +278,12 @@
     "removeFromFavorites": "Retirer des favoris",
     "totalReturnTip": "Rentabilité totale depuis le premier apport",
     "aiSuggested": "Suggéré par IA",
-    "priceVarTip": "Variation du prix de l'actif sur la période"
+    "priceVarTip": "Variation du prix de l'actif sur la période",
+    "renderErrorTitle": "Une erreur est survenue",
+    "renderErrorBody": "Une erreur inattendue s'est produite lors de l'affichage de cet écran. Recharger la page résout généralement le problème.",
+    "renderErrorReload": "Recharger la page",
+    "renderErrorHome": "Aller à l'accueil",
+    "renderErrorDetails": "Détails techniques"
   },
   "login": {
     "subtitle": "Suivez vos investissements mondiaux",

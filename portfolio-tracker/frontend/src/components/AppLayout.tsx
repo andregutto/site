@@ -11,6 +11,7 @@ import { useUpgrade } from '../contexts/UpgradeContext'
 import { resolveNotificationText, SEVERITY_COLORS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
+import { RouteErrorBoundary } from './ErrorBoundary'
 import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
 import ChatWidget from './ChatWidget'
@@ -768,7 +769,9 @@ export default function AppLayout() {
       })() : null}
 
       <main className="flex-1 max-w-6xl 2xl:max-w-[1440px] mx-auto w-full px-4 2xl:px-8 py-6 sm:pb-6 main-content">
-        <Outlet />
+        <RouteErrorBoundary>
+          <Outlet />
+        </RouteErrorBoundary>
       </main>
 
       <div className="hidden sm:block max-w-6xl 2xl:max-w-[1440px] mx-auto w-full px-4 2xl:px-8 pb-2">

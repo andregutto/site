@@ -87,6 +87,7 @@ import AdminPage from './pages/AdminPage'
 import PlansPage from './pages/PlansPage'
 import { UpgradeProvider } from './contexts/UpgradeContext'
 import GateGuard from './components/upgrade/GateGuard'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -247,16 +248,20 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <I18nProvider>
-          <CurrencyProvider>
-            <ThemeProvider>
-              <AppRoutes />
-            </ThemeProvider>
-          </CurrencyProvider>
-        </I18nProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    // Boundary global fora dos providers: pega crash de qualquer provider/rota.
+    // O fallback não usa nenhum contexto (ver ErrorBoundary.tsx).
+    <ErrorBoundary variant="global">
+      <BrowserRouter>
+        <AuthProvider>
+          <I18nProvider>
+            <CurrencyProvider>
+              <ThemeProvider>
+                <AppRoutes />
+              </ThemeProvider>
+            </CurrencyProvider>
+          </I18nProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }

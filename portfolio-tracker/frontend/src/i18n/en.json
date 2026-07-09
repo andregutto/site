@@ -278,7 +278,12 @@
     "removeFromFavorites": "Remove from favorites",
     "totalReturnTip": "Total return since first contribution",
     "aiSuggested": "Suggested by AI",
-    "priceVarTip": "Asset price variation in the period"
+    "priceVarTip": "Asset price variation in the period",
+    "renderErrorTitle": "Something went wrong",
+    "renderErrorBody": "An unexpected error occurred while displaying this screen. Reloading the page usually fixes it.",
+    "renderErrorReload": "Reload page",
+    "renderErrorHome": "Go to home",
+    "renderErrorDetails": "Technical details"
   },
   "login": {
     "subtitle": "Track your global investments",

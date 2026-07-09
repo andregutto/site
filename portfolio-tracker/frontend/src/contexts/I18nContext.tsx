@@ -25,17 +25,21 @@ function validLocale(v: unknown): v is Locale {
   return v === 'pt' || v === 'en' || v === 'fr'
 }
 
+/* Locale sem contexto — usado no initializer do provider e por código que
+   roda fora/abaixo de um I18nProvider quebrado (ex.: ErrorBoundary). */
+export function detectLocale(): Locale {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (validLocale(stored)) return stored
+  const browser = navigator.language.slice(0, 2).toLowerCase()
+  if (browser === 'fr') return 'fr'
+  if (browser === 'en') return 'en'
+  return 'pt'
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const hadStoredLocale = validLocale(localStorage.getItem(STORAGE_KEY))
 
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (validLocale(stored)) return stored
-    const browser = navigator.language.slice(0, 2).toLowerCase()
-    if (browser === 'fr') return 'fr'
-    if (browser === 'en') return 'en'
-    return 'pt'
-  })
+  const [locale, setLocaleState] = useState<Locale>(detectLocale)
 
   // Sync locale from user_metadata only when this device has no explicit local choice yet
   // (e.g. first login on a new device). Never let a stale/failed server value stomp an
