@@ -68,8 +68,9 @@ export default function CommunityTopicPage() {
       setReply('')
       await reloadSilently()
     } catch (e) {
-      // Postar é gated (community_post, Plus). Leitura segue livre; só a ação
-      // dispara o modal. O rascunho fica preservado.
+      // Defesa em profundidade: a Comunidade inteira é gated na rota (gate
+      // 'community', Plus) via GateGuard, então esta página só monta pra quem tem
+      // acesso. Este catch cobre o 403 residual sem quebrar o rascunho.
       if (!handleUpgradeError(e)) throw e
     } finally {
       setSending(false)

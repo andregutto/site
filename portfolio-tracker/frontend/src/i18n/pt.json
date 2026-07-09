@@ -484,7 +484,7 @@
     "financeEnvsTitle": "Planejamento por envelopes",
     "financeEnvsBody": "Dividimos sua renda em 4 envelopes seguindo a regra 50/30/10/10. Personalize a qualquer momento.",
     "doneTitle": "Tudo configurado!",
-    "doneBody": "Seu portfólio e planejamento financeiro estão prontos. Explore o Dashboard ou comece a registrar transações.",
+    "doneBody": "Tudo pronto. Comece a registrar suas transações e explore o Arvo no seu ritmo.",
     "gotoDashboard": "Ir para o Dashboard",
     "gotoFinances": "Ver Finanças",
     "gotoInstitutions": "Criar minha primeira conta",
@@ -503,7 +503,26 @@
     "sharedOnboardTitle": "Categorias Compartilhadas",
     "sharedOnboardBody": "Compartilhe categorias de orçamento com seu parceiro ou grupo familiar para acompanhar gastos conjuntos em tempo real.",
     "sharedOnboardFeature1": "Gastos compartilhados visíveis para todos do grupo",
-    "sharedOnboardFeature2": "Cada pessoa mantém suas categorias privadas"
+    "sharedOnboardFeature2": "Cada pessoa mantém suas categorias privadas",
+    "doneClose": "Começar a usar",
+    "capabilitiesTitle": "O que dá pra fazer no Arvo",
+    "capabilitiesBody": "Um resumo do que já está liberado pra você. Explore no seu ritmo.",
+    "capTransactions": "Registrar transações",
+    "capTransactionsDesc": "Lance receitas e gastos na mão, sem limite.",
+    "capAccounts": "Suas contas",
+    "capAccountsDesc": "Acompanhe o saldo das suas contas e corretoras.",
+    "capVoyage": "Viagens",
+    "capVoyageDesc": "Planeje viagens e organize os gastos de cada uma.",
+    "capSplit": "Divisão de despesas",
+    "capSplitDesc": "Divida contas com amigos e acerte quem deve o quê.",
+    "capResources": "Recursos",
+    "capResourcesDesc": "Guias e materiais da comunidade Arvo.",
+    "capBudget": "Orçamento por envelopes",
+    "capBudgetDesc": "Planeje sua renda dividindo por envelopes.",
+    "capFreedom": "Liberdade financeira",
+    "capFreedomDesc": "Simule sua trajetória até a independência financeira.",
+    "capShared": "Categorias compartilhadas",
+    "capSharedDesc": "Acompanhe gastos em conjunto com quem você convida."
   },
   "achievements": {
     "title": "Conquistas",
@@ -3151,7 +3170,8 @@
       "budget": "O Orçamento faz parte do Arvo Plus",
       "freedom_plans": "Planos de liberdade fazem parte do Arvo Plus",
       "shared_groups_create": "Criar grupos compartilhados faz parte do Arvo Plus",
-      "community_post": "Participar da Comunidade faz parte do Arvo Plus",
+      "community": "A Comunidade faz parte do Arvo Plus",
+      "community_post": "A Comunidade faz parte do Arvo Plus",
       "messaging": "As Mensagens fazem parte do Arvo Plus",
       "csv_import": "Importar extrato faz parte do Arvo Plus",
       "ai_categorize": "A categorização por IA faz parte do Arvo Plus",
@@ -3167,7 +3187,8 @@
       "shared_groups_create": "Criar grupos compartilhados",
       "trips_own": "Viagens próprias",
       "split_expenses_per_day": "Despesas de divisão por dia",
-      "community_post": "Postar e curtir na Comunidade",
+      "community": "Comunidade completa",
+      "community_post": "Comunidade completa",
       "messaging": "Mensagens",
       "csv_import": "Importar extrato (CSV)",
       "import_accounts": "Contas com importação",
@@ -3197,6 +3218,35 @@
     "plansIntro": "Todo mundo aqui já faz parte da comunidade. Os planos abrem o que dá pra automatizar e analisar — e ainda não estão à venda.",
     "plansCurrent": "Seu plano atual: {tier}",
     "gatedPageBody": "Isso abre com o upgrade. Você segue na comunidade normalmente enquanto isso.",
-    "gatedPageCta": "Ver o que muda"
+    "gatedPageCta": "Ver o que muda",
+    "close": "Fechar",
+    "seePlans": "Ver planos",
+    "lockedTitle": "Uma parte do Arvo que ainda não é sua",
+    "modalIntro": "Veja o que passa a fazer parte do seu Arvo:",
+    "tierEyebrowPlus": "Arvo Plus",
+    "tierEyebrowPro": "Arvo Pro",
+    "taglines": {
+      "free": "Faça na mão e participe de tudo que a comunidade cria.",
+      "plus": "Automatize, conviva e organize a vida financeira por inteiro.",
+      "pro": "Analise como um profissional, sem limites que atrapalhem."
+    },
+    "cardCurrentBadge": "Seu plano",
+    "benefits": {
+      "plus": {
+        "patrimonio": "Patrimônio completo: dashboard, performance e evolução",
+        "community": "Comunidade inteira: ler, postar e conviver",
+        "messaging": "Mensagens diretas com quem você conhece",
+        "moments_create": "Momentos nomeados e grupos compartilhados do zero",
+        "budget": "Orçamento por envelopes e planos de liberdade",
+        "csv_import": "Importar extratos e categorizar com IA"
+      },
+      "pro": {
+        "insights": "Insights automáticos sobre seus gastos e receitas",
+        "diversification": "Diversificação e rebalanceamento do patrimônio",
+        "ir_france": "IR França pronto (2042 IFI, 3916, 2047)",
+        "ai_more": "Categorização por IA com limites bem maiores",
+        "everything_plus": "Tudo do Plus, sem os tetos do dia a dia"
+      }
+    }
   }
 }

@@ -484,7 +484,7 @@
     "financeEnvsTitle": "Planification par enveloppes",
     "financeEnvsBody": "Nous répartissons votre revenu dans 4 enveloppes selon la règle 50/30/10/10. Personnalisez à tout moment.",
     "doneTitle": "Tout est prêt !",
-    "doneBody": "Votre portefeuille et votre planification financière sont prêts. Explorez le tableau de bord ou commencez à enregistrer des transactions.",
+    "doneBody": "Tout est prêt. Commencez à enregistrer vos transactions et explorez Arvo à votre rythme.",
     "gotoDashboard": "Aller au tableau de bord",
     "gotoFinances": "Voir les Finances",
     "gotoInstitutions": "Créer mon premier compte",
@@ -503,7 +503,26 @@
     "sharedOnboardTitle": "Catégories Partagées",
     "sharedOnboardBody": "Partagez des catégories de budget avec votre partenaire ou groupe familial pour suivre les dépenses communes en temps réel.",
     "sharedOnboardFeature1": "Dépenses partagées visibles par tous les membres",
-    "sharedOnboardFeature2": "Chaque personne garde ses catégories privées"
+    "sharedOnboardFeature2": "Chaque personne garde ses catégories privées",
+    "doneClose": "Commencer",
+    "capabilitiesTitle": "Ce que vous pouvez faire sur Arvo",
+    "capabilitiesBody": "Un aperçu de ce qui est déjà débloqué pour vous. Explorez à votre rythme.",
+    "capTransactions": "Enregistrer des transactions",
+    "capTransactionsDesc": "Saisissez revenus et dépenses à la main, sans limite.",
+    "capAccounts": "Vos comptes",
+    "capAccountsDesc": "Suivez le solde de vos comptes bancaires et courtiers.",
+    "capVoyage": "Voyages",
+    "capVoyageDesc": "Planifiez vos voyages et organisez leurs dépenses.",
+    "capSplit": "Partage de dépenses",
+    "capSplitDesc": "Partagez les additions et réglez qui doit quoi.",
+    "capResources": "Ressources",
+    "capResourcesDesc": "Guides et contenus de la communauté Arvo.",
+    "capBudget": "Budget par enveloppes",
+    "capBudgetDesc": "Planifiez vos revenus en les répartissant par enveloppes.",
+    "capFreedom": "Liberté financière",
+    "capFreedomDesc": "Simulez votre parcours vers l'indépendance financière.",
+    "capShared": "Catégories partagées",
+    "capSharedDesc": "Suivez les dépenses avec les personnes que vous invitez."
   },
   "achievements": {
     "title": "Succès",
@@ -3151,7 +3170,8 @@
       "budget": "Le Budget fait partie d'Arvo Plus",
       "freedom_plans": "Les plans de liberté font partie d'Arvo Plus",
       "shared_groups_create": "Créer des groupes partagés fait partie d'Arvo Plus",
-      "community_post": "Participer à la Communauté fait partie d'Arvo Plus",
+      "community": "La Communauté fait partie d'Arvo Plus",
+      "community_post": "La Communauté fait partie d'Arvo Plus",
       "messaging": "La messagerie fait partie d'Arvo Plus",
       "csv_import": "Importer un relevé fait partie d'Arvo Plus",
       "ai_categorize": "La catégorisation par IA fait partie d'Arvo Plus",
@@ -3167,7 +3187,8 @@
       "shared_groups_create": "Créer des groupes partagés",
       "trips_own": "Voyages personnels",
       "split_expenses_per_day": "Dépenses partagées par jour",
-      "community_post": "Publier et aimer dans la Communauté",
+      "community": "Communauté complète",
+      "community_post": "Communauté complète",
       "messaging": "Messagerie",
       "csv_import": "Importer un relevé (CSV)",
       "import_accounts": "Comptes avec import",
@@ -3197,6 +3218,35 @@
     "plansIntro": "Tout le monde ici fait déjà partie de la communauté. Les plans débloquent ce qu'on peut automatiser et analyser — et ils ne sont pas encore en vente.",
     "plansCurrent": "Votre plan actuel : {tier}",
     "gatedPageBody": "Cela s'ouvre avec l'upgrade. Vous restez dans la communauté comme d'habitude en attendant.",
-    "gatedPageCta": "Voir ce qui change"
+    "gatedPageCta": "Voir ce qui change",
+    "close": "Fermer",
+    "seePlans": "Voir les plans",
+    "lockedTitle": "Une partie d'Arvo qui n'est pas encore la vôtre",
+    "modalIntro": "Voici ce qui rejoint votre Arvo :",
+    "tierEyebrowPlus": "Arvo Plus",
+    "tierEyebrowPro": "Arvo Pro",
+    "taglines": {
+      "free": "Faites à la main et participez à tout ce que la communauté crée.",
+      "plus": "Automatisez, échangez et organisez toute votre vie financière.",
+      "pro": "Analysez comme un pro, sans limites qui vous gênent."
+    },
+    "cardCurrentBadge": "Votre plan",
+    "benefits": {
+      "plus": {
+        "patrimonio": "Patrimoine complet : tableau de bord, performance et historique",
+        "community": "Toute la communauté : lire, publier et échanger",
+        "messaging": "Messages directs avec les personnes que vous connaissez",
+        "moments_create": "Moments nommés et groupes partagés à partir de zéro",
+        "budget": "Budget par enveloppes et plans de liberté",
+        "csv_import": "Importer des relevés et catégoriser avec l'IA"
+      },
+      "pro": {
+        "insights": "Analyses automatiques de vos dépenses et revenus",
+        "diversification": "Diversification et rééquilibrage du patrimoine",
+        "ir_france": "Impôts France prêts (2042 IFI, 3916, 2047)",
+        "ai_more": "Catégorisation par IA avec des limites bien plus hautes",
+        "everything_plus": "Tout Plus, sans les plafonds du quotidien"
+      }
+    }
   }
 }

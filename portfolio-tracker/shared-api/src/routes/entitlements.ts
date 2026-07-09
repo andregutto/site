@@ -82,16 +82,17 @@ router.post('/interest', async (req: any, res: Response) => {
   try {
     const userId = uid(req)
     const gate = String(req.body?.gate ?? '')
-    // 'plans' é o pseudo-gate do CTA genérico da página /planos (interesse
-    // geral em upgrade, sem funcionalidade específica) — não existe na matriz.
-    if (!isGateKey(gate) && !isQuotaKey(gate) && gate !== 'plans') {
+    // Pseudo-gates dos CTAs da página /planos (interesse num plano inteiro,
+    // sem funcionalidade específica) — não existem na matriz.
+    const PLAN_GATES: Record<string, 'plus' | 'pro'> = { plans: 'plus', plan_plus: 'plus', plan_pro: 'pro' }
+    if (!isGateKey(gate) && !isQuotaKey(gate) && !(gate in PLAN_GATES)) {
       res.status(400).json({ error: 'gate inválido' }); return
     }
 
     // required_tier efetivo no momento do clique (a matriz pode evoluir).
     let requiredTier: 'plus' | 'pro'
-    if (gate === 'plans') {
-      requiredTier = 'plus'
+    if (gate in PLAN_GATES) {
+      requiredTier = PLAN_GATES[gate]
     } else if (isGateKey(gate)) {
       const gates = await getEffectiveGates()
       const req_ = gates[gate]
@@ -99,7 +100,9 @@ router.post('/interest', async (req: any, res: Response) => {
     } else {
       // Quota: menor tier acima de 'free' cujo limite é maior que o do free.
       const quotas = await getEffectiveQuotas()
-      const limits = quotas[gate].limits
+      // O narrowing de string → QuotaKey se perde com o check `in PLAN_GATES`
+      // acima; a validação já garantiu isQuotaKey(gate) neste branch.
+      const limits = quotas[gate as QuotaKey].limits
       const plusBetter = limits.plus === null || (typeof limits.plus === 'number' && (limits.free === null ? false : limits.plus > (limits.free ?? 0)))
       requiredTier = plusBetter ? 'plus' : 'pro'
     }

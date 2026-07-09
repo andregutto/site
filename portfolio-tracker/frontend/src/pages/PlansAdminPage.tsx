@@ -79,8 +79,32 @@ export default function PlansAdminPage() {
 
   function load() {
     setLoading(true)
-    apiFetch<AdminData>('/entitlements/admin')
-      .then(d => { setData(d); setError(false) })
+    // O endpoint devolve linhas cruas {default, override, effective}; aqui
+    // adaptamos pro shape da tela (efetivo + flag de override por linha).
+    apiFetch<any>('/entitlements/admin')
+      .then(d => {
+        setData({
+          gates: (d.gates ?? []).map((g: any): GateRow => ({
+            key: g.key, requiredTier: g.effective, defaultTier: g.default, overridden: g.override !== null,
+          })),
+          quotas: (d.quotas ?? []).map((q: any): QuotaRow => ({
+            key: q.key, period: q.period, limits: q.effective, defaultLimits: q.default, overridden: q.override !== null,
+          })),
+          interest: {
+            total: d.interest?.total ?? 0,
+            by_gate: (d.interest?.by_gate ?? []).map((b: any): InterestByGate => ({
+              gate: b.gate, count: b.count, required_tier: b.required_tier ?? null, last_click: b.last_at ?? null,
+            })),
+            recent: (d.interest?.recent ?? []).map((r: any): InterestRecent => ({
+              gate: r.gate,
+              user_name: r.user?.name ?? null,
+              user_email: r.user?.username ? `@${r.user.username}` : null,
+              created_at: r.created_at,
+            })),
+          },
+        })
+        setError(false)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }

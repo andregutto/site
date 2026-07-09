@@ -203,8 +203,8 @@ function AppRoutes() {
         <Route path="/resources"       element={<ResourcesPage />} />
         <Route path="/resources/admin" element={<Navigate to="/admin?tab=resources" replace />} />
         <Route path="/resources/:slug" element={<ResourceDetailPage />} />
-        <Route path="/messages"       element={<MessagesPage />} />
-        <Route path="/messages/:conversationId" element={<ConversationPage />} />
+        <Route path="/messages"       element={<GateGuard gate="messaging"><MessagesPage /></GateGuard>} />
+        <Route path="/messages/:conversationId" element={<GateGuard gate="messaging"><ConversationPage /></GateGuard>} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
         <Route path="/diversification" element={<GateGuard gate="diversification" requiredTier="pro"><DiversificationPage /></GateGuard>} />
         <Route path="/voyage"          element={<VoyageLayout />}>
@@ -214,7 +214,7 @@ function AppRoutes() {
           <Route path="places"        element={<VoyagePlacesPage />} />
           <Route path="map"           element={<VoyageMapPage />} />
         </Route>
-        <Route path="/community"       element={<CommunityLayout />}>
+        <Route path="/community"       element={<GateGuard gate="community"><CommunityLayout /></GateGuard>}>
           <Route index                element={<CommunityHomePage />} />
           <Route path="admin"         element={<Navigate to="/admin" replace />} />
           {/* "trips" antes de :slug — o segmento estático ganha da categoria dinâmica */}

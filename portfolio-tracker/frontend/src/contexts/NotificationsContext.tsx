@@ -25,7 +25,11 @@ const ACCEPT_ENDPOINT: Partial<Record<string, string>> = {
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null)
 
-const POLL_MS = 5 * 60 * 1000
+// Poll de 60s enquanto a aba está visível. O intervalo de 5min fazia
+// notificações (ex.: um amigo aceitando seu convite) demorarem minutos pra
+// aparecer. Pausamos quando a aba fica oculta (economia de rede/bateria) e
+// refazemos o fetch imediatamente ao voltar o foco / visibilidade.
+const POLL_MS = 60 * 1000
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState<NotificationItem[]>([])
@@ -46,12 +50,33 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     refresh()
-    const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
-    document.addEventListener('visibilitychange', onVisible)
-    const interval = setInterval(refresh, POLL_MS)
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    const startPolling = () => {
+      if (interval) return
+      interval = setInterval(refresh, POLL_MS)
+    }
+    const stopPolling = () => {
+      if (interval) { clearInterval(interval); interval = null }
+    }
+
+    // Pausa o polling quando a aba fica oculta; ao voltar, refetch imediato +
+    // retoma o intervalo. Assim uma notificação nova aparece assim que o usuário
+    // volta pra aba, sem esperar o próximo tick.
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') { refresh(); startPolling() }
+      else stopPolling()
+    }
+    const onFocus = () => { refresh(); startPolling() }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+    if (document.visibilityState === 'visible') startPolling()
+
     return () => {
-      document.removeEventListener('visibilitychange', onVisible)
-      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+      stopPolling()
     }
   }, [refresh])
 

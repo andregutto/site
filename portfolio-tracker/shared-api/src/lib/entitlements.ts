@@ -34,7 +34,10 @@ export const GATE_DEFAULTS = {
   freedom_plans:        'plus',
   budget:               'plus',
   shared_groups_create: 'plus',
-  community_post:       'plus', // postar/curtir; leitura é livre pra logado
+  // Vertente inteira, leitura inclusive — "comunidade fechada" é parte do
+  // valor (decisão original da V1, reafirmada 2026-07-09). Pill fica visível;
+  // o conteúdo abre o gate. Chave antiga 'community_post' foi absorvida.
+  community:            'plus',
   messaging:            'plus',
   csv_import:           'plus', // + quota import_accounts
   ai_categorize:        'plus', // + quota ai_categorize_month

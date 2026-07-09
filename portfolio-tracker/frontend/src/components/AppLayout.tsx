@@ -7,6 +7,7 @@ import { useI18n } from '../contexts/I18nContext'
 import type React from 'react'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { useMessagingContext } from '../contexts/MessagingContext'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import { resolveNotificationText, SEVERITY_COLORS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
@@ -59,6 +60,7 @@ export default function AppLayout() {
   const { t, locale } = useI18n()
   const { active: activeNotifications, unreadCount, dismissAll, acceptInvite } = useNotificationsContext()
   const { unreadTotal: messagesUnreadTotal } = useMessagingContext()
+  const { hasGate } = useUpgrade()
   const [acceptingKey, setAcceptingKey] = useState<string | null>(null)
   const location = useLocation()
 
@@ -173,8 +175,28 @@ export default function AppLayout() {
     if (!user?.id) return
     const freq = Number(user.user_metadata?.budget_reminder_freq ?? 0)
     if (freq === 0) {
+      // Prompt de "quer ser lembrado de revisar seu planejamento?" — não pode
+      // aparecer pra qualquer recém-criado embaixo do subnav (overwhelming).
+      // Só faz sentido pra quem PODE ter orçamento (gate `budget`) e já está
+      // engajado: tem categorias com orçamento OU a conta tem ≥7 dias. Nunca na
+      // mesma sessão em que o onboarding foi mostrado (`showOnboarding`) nem se
+      // acabou de terminar o onboarding.
+      if (!hasGate('budget')) { setShowBudgetSetup(false); return }
+      if (showOnboarding) { setShowBudgetSetup(false); return }
+      if (localStorage.getItem('arvo_onboarding_just_finished') === '1') { setShowBudgetSetup(false); return }
       const dismissed = localStorage.getItem(`arvo_budget_reminder_setup_dismissed_${user.id}`)
-      if (!dismissed) setShowBudgetSetup(true)
+      if (dismissed) { setShowBudgetSetup(false); return }
+
+      const createdAt = user.created_at ? new Date(user.created_at).getTime() : Date.now()
+      const accountOldEnough = Date.now() - createdAt >= 7 * 24 * 60 * 60 * 1000
+
+      // Tem planejamento? (categorias com orçamento definido, exceto salário)
+      apiFetch<Array<{ budget_monthly?: number; name_key?: string }>>('/finances/categories')
+        .then(cats => {
+          const hasPlanning = (cats ?? []).some(c => c.name_key !== 'categorySalary' && (c.budget_monthly ?? 0) > 0)
+          setShowBudgetSetup(hasPlanning || accountOldEnough)
+        })
+        .catch(() => setShowBudgetSetup(accountOldEnough))
       return
     }
     const last = localStorage.getItem(`arvo_budget_reminder_last_${user.id}`)
@@ -186,7 +208,7 @@ export default function AppLayout() {
     const diffMs = Date.now() - new Date(last).getTime()
     const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44)
     if (diffMonths >= freq) setShowBudgetBanner(true)
-  }, [user?.id, user?.user_metadata?.budget_reminder_freq])
+  }, [user?.id, user?.created_at, user?.user_metadata?.budget_reminder_freq, hasGate, showOnboarding])
 
   function dismissBudgetBanner() {
     if (user?.id) {
@@ -323,6 +345,14 @@ export default function AppLayout() {
         <path strokeLinecap="round" d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>
       </svg>
     )},
+    // Contas é a visão de Finanças (só contas por instituição + criar conta,
+    // sem dados de portfólio — acessível a todos os tiers). A visão completa
+    // de Instituições, com ativos, segue no Patrimônio (gated).
+    { to: '/finances/accounts', label: t.finances.accountsPageTitle, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
+      </svg>
+    )},
     { to: '/finances/freedom', label: t.finances.navFreedom, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12.5a7 7 0 0114 0"/>
@@ -332,14 +362,6 @@ export default function AppLayout() {
     { to: '/finances/insights', label: t.finances.navInsights, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.542 10.603 6 12.5l-.542-1.897a3 3 0 0 0-2.06-2.06L1.5 8l1.897-.542a3 3 0 0 0 2.06-2.06L6 3.5l.542 1.897a3 3 0 0 0 2.06 2.06L10.5 8l-1.897.542a3 3 0 0 0-2.06 2.06ZM12.173 5.81 12 6.5l-.173-.69a2.25 2.25 0 0 0-1.637-1.637L9.5 4l.691-.173a2.25 2.25 0 0 0 1.637-1.637L12 1.5l.173.69a2.25 2.25 0 0 0 1.637 1.637L15.5 4l-.69.173a2.25 2.25 0 0 0-1.637 1.637Z"/>
-      </svg>
-    )},
-    // Contas é a visão de Finanças (só contas por instituição + criar conta,
-    // sem dados de portfólio — acessível a todos os tiers). A visão completa
-    // de Instituições, com ativos, segue no Patrimônio (gated).
-    { to: '/finances/accounts', label: t.finances.accountsPageTitle, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
       </svg>
     )},
   ]

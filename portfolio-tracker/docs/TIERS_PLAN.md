@@ -51,7 +51,7 @@ Ranking: `free(0) < plus(1) < pro(2) < beta(3)`.
 | Planos de liberdade (`freedom_plans`) | — | ✓ | ✓ |
 | Orçamento/envelopes (`budget`) | — | ✓ | ✓ |
 | Criar grupos/categorias compartilhadas (`shared_groups_create`) | — | ✓ | ✓ |
-| Comunidade postar/curtir (`community_post`; leitura livre) | — | ✓ | ✓ |
+| Comunidade inteira, leitura inclusive (`community`; pill visível, gate no conteúdo) | — | ✓ | ✓ |
 | Mensagens (`messaging`) | — | ✓ | ✓ |
 | Patrimônio inteiro (`patrimonio`; contas/instituições ficam fora) | — | ✓ | ✓ |
 | Import CSV (`csv_import`) / contas com import (`import_accounts`) | — | 3 contas | ilimitado |
@@ -119,3 +119,7 @@ ilimitado em tudo.
 ## Histórico
 
 - **2026-07-09** — Estratégia inicial fechada e implementada (matriz acima).
+- **2026-07-09 (b)** — `community_post` (só postar) absorvido por `community`
+  (vertente inteira, leitura inclusive): André reafirmou que comunidade fechada
+  = conteúdo exclusivo de membro pagante, não só escrita. Exceções no router:
+  `/is-admin` e `/users/*` (perfil serve superfícies compartilhadas).

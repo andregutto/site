@@ -36,6 +36,40 @@ export function MessagingProvider({ children }: { children: React.ReactNode }) {
     refresh()
   }, [user, refresh])
 
+  // Rede de segurança para o balão de não-lidas: o realtime (abaixo) é o caminho
+  // principal e instantâneo, mas se o socket cair/ficar instável o badge poderia
+  // não atualizar até reconectar. Um poll leve de 60s (só com a aba visível) +
+  // refetch imediato no focus/visibilidade garante que uma mensagem nova sempre
+  // apareça, mesmo sem realtime.
+  useEffect(() => {
+    if (!user) return
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    const startPolling = () => {
+      if (interval) return
+      interval = setInterval(refresh, 60 * 1000)
+    }
+    const stopPolling = () => {
+      if (interval) { clearInterval(interval); interval = null }
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') { refresh(); startPolling() }
+      else stopPolling()
+    }
+    const onFocus = () => { refresh(); startPolling() }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+    if (document.visibilityState === 'visible') startPolling()
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+      stopPolling()
+    }
+  }, [user, refresh])
+
   // Realtime: subscribe to INSERTs on dm_messages. The server-side filter can't
   // scope by "conversations I'm in", so we subscribe broadly and rely on RLS —
   // Postgres only ever sends rows the current session is allowed to SELECT.

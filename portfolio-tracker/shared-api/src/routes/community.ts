@@ -9,6 +9,17 @@ import { TIER_RANK as ENTITLEMENTS_TIER_RANK, getUserTier, type Tier } from '../
 const router = Router()
 router.use(requireAuth)
 
+// Comunidade fechada: a vertente inteira (leitura inclusive) é gate 'plus' —
+// exclusividade é parte do valor (decisão V1, reafirmada 2026-07-09).
+// Exceções: /is-admin (check barato usado pelo layout) e /users/* (perfil,
+// consumido por superfícies compartilhadas fora da comunidade, ex. membros
+// de um momento). Admin passa porque o tier beta supera qualquer gate.
+const COMMUNITY_GATE_EXEMPT = [/^\/is-admin$/, /^\/users\//]
+router.use((req, res, next) => {
+  if (COMMUNITY_GATE_EXEMPT.some(re => re.test(req.path))) { next(); return }
+  requireGateMw('community')(req, res, next)
+})
+
 function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
@@ -329,7 +340,7 @@ router.get('/categories/:slug/topics', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/topics ───────────────────────────────────────────────
-router.post('/topics', requireGateMw('community_post'), async (req: any, res: any) => {
+router.post('/topics', async (req: any, res: any) => {
   const userId = uid(req)
   const { category_slug, title, body, linked_trip_id } = req.body as {
     category_slug: string; title: string; body: string; linked_trip_id?: number
@@ -470,7 +481,7 @@ router.get('/topics/:id', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/topics/:id/posts ─────────────────────────────────────
-router.post('/topics/:id/posts', requireGateMw('community_post'), async (req: any, res: any) => {
+router.post('/topics/:id/posts', async (req: any, res: any) => {
   const userId = uid(req)
   const topicId = Number(req.params.id)
   const { body } = req.body as { body: string }
@@ -571,7 +582,7 @@ router.delete('/posts/:id', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/posts/:id/like ───────────────────────────────────────
-router.post('/posts/:id/like', requireGateMw('community_post'), async (req: any, res: any) => {
+router.post('/posts/:id/like', async (req: any, res: any) => {
   const userId = uid(req)
   const postId = Number(req.params.id)
   if (!Number.isFinite(postId)) { res.status(400).json({ error: 'invalid post id' }); return }

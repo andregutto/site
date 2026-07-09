@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useI18n } from '../contexts/I18nContext'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import { apiFetch } from '../lib/api'
 import ArvoLoader from './ArvoLoader'
 import { Icon, type IconName } from './icons'
@@ -13,55 +13,31 @@ const INSTITUTION_SUGGESTIONS = [
   'Caixa Econômica', 'Banco do Brasil', 'BTG Pactual', 'XP Investimentos',
 ]
 
-const CLASSES_BY_LOCALE: Record<string, { name: string; color: string; nameKey: string }[]> = {
-  pt: [
-    { name: 'Ações Brasil',   color: '#10b981', nameKey: 'classAcoesBrasil' },
-    { name: 'Ações Exterior', color: '#3b82f6', nameKey: 'classAcoesExterior' },
-    { name: 'FIIs',           color: '#f59e0b', nameKey: 'classFiis' },
-    { name: 'Cripto',         color: '#f97316', nameKey: 'classCripto' },
-    { name: 'Renda Fixa',     color: '#06b6d4', nameKey: 'classRendaFixa' },
-    { name: 'Previdência',    color: '#8b5cf6', nameKey: 'classPrevidencia' },
-    { name: 'Imóveis',        color: '#ef4444', nameKey: 'classImoveis' },
-  ],
-  en: [
-    { name: 'Brazilian Stocks',     color: '#10b981', nameKey: 'classAcoesBrasil' },
-    { name: 'International Stocks', color: '#3b82f6', nameKey: 'classAcoesExterior' },
-    { name: 'REITs',                color: '#f59e0b', nameKey: 'classFiis' },
-    { name: 'Crypto',               color: '#f97316', nameKey: 'classCripto' },
-    { name: 'Fixed Income',         color: '#06b6d4', nameKey: 'classRendaFixa' },
-    { name: 'Pension',              color: '#8b5cf6', nameKey: 'classPrevidencia' },
-    { name: 'Real Estate',          color: '#ef4444', nameKey: 'classImoveis' },
-  ],
-  fr: [
-    { name: 'Actions brésiliennes', color: '#10b981', nameKey: 'classAcoesBrasil' },
-    { name: 'Actions mondiales',    color: '#3b82f6', nameKey: 'classAcoesExterior' },
-    { name: 'ETF / SCPI',           color: '#f59e0b', nameKey: 'classFiis' },
-    { name: 'Crypto',               color: '#f97316', nameKey: 'classCripto' },
-    { name: 'Revenu fixe',          color: '#06b6d4', nameKey: 'classRendaFixa' },
-    { name: 'Épargne retraite',     color: '#8b5cf6', nameKey: 'classPrevidencia' },
-    { name: 'Immobilier',           color: '#ef4444', nameKey: 'classImoveis' },
-  ],
+// Envelopes reais do usuário (mesma fonte que a tela de Planejamento: GET
+// /finances/budget). O onboarding não mais mantém uma lista hardcoded própria —
+// isso causava divergência com o que o usuário via em Planejamento.
+interface RealEnvelope {
+  id: number
+  name: string
+  name_key?: string | null
+  icon: string
+  color: string
+  pct_target: number
+  type: string
 }
 
-const ENVELOPES_BY_LOCALE: Record<string, { name: string; icon: IconName; color: string; pct: number }[]> = {
-  pt: [
-    { name: 'Gastos Essenciais', icon: 'home',       color: '#3b82f6', pct: 50 },
-    { name: 'Investimentos',     icon: 'chart-line', color: '#10b981', pct: 30 },
-    { name: 'Reserva',           icon: 'bank',       color: '#f59e0b', pct: 10 },
-    { name: 'Lazer',             icon: 'party',      color: '#a855f7', pct: 10 },
-  ],
-  en: [
-    { name: 'Essential Expenses', icon: 'home',       color: '#3b82f6', pct: 50 },
-    { name: 'Investments',        icon: 'chart-line', color: '#10b981', pct: 30 },
-    { name: 'Savings',            icon: 'bank',       color: '#f59e0b', pct: 10 },
-    { name: 'Fun Money',          icon: 'party',      color: '#a855f7', pct: 10 },
-  ],
-  fr: [
-    { name: 'Dépenses Essentielles', icon: 'home',       color: '#3b82f6', pct: 50 },
-    { name: 'Investissements',       icon: 'chart-line', color: '#10b981', pct: 30 },
-    { name: 'Épargne',               icon: 'bank',       color: '#f59e0b', pct: 10 },
-    { name: 'Loisirs',               icon: 'party',      color: '#a855f7', pct: 10 },
-  ],
+// Fallback de nomes traduzidos por name_key, caso a env venha só com name cru.
+function envLabel(env: RealEnvelope, t: any): string {
+  const map: Record<string, string> = {
+    envelopeEssential:    t.finances?.envelopeEssential,
+    envelopeInvestment:   t.finances?.envelopeInvestment,
+    envelopeSavings:      t.finances?.envelopeSavings,
+    envelopeFree:         t.finances?.envelopeFree,
+    envelopeIncome:       t.finances?.envelopeIncome,
+    envelopeNonEssential: t.finances?.envelopeNonEssential,
+    envelopeTorrar:       t.finances?.envelopeTorrar,
+  }
+  return (env.name_key ? map[env.name_key] : null) ?? env.name
 }
 
 interface Props {
@@ -70,8 +46,8 @@ interface Props {
 }
 
 export default function OnboardingOverlay({ onDone, userId }: Props) {
-  const { t, locale } = useI18n()
-  const navigate = useNavigate()
+  const { t } = useI18n()
+  const { hasGate } = useUpgrade()
   const [step, setStep] = useState(0)
   const [incomeVal, setIncomeVal] = useState('')
   const [incomeCur, setIncomeCur] = useState('EUR')
@@ -80,17 +56,36 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   const [accountCurrency, setAccountCurrency] = useState('EUR')
   const [accountInstitution, setAccountInstitution] = useState('')
   const [savingAccount, setSavingAccount] = useState(false)
-  const [accountCreated, setAccountCreated] = useState(false)
+  const [realEnvelopes, setRealEnvelopes] = useState<RealEnvelope[] | null>(null)
 
   const o = t.onboarding
-  const TOTAL_STEPS = 9
-  const defaultClasses   = CLASSES_BY_LOCALE[locale]   ?? CLASSES_BY_LOCALE.pt
-  const defaultEnvelopes = ENVELOPES_BY_LOCALE[locale] ?? ENVELOPES_BY_LOCALE.pt
+
+  // Tiers: se o usuário não tem o gate `budget`, envelopes/orçamento estão fora
+  // do plano dele — não mostramos o passo de envelopes (que terminaria num
+  // paywall). Idem para as capacidades gated na tela de "o que dá pra fazer".
+  const canBudget = hasGate('budget')
 
   const [showInstitutionSuggestions, setShowInstitutionSuggestions] = useState(false)
   const institutionSuggestions = INSTITUTION_SUGGESTIONS.filter(s =>
     accountInstitution.length === 0 || s.toLowerCase().includes(accountInstitution.toLowerCase())
   )
+
+  // Passos dinâmicos, montados conforme o tier. Cada entrada é uma chave de
+  // conteúdo; a barra de progresso e a navegação (next/back) derivam desta lista,
+  // então nunca sobra um passo "vazio" ou que leve a paywall.
+  const stepKeys: string[] = ['welcome', 'income', 'account']
+  if (canBudget) stepKeys.push('envelopes')
+  stepKeys.push('capabilities', 'done')
+  const TOTAL_STEPS = stepKeys.length
+  const currentKey = stepKeys[step]
+
+  // Só busca os envelopes reais quando o passo faz parte do fluxo (tier com budget).
+  useEffect(() => {
+    if (!canBudget || realEnvelopes) return
+    apiFetch<{ envelopes: RealEnvelope[] }>('/finances/budget')
+      .then(d => setRealEnvelopes((d.envelopes ?? []).filter(e => e.type !== 'income')))
+      .catch(() => setRealEnvelopes([]))
+  }, [canBudget, realEnvelopes])
 
   function finish() {
     localStorage.setItem(onboardingKey(userId), '1')
@@ -98,16 +93,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
     onDone()
   }
 
-  function goToDashboard() { finish(); navigate('/') }
-  function goToFinances()   { finish(); navigate('/finances') }
-  function goToInstitutions() { finish(); navigate('/institutions') }
-  function goToAccounts()   { finish(); navigate('/finances/accounts') }
-
-  function createClassesAndContinue() {
-    // Classes are created by the DB trigger at signup (handle_new_user).
-    // This step is now informational only.
-    setStep(2)
-  }
+  function next() { setStep(s => Math.min(s + 1, TOTAL_STEPS - 1)) }
+  function back() { setStep(s => Math.max(s - 1, 0)) }
 
   async function saveIncomeAndContinue() {
     const val = parseFloat(incomeVal)
@@ -124,11 +111,11 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
         setSavingIncome(false)
       }
     }
-    setStep(3)
+    next()
   }
 
   async function createAccountAndContinue() {
-    if (!accountName.trim()) { setStep(4); return }
+    if (!accountName.trim()) { next(); return }
     setSavingAccount(true)
     try {
       await apiFetch('/finances/accounts', {
@@ -140,26 +127,33 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           create_asset: true,
         }),
       })
-      setAccountCreated(true)
     } catch {
       // fail silently
     } finally {
       setSavingAccount(false)
     }
-    setStep(4)
+    next()
   }
 
-  // Step layout:
-  // 0 Welcome → 1 Classes → 2 Income → 3 Account → 4 Asset Types (info) → 5 Envelopes → 6 Freedom → 7 Shared Categories → 8 Done
-
-  const ASSET_TYPES: { icon: IconName; label: string; desc: string }[] = [
-    { icon: 'wallet',     label: o.assetCash,   desc: o.assetCashDesc   },
-    { icon: 'chart-bars', label: o.assetB3,     desc: o.assetB3Desc     },
-    { icon: 'globe',      label: o.assetIntl,   desc: o.assetIntlDesc   },
-    { icon: 'coin',       label: o.assetCrypto, desc: o.assetCryptoDesc },
-    { icon: 'file',       label: o.assetFi,     desc: o.assetFiDesc     },
-    { icon: 'home',       label: o.assetImovel, desc: o.assetImovelDesc },
+  // "O que dá pra fazer no Arvo" — adaptado ao tier. Free foca no que ele PODE
+  // fazer sem esbarrar num gate; capacidades gated só aparecem para quem tem o
+  // gate correspondente. Cada item usa cópia já existente do i18n quando possível.
+  const capabilities: { icon: IconName; label: string; desc: string }[] = [
+    { icon: 'chart-bars', label: o.capTransactions, desc: o.capTransactionsDesc },
+    { icon: 'bank',       label: o.capAccounts,     desc: o.capAccountsDesc },
+    { icon: 'globe',      label: o.capVoyage,       desc: o.capVoyageDesc },
+    { icon: 'scissors',   label: o.capSplit,        desc: o.capSplitDesc },
+    { icon: 'file',       label: o.capResources,    desc: o.capResourcesDesc },
   ]
+  if (canBudget) {
+    capabilities.push(
+      { icon: 'chart-line', label: o.capBudget,  desc: o.capBudgetDesc },
+      { icon: 'seal',       label: o.capFreedom, desc: o.capFreedomDesc },
+    )
+  }
+  if (hasGate('shared_groups_create')) {
+    capabilities.push({ icon: 'share', label: o.capShared, desc: o.capSharedDesc })
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
@@ -192,8 +186,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
         {/* Scrollable content */}
         <div className="px-6 pb-6 overflow-y-auto flex-1">
 
-          {/* Step 0: Welcome */}
-          {step === 0 && (
+          {/* Welcome */}
+          {currentKey === 'welcome' && (
             <div className="space-y-5 text-center">
               <div className="w-16 h-16 bg-[var(--arvo-fg)] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                 <ArvoLoader size={36} style={{ color: 'var(--arvo-gold)' }} />
@@ -203,7 +197,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 <p className="text-[var(--arvo-fg-muted)] mt-2 text-sm leading-relaxed">{o.welcomeBody}</p>
               </div>
               <button
-                onClick={() => setStep(1)}
+                onClick={next}
                 className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.start}
@@ -211,33 +205,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 1: Default asset classes */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.classesTitle}</h2>
-                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.classesBody}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {defaultClasses.map(c => (
-                  <div key={c.nameKey} className="flex items-center gap-2 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-lg px-3 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-sm font-medium text-[var(--arvo-fg)]">{c.name}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-[var(--arvo-fg-soft)] leading-relaxed">{o.classesNote}</p>
-              <button
-                onClick={createClassesAndContinue}
-                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
-              >
-                {o.continue}
-              </button>
-            </div>
-          )}
-
-          {/* Step 2: Monthly income */}
-          {step === 2 && (
+          {/* Monthly income */}
+          {currentKey === 'income' && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.financeIncomeTitle}</h2>
@@ -274,7 +243,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 {savingIncome ? '…' : o.continue}
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={next}
                 className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
               >
                 {o.financeIncomeSkip}
@@ -282,8 +251,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 3: First account */}
-          {step === 3 && (
+          {/* First account */}
+          {currentKey === 'account' && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.accountTitle}</h2>
@@ -350,7 +319,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 {savingAccount ? '…' : o.accountCreate}
               </button>
               <button
-                onClick={() => setStep(4)}
+                onClick={next}
                 className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
               >
                 {o.accountSkip} →
@@ -358,62 +327,58 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 4: Asset types — informational only */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.assetsTitle}</h2>
-                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm">{o.assetsBody}</p>
-              </div>
-              <div className="space-y-2">
-                {ASSET_TYPES.map(a => (
-                  <div
-                    key={a.label}
-                    className="w-full flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3"
-                  >
-                    <Icon name={a.icon} size={20} className="shrink-0" style={{ color: 'var(--arvo-fg-muted)' }} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--arvo-fg)]">{a.label}</p>
-                      <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{a.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setStep(5)}
-                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
-              >
-                {o.continue}
-              </button>
-            </div>
-          )}
-
-          {/* Step 5: Default envelopes */}
-          {step === 5 && (
+          {/* Envelopes reais (só tier com budget) */}
+          {currentKey === 'envelopes' && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.financeEnvsTitle}</h2>
                 <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.financeEnvsBody}</p>
               </div>
               <div className="space-y-2">
-                {defaultEnvelopes.map(env => (
-                  <div key={env.name} className="flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <Icon name={env.icon} size={20} className="shrink-0" style={{ color: env.color }} />
-                    <span className="flex-1 text-sm font-medium text-[var(--arvo-fg)]">{env.name}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="w-16 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${env.pct}%`, backgroundColor: env.color }}
-                        />
+                {(realEnvelopes ?? []).map(env => (
+                  <div key={env.id} className="flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
+                    <span className="text-lg shrink-0 w-6 text-center">{env.icon}</span>
+                    <span className="flex-1 text-sm font-medium text-[var(--arvo-fg)]">{envLabel(env, t)}</span>
+                    {env.pct_target > 0 && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="w-16 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${env.pct_target}%`, backgroundColor: env.color }} />
+                        </div>
+                        <span className="text-xs font-semibold text-[var(--arvo-fg-muted)] w-7 text-right">{env.pct_target}%</span>
                       </div>
-                      <span className="text-xs font-semibold text-[var(--arvo-fg-muted)] w-7 text-right">{env.pct}%</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={next}
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
+              >
+                {o.continue}
+              </button>
+            </div>
+          )}
+
+          {/* Capacidades — o que dá pra fazer (adaptado ao tier) */}
+          {currentKey === 'capabilities' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.capabilitiesTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.capabilitiesBody}</p>
+              </div>
+              <div className="space-y-2">
+                {capabilities.map(c => (
+                  <div key={c.label} className="w-full flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
+                    <Icon name={c.icon} size={20} className="shrink-0" style={{ color: 'var(--arvo-fg-muted)' }} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--arvo-fg)]">{c.label}</p>
+                      <p className="text-xs text-[var(--arvo-fg-soft)]">{c.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
               <button
-                onClick={() => setStep(6)}
+                onClick={next}
                 className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
@@ -421,56 +386,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 6: Freedom */}
-          {step === 6 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.freedomOnboardTitle}</h2>
-                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.freedomOnboardBody}</p>
-              </div>
-              <div className="space-y-2">
-                {[o.freedomOnboardFeature1, o.freedomOnboardFeature2].map(f => (
-                  <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <Icon name="check" size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--arvo-green)' }} />
-                    <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setStep(7)}
-                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
-              >
-                {o.continue}
-              </button>
-            </div>
-          )}
-
-          {/* Step 7: Shared Categories */}
-          {step === 7 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.sharedOnboardTitle}</h2>
-                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.sharedOnboardBody}</p>
-              </div>
-              <div className="space-y-2">
-                {[o.sharedOnboardFeature1, o.sharedOnboardFeature2].map(f => (
-                  <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <Icon name="check" size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--arvo-blue)' }} />
-                    <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setStep(8)}
-                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
-              >
-                {o.continue}
-              </button>
-            </div>
-          )}
-
-          {/* Step 8: Done */}
-          {step === 8 && (
+          {/* Done — apenas fecha, sem navegação (evita rotas gated/movidas) */}
+          {currentKey === 'done' && (
             <div className="space-y-5 text-center">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'rgba(31,138,91,0.12)', border: '1px solid rgba(31,138,91,0.25)' }}>
                 <Icon name="check" size={32} strokeWidth={2} style={{ color: 'var(--arvo-green)' }} />
@@ -479,42 +396,19 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 <h2 className="text-xl font-bold text-[var(--arvo-fg)]">{o.doneTitle}</h2>
                 <p className="text-[var(--arvo-fg-muted)] mt-2 text-sm leading-relaxed">{o.doneBody}</p>
               </div>
-              <div className="space-y-2">
-                <button
-                  onClick={goToDashboard}
-                  className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
-                >
-                  {o.gotoDashboard}
-                </button>
-                {accountCreated ? (
-                  <button
-                    onClick={goToAccounts}
-                    className="w-full border border-[var(--arvo-fg)]/20 text-[var(--arvo-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 transition-colors"
-                  >
-                    {o.gotoAccounts}
-                  </button>
-                ) : (
-                  <button
-                    onClick={goToInstitutions}
-                    className="w-full border border-[var(--arvo-fg)]/20 text-[var(--arvo-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 transition-colors"
-                  >
-                    {o.gotoInstitutions}
-                  </button>
-                )}
-                <button
-                  onClick={goToFinances}
-                  className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
-                >
-                  {o.gotoFinances}
-                </button>
-              </div>
+              <button
+                onClick={finish}
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
+              >
+                {o.doneClose}
+              </button>
             </div>
           )}
 
-          {/* Back button for steps 1–7 */}
-          {step > 0 && step < 8 && (
+          {/* Back button — todos os passos menos o primeiro e o último */}
+          {step > 0 && currentKey !== 'done' && (
             <button
-              onClick={() => setStep(s => s - 1)}
+              onClick={back}
               className="mt-4 w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
             >
               ← {o.back}

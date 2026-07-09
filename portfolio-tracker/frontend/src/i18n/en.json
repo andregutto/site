@@ -484,7 +484,7 @@
     "financeEnvsTitle": "Envelope planning",
     "financeEnvsBody": "We split your income into 4 envelopes following the 50/30/10/10 rule. Customise at any time.",
     "doneTitle": "All set!",
-    "doneBody": "Your portfolio and financial planning are ready. Explore the Dashboard or start recording transactions.",
+    "doneBody": "You're all set. Start recording your transactions and explore Arvo at your own pace.",
     "gotoDashboard": "Go to Dashboard",
     "gotoFinances": "Go to Finances",
     "gotoInstitutions": "Create my first account",
@@ -503,7 +503,26 @@
     "sharedOnboardTitle": "Shared Categories",
     "sharedOnboardBody": "Share budget categories with your partner or family group to track joint expenses in real time.",
     "sharedOnboardFeature1": "Shared expenses visible to all group members",
-    "sharedOnboardFeature2": "Each person keeps their private categories"
+    "sharedOnboardFeature2": "Each person keeps their private categories",
+    "doneClose": "Start using Arvo",
+    "capabilitiesTitle": "What you can do in Arvo",
+    "capabilitiesBody": "A quick look at what's already unlocked for you. Explore at your own pace.",
+    "capTransactions": "Record transactions",
+    "capTransactionsDesc": "Log income and expenses by hand, with no limit.",
+    "capAccounts": "Your accounts",
+    "capAccountsDesc": "Track the balance of your bank and brokerage accounts.",
+    "capVoyage": "Trips",
+    "capVoyageDesc": "Plan trips and organize each one's expenses.",
+    "capSplit": "Split expenses",
+    "capSplitDesc": "Split bills with friends and settle who owes what.",
+    "capResources": "Resources",
+    "capResourcesDesc": "Guides and materials from the Arvo community.",
+    "capBudget": "Envelope budgeting",
+    "capBudgetDesc": "Plan your income by dividing it into envelopes.",
+    "capFreedom": "Financial freedom",
+    "capFreedomDesc": "Simulate your path to financial independence.",
+    "capShared": "Shared categories",
+    "capSharedDesc": "Track expenses together with people you invite."
   },
   "achievements": {
     "title": "Achievements",
@@ -3151,7 +3170,8 @@
       "budget": "Budget is part of Arvo Plus",
       "freedom_plans": "Freedom plans are part of Arvo Plus",
       "shared_groups_create": "Creating shared groups is part of Arvo Plus",
-      "community_post": "Taking part in the Community is part of Arvo Plus",
+      "community": "The Community is part of Arvo Plus",
+      "community_post": "The Community is part of Arvo Plus",
       "messaging": "Messaging is part of Arvo Plus",
       "csv_import": "Importing statements is part of Arvo Plus",
       "ai_categorize": "AI categorization is part of Arvo Plus",
@@ -3167,7 +3187,8 @@
       "shared_groups_create": "Create shared groups",
       "trips_own": "Own trips",
       "split_expenses_per_day": "Split expenses per day",
-      "community_post": "Post & like in Community",
+      "community": "Full community access",
+      "community_post": "Full community access",
       "messaging": "Messaging",
       "csv_import": "Import statement (CSV)",
       "import_accounts": "Accounts with import",
@@ -3197,6 +3218,35 @@
     "plansIntro": "Everyone here is already part of the community. Plans unlock what you can automate and analyze — and they're not for sale yet.",
     "plansCurrent": "Your current plan: {tier}",
     "gatedPageBody": "This opens with the upgrade. You stay in the community as usual in the meantime.",
-    "gatedPageCta": "See what changes"
+    "gatedPageCta": "See what changes",
+    "close": "Close",
+    "seePlans": "See plans",
+    "lockedTitle": "A part of Arvo that isn't yours yet",
+    "modalIntro": "Here's what becomes part of your Arvo:",
+    "tierEyebrowPlus": "Arvo Plus",
+    "tierEyebrowPro": "Arvo Pro",
+    "taglines": {
+      "free": "Do it by hand and take part in everything the community creates.",
+      "plus": "Automate, connect, and organize your whole financial life.",
+      "pro": "Analyze like a pro, with no limits getting in the way."
+    },
+    "cardCurrentBadge": "Your plan",
+    "benefits": {
+      "plus": {
+        "patrimonio": "Full wealth: dashboard, performance and history",
+        "community": "The whole community: read, post and connect",
+        "messaging": "Direct messages with people you know",
+        "moments_create": "Named Moments and shared groups from scratch",
+        "budget": "Envelope budgeting and freedom plans",
+        "csv_import": "Import statements and categorize with AI"
+      },
+      "pro": {
+        "insights": "Automatic insights on your spending and income",
+        "diversification": "Wealth diversification and rebalancing",
+        "ir_france": "France tax reports ready (2042 IFI, 3916, 2047)",
+        "ai_more": "AI categorization with much higher limits",
+        "everything_plus": "Everything in Plus, without the day-to-day caps"
+      }
+    }
   }
 }

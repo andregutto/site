@@ -4,10 +4,19 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useUpgrade } from '../../contexts/UpgradeContext'
 
 // CTA "Avisar quando abrir" + subcopy + link secundário "Ver todos os planos".
-// Compartilhado entre o modal e a página /planos. O gate registrado fica marcado
-// no UpgradeContext (persiste enquanto a sessão viver), então o botão vira estado
-// de sucesso desabilitado se o usuário já clicou naquele gate.
-export default function UpgradeCta({ gate, showPlansLink = true }: { gate: string; showPlansLink?: boolean }) {
+// Usado no modal (fundo dark) e nos cards da /planos (superfície clara). O gate
+// registrado fica marcado no UpgradeContext (persiste enquanto a sessão viver),
+// então o botão vira estado de sucesso desabilitado se o usuário já clicou.
+//
+// `dark`: no modal e no painel bloqueado o CTA vive sobre #0D0D0D — o botão fica
+// dourado com texto preto (mesma regra dos botões primários em dark do design
+// system) e a subcopy usa tons claros. Fora disso (cards claros) é o inverso.
+export default function UpgradeCta({
+  gate,
+  showPlansLink = true,
+  showSubcopy = true,
+  dark = false,
+}: { gate: string; showPlansLink?: boolean; showSubcopy?: boolean; dark?: boolean }) {
   const { t } = useI18n()
   const s = ((t as any).upgrade ?? {}) as Record<string, string>
   const { registerInterest, interestedGates } = useUpgrade()
@@ -21,6 +30,13 @@ export default function UpgradeCta({ gate, showPlansLink = true }: { gate: strin
     setBusy(false)
   }
 
+  const btnBg = done
+    ? (dark ? 'rgba(242,237,228,0.10)' : 'var(--arvo-chip-bg)')
+    : (dark ? 'var(--arvo-gold)' : 'var(--arvo-black)')
+  const btnFg = done
+    ? (dark ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)')
+    : (dark ? 'var(--arvo-black)' : 'var(--arvo-offwhite)')
+
   return (
     <div>
       <button
@@ -28,23 +44,24 @@ export default function UpgradeCta({ gate, showPlansLink = true }: { gate: strin
         disabled={done || busy}
         style={{
           width: '100%', padding: '13px 20px', borderRadius: 12, border: 'none',
-          fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, letterSpacing: '0.06em',
+          fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, letterSpacing: '0.08em',
           textTransform: 'uppercase', cursor: done ? 'default' : 'pointer',
-          background: done ? 'var(--arvo-chip-bg)' : 'var(--arvo-black)',
-          color: done ? 'var(--arvo-gold-text)' : 'var(--arvo-offwhite)',
+          background: btnBg, color: btnFg,
           opacity: busy ? 0.6 : 1, transition: 'opacity 160ms',
         }}
       >
         {done ? (s.notifiedDone ?? 'Você será avisado ✓') : busy ? (s.notifying ?? '...') : (s.notifyCta ?? 'Avisar quando abrir')}
       </button>
-      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, lineHeight: 1.55, color: 'var(--arvo-fg-soft)', textAlign: 'center', marginTop: 12 }}>
-        {s.notifySubcopy ?? 'Os upgrades ainda não estão à venda. Quem registra interesse fica sabendo primeiro quando abrirem.'}
-      </p>
+      {showSubcopy && (
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, lineHeight: 1.55, color: dark ? 'rgba(242,237,228,0.6)' : 'var(--arvo-fg-soft)', textAlign: 'center', marginTop: 11 }}>
+          {s.notifySubcopy ?? 'Os upgrades ainda não estão à venda. Quem registra interesse fica sabendo primeiro quando abrirem.'}
+        </p>
+      )}
       {showPlansLink && (
-        <div style={{ textAlign: 'center', marginTop: 14 }}>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
           <Link
             to="/planos"
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-muted)', textDecoration: 'underline', textUnderlineOffset: 3 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: dark ? 'rgba(242,237,228,0.72)' : 'var(--arvo-fg-muted)', textDecoration: 'underline', textUnderlineOffset: 3 }}
           >
             {s.seeAllPlans ?? 'Ver todos os planos'}
           </Link>
