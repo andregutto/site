@@ -2,6 +2,14 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- Inline (not the async index.css bundle) so it paints on the very first frame —
+         kills the white flash between HTML parse and the CSS file finishing download,
+         which is the second half of the "branco e cinza" flash reported on PWA cold
+         start (the first half, before any HTML exists, is the OS-level splash — see
+         apple-touch-startup-image, not fixable from CSS). Mirrors index.css's own
+         html{#0D0D0D}/body{--arvo-offwhite} rule so there's no visible handoff once
+         the real stylesheet loads. -->
+    <style>html{background-color:#0D0D0D}body{background-color:#FAF8F4;margin:0}</style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/logo/apple-touch-icon.png" />
