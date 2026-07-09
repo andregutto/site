@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../contexts/I18nContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { useUpgrade, type Entitlements, type GateTier } from '../contexts/UpgradeContext'
 import { PageLoader } from '../components/ArvoLoader'
 import UpgradeCta from '../components/upgrade/UpgradeCta'
@@ -11,11 +12,13 @@ import { ROW_ORDER, INCLUDED_ROWS, USER_TIERS, TIER_RANK, tierLabel, tierTagline
 // atrás de "Ver lista completa". O dono pediu ~6-7 mais relevantes visíveis.
 const VISIBLE_LIMIT = 7
 
-// Página /planos — sempre-dark premium, estilo pricing da Finary: 3 cards de
-// tier lado a lado (Free / Plus / Pro), cada um com nome, tagline e a lista de
-// capacidades (✓ / —) derivada da matriz do GET /api/entitlements. Badge no
-// plano atual, CTA "avisar quando abrir" nos pagos. Sem preços, sem Beta.
-// Ver docs/TIERS_PLAN.md.
+// Página /planos — estilo pricing da Finary: 3 cards de tier lado a lado
+// (Free / Plus / Pro), cada um com nome, tagline e a lista de capacidades
+// (✓ / —) derivada da matriz do GET /api/entitlements. Badge no plano atual,
+// CTA "avisar quando abrir" nos pagos. Sem preços, sem Beta.
+// As superfícies (página, cards, listas) SEGUEM o tema do app (vars --arvo-*):
+// claras no light, escuras no dark. Só o hero tem foto autoral tratada dark
+// com texto claro dentro dela — foto é elemento, não tema. Ver docs/TIERS_PLAN.md.
 
 // Como cada capacidade se resolve para uma coluna de tier: texto + se é "on".
 function cell(
@@ -44,7 +47,7 @@ function cell(
 interface Row { key: string; label: string; on: boolean; text: string }
 
 function TierCard({
-  tier, entitlements, rows, included, labels, s, isCurrent,
+  tier, entitlements, rows, included, labels, s, isCurrent, onDark,
 }: {
   tier: GateTier
   entitlements: Entitlements
@@ -53,9 +56,32 @@ function TierCard({
   labels: { yes: string; no: string; unlimited: string; perDay: string; perMonth: string; accounts: string }
   s: Record<string, any>
   isCurrent: boolean
+  onDark: boolean
 }) {
   const featured = tier === 'plus' // coluna que puxa o olho, como no Finary
   const [expanded, setExpanded] = useState(false)
+
+  // Cromo por tema. No dark mantém o visual aprovado (gradientes/rgba claros);
+  // no light usa superfície clara do tema, texto --arvo-fg e ouro legível.
+  // A borda dourada do card featured funciona nos dois modos (--arvo-gold é ok
+  // como BORDA em claro, só não como texto).
+  const cardBg = onDark
+    ? (featured
+        ? 'radial-gradient(120% 60% at 50% 0%, #1c1811 0%, #121009 60%, #0D0D0D 100%)'
+        : '#121110')
+    : 'var(--arvo-surface)'
+  const cardBorder = featured ? '1px solid var(--arvo-gold)' : '1px solid var(--arvo-border)'
+  const cardShadow = featured
+    ? (onDark ? '0 20px 50px -24px rgba(0,0,0,0.6)' : 'var(--arvo-shadow-lg)')
+    : (onDark ? 'none' : 'var(--arvo-shadow-sm)')
+  const goldAccent = onDark ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)'
+  const tierNameColor = featured ? goldAccent : (onDark ? 'var(--arvo-fg-on-dark)' : 'var(--arvo-fg)')
+  const taglineColor = onDark ? 'rgba(242,237,228,0.66)' : 'var(--arvo-fg-muted)'
+  const dividerColor = onDark ? 'rgba(200,184,154,0.14)' : 'var(--arvo-border)'
+  const rowBorder = onDark ? 'rgba(200,184,154,0.07)' : 'var(--arvo-border-soft)'
+  const onLabelColor = onDark ? 'rgba(242,237,228,0.88)' : 'var(--arvo-fg)'
+  const offLabelColor = onDark ? 'rgba(242,237,228,0.4)' : 'var(--arvo-fg-soft)'
+  const offMarkColor = onDark ? 'rgba(242,237,228,0.28)' : 'var(--arvo-fg-faint)'
 
   // Linhas incluídas (sempre ✓) primeiro, depois as da matriz. Ordena o resultado
   // "on primeiro, bloqueado por último" — o dono quer começar pelo que está
@@ -82,24 +108,23 @@ function TierCard({
     <div
       style={{
         display: 'flex', flexDirection: 'column',
-        background: featured
-          ? 'radial-gradient(120% 60% at 50% 0%, #1c1811 0%, #121009 60%, #0D0D0D 100%)'
-          : '#121110',
-        border: featured ? '1px solid rgba(200,184,154,0.32)' : '1px solid rgba(200,184,154,0.12)',
+        background: cardBg,
+        border: cardBorder,
         borderRadius: 18, padding: '22px 20px', position: 'relative', overflow: 'hidden',
-        boxShadow: featured ? '0 20px 50px -24px rgba(0,0,0,0.6)' : 'none',
+        boxShadow: cardShadow,
       }}
     >
-      {featured && (
+      {/* Glow interno só faz sentido sobre superfície escura. */}
+      {featured && onDark && (
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(70% 40% at 50% 0%, rgba(200,184,154,0.12), transparent 70%)', pointerEvents: 'none' }} />
       )}
       <div style={{ position: 'relative' }}>
         <div className="flex items-center justify-between" style={{ gap: 8 }}>
           <div className="flex items-center" style={{ gap: 10 }}>
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 20, letterSpacing: '0.06em', color: featured ? 'var(--arvo-gold)' : 'var(--arvo-fg-on-dark)' }}>
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 20, letterSpacing: '0.06em', color: tierNameColor }}>
               {tierLabel(tier, s)}
             </span>
-            {tier !== 'free' && <TierBadge tier={tier} size={14} onDark />}
+            {tier !== 'free' && <TierBadge tier={tier} size={14} onDark={onDark} />}
           </div>
           {isCurrent && (
             <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-black)', background: 'var(--arvo-gold)', borderRadius: 999, padding: '3px 9px' }}>
@@ -108,23 +133,23 @@ function TierCard({
           )}
         </div>
         {/* Tagline em DM Sans (body) regular — Playfair itálico deixava ilegível. */}
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.5, color: 'rgba(242,237,228,0.66)', marginTop: 9, minHeight: 40 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.5, color: taglineColor, marginTop: 9, minHeight: 40 }}>
           {tierTagline(tier, s)}
         </p>
 
-        <div style={{ height: 1, background: 'rgba(200,184,154,0.14)', margin: '14px 0 4px' }} />
+        <div style={{ height: 1, background: dividerColor, margin: '14px 0 4px' }} />
 
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
           {shown.map(r => (
-            <li key={r.key} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(200,184,154,0.07)' }}>
-              <span style={{ flexShrink: 0, width: 14, textAlign: 'center', color: r.on ? 'var(--arvo-gold)' : 'rgba(242,237,228,0.28)', fontSize: 13 }}>
+            <li key={r.key} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '9px 0', borderBottom: `1px solid ${rowBorder}` }}>
+              <span style={{ flexShrink: 0, width: 14, textAlign: 'center', color: r.on ? goldAccent : offMarkColor, fontSize: 13 }}>
                 {r.on ? '✓' : '—'}
               </span>
-              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.4, color: r.on ? 'rgba(242,237,228,0.88)' : 'rgba(242,237,228,0.4)' }}>
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.4, color: r.on ? onLabelColor : offLabelColor }}>
                 {r.label}
               </span>
               {r.on && r.text !== labels.yes && (
-                <span style={{ flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: 'var(--arvo-gold)' }}>
+                <span style={{ flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: goldAccent }}>
                   {r.text}
                 </span>
               )}
@@ -135,7 +160,7 @@ function TierCard({
         {hasMore && (
           <button
             onClick={() => setExpanded(v => !v)}
-            style={{ marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-gold)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            style={{ marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, letterSpacing: '0.02em', color: goldAccent, display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
             {expanded ? (s.showLess ?? 'Ver menos') : (s.seeFullList ?? 'Ver lista completa')}
             <span style={{ display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms', fontSize: 10 }}>▾</span>
@@ -146,7 +171,7 @@ function TierCard({
           <div style={{ marginTop: 18 }}>
             {isCurrent
               ? null
-              : <UpgradeCta gate={`plan_${tier}`} dark showPlansLink={false} showSubcopy={false} />}
+              : <UpgradeCta gate={`plan_${tier}`} dark={onDark} showPlansLink={false} showSubcopy={false} />}
           </div>
         )}
       </div>
@@ -160,6 +185,8 @@ export default function PlansPage() {
   const rows = ((t as any).upgrade?.rows ?? {}) as Record<string, string>
   const included = ((t as any).upgrade?.included ?? {}) as Record<string, string>
   const { entitlements, loading } = useUpgrade()
+  const { resolvedTheme } = useTheme()
+  const onDark = resolvedTheme === 'dark'
 
   if (loading && !entitlements) return <PageLoader />
 
@@ -175,9 +202,13 @@ export default function PlansPage() {
   return (
     <div
       style={{
-        margin: '-16px', // encosta o dark nas bordas do container claro do app
+        margin: '-16px', // encosta o fundo nas bordas do container do app
         minHeight: 'calc(100vh - 0px)',
-        background: 'radial-gradient(140% 60% at 50% 0%, #17140f 0%, #0D0D0D 55%)',
+        // Segue o tema: gradiente dark aprovado no dark; superfície clara do app
+        // no light. Só o hero (abaixo) mantém foto autoral tratada dark.
+        background: onDark
+          ? 'radial-gradient(140% 60% at 50% 0%, #17140f 0%, #0D0D0D 55%)'
+          : 'var(--arvo-bg)',
         padding: '32px 16px calc(48px + env(safe-area-inset-bottom, 0px))',
       }}
     >
@@ -211,12 +242,13 @@ export default function PlansPage() {
                 labels={labels}
                 s={s}
                 isCurrent={currentTier === tier}
+                onDark={onDark}
               />
             ))}
           </div>
         )}
 
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, lineHeight: 1.6, color: 'rgba(242,237,228,0.55)', textAlign: 'center', marginTop: 26, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, lineHeight: 1.6, color: onDark ? 'rgba(242,237,228,0.55)' : 'var(--arvo-fg-soft)', textAlign: 'center', marginTop: 26, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
           {s.notifySubcopy ?? 'Os upgrades ainda não estão à venda. Quem registra interesse fica sabendo primeiro quando abrirem.'}
         </p>
       </div>
