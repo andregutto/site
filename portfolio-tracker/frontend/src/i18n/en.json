@@ -991,7 +991,7 @@
     "publicByCategory": "By category",
     "publicCreatedWith": "Created with",
     "accountsPageTitle": "Accounts",
-    "accountsPageSubtitle": "Manage your bank and investment accounts",
+    "accountsPageSubtitle": "Your accounts by institution — where your transactions live.",
     "addAccount": "Add account",
     "accountBalance": "Current balance",
     "accountCurrency": "Currency",
@@ -1239,7 +1239,10 @@
     "momentTransformToTrip": "Turn into a trip",
     "momentTransformCreating": "Creating…",
     "momentTransformOpening": "Opening trip…",
-    "momentViewTrip": "View trip"
+    "momentViewTrip": "View trip",
+    "accountsPageEmpty": "No accounts yet. Create your first one to start tracking transactions.",
+    "accountsPageOne": "1 account",
+    "accountsPageMany": "{n} accounts"
   },
   "classes": {
     "title": "Asset Classes",

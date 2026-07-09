@@ -991,7 +991,7 @@
     "publicByCategory": "Por categoria",
     "publicCreatedWith": "Criado com",
     "accountsPageTitle": "Contas",
-    "accountsPageSubtitle": "Gerencie suas contas bancárias e de investimento",
+    "accountsPageSubtitle": "Suas contas por instituição — é nelas que as transações vivem.",
     "addAccount": "Adicionar conta",
     "accountBalance": "Saldo atual",
     "accountCurrency": "Moeda",
@@ -1239,7 +1239,10 @@
     "momentTransformToTrip": "Transformar em viagem",
     "momentTransformCreating": "Criando…",
     "momentTransformOpening": "Abrindo viagem…",
-    "momentViewTrip": "Ver viagem"
+    "momentViewTrip": "Ver viagem",
+    "accountsPageEmpty": "Nenhuma conta ainda. Crie a primeira pra começar a registrar transações.",
+    "accountsPageOne": "1 conta",
+    "accountsPageMany": "{n} contas"
   },
   "classes": {
     "title": "Classes de Ativos",

@@ -58,6 +58,7 @@ import { NotificationsProvider } from './contexts/NotificationsContext'
 import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import FinancesInsightsPage from './pages/finances/FinancesInsightsPage'
+import AccountsPage from './pages/finances/AccountsPage'
 import VoyageLayout from './pages/voyage/VoyageLayout'
 import VoyageTripsPage from './pages/voyage/VoyageTripsPage'
 import VoyageTripDetailPage from './pages/voyage/VoyageTripDetailPage'
@@ -236,7 +237,7 @@ function AppRoutes() {
           <Route path="insights"      element={<GateGuard gate="insights" requiredTier="pro"><FinancesInsightsPage /></GateGuard>} />
           <Route path="subscriptions" element={<Navigate to="/finances/insights" replace />} />
           <Route path="fees"          element={<Navigate to="/finances/insights" replace />} />
-          <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
+          <Route path="accounts"      element={<AccountsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

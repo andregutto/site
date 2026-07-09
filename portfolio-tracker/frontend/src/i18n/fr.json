@@ -991,7 +991,7 @@
     "publicByCategory": "Par catégorie",
     "publicCreatedWith": "Créé avec",
     "accountsPageTitle": "Comptes",
-    "accountsPageSubtitle": "Gérez vos comptes bancaires et d'investissement",
+    "accountsPageSubtitle": "Vos comptes par institution — c'est là que vivent vos transactions.",
     "addAccount": "Ajouter un compte",
     "accountBalance": "Solde actuel",
     "accountCurrency": "Devise",
@@ -1239,7 +1239,10 @@
     "momentTransformToTrip": "Transformer en voyage",
     "momentTransformCreating": "Création…",
     "momentTransformOpening": "Ouverture du voyage…",
-    "momentViewTrip": "Voir le voyage"
+    "momentViewTrip": "Voir le voyage",
+    "accountsPageEmpty": "Aucun compte pour l'instant. Créez le premier pour suivre vos transactions.",
+    "accountsPageOne": "1 compte",
+    "accountsPageMany": "{n} comptes"
   },
   "classes": {
     "title": "Classes d'actifs",
