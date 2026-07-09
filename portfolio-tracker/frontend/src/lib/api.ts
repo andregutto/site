@@ -35,6 +35,18 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const res = await fetch(`${base}/api${path}`, { ...init, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as Record<string, unknown>
+    // Tier pode ter mudado no servidor com a sessão aberta (o app carrega os
+    // acessos uma vez). Avisa o UpgradeProvider pra reler os entitlements —
+    // sem isso a página gated caía num estado vazio em vez do bloqueio.
+    if (res.status === 403 && body.error === 'upgrade_required') {
+      window.dispatchEvent(new CustomEvent('arvo:upgrade-required', { detail: body }))
+    }
+    // Conta bloqueada por um admin com a sessão aberta: o backend corta a
+    // request (requireAuth → 403 account_blocked). Avisa o AuthProvider pra
+    // deslogar e levar pro /login com a mensagem de bloqueio.
+    if (res.status === 403 && body.error === 'account_blocked') {
+      window.dispatchEvent(new CustomEvent('arvo:account-blocked'))
+    }
     throw new ApiError((body.error as string) ?? `HTTP ${res.status}`, res.status, body)
   }
   return res.json() as Promise<T>

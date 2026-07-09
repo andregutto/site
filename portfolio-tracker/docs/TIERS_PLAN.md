@@ -109,11 +109,28 @@ ilimitado em tudo.
 
 ## Pendências conhecidas
 
+- **Trial de 7 dias** quando a cobrança abrir (padrão Finary), em vez de free
+  trial permanente.
+- **Preview borrado (padrão Finary) nos bloqueios**: primeira tentativa
+  (2026-07-09) foi vetada ("muito feio, não dá pra ver nada") — a foto autoral
+  continua sendo o aprovado. Evolução possível: bloqueio em formato mais
+  "modal", com o conteúdo borrado visível nas LATERAIS/fundo da página em vez
+  de escondido atrás do card. Componente `GatedPreviewMock.tsx` ficou no repo,
+  dormente, pra essa evolução.
+
 - **UI da promoção de split** (adicionar 3ª pessoa num split 1:1 → pedir nome →
   promote + convite): não existia antes dos tiers e ficou fora deste lote.
   Sem ela, free não consegue iniciar split 3+ fora de grupo — aceitável por
   ora, priorizar em seguida.
 - Checkout/pagamento: só quando houver demanda registrada (upgrade_interest).
+- **Modelo de assinatura + KPIs (junto do checkout)**: tabela `subscriptions`
+  (user_id, plano, status, started_at, expires_at/renews_at, valor, moeda) +
+  `subscription_payments` (histórico de cobranças). A aba Usuários do admin
+  ganha as colunas: assinou quando, plano, expira quando, total pago (LTV por
+  usuário). Painel de KPIs: MRR, churn, conversão free→pago, LTV médio,
+  receita por origem (signup_source, fechando o funil dos vídeos).
+- **Bloqueio de usuário** (aba Usuários): ban nativo do Supabase Auth +
+  mensagem amigável no login + corte de sessão viva no requireAuth.
 - Kit: exportar interessados como segmento quando o checkout abrir.
 
 ## Histórico

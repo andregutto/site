@@ -65,7 +65,12 @@
       "empty": "Aucun utilisateur trouvé.",
       "loadError": "Impossible de charger les utilisateurs.",
       "saveError": "Impossible d'enregistrer.",
-      "adminBadge": "Admin"
+      "adminBadge": "Admin",
+      "block": "Bloquer",
+      "unblock": "Débloquer",
+      "blockedBadge": "Bloqué",
+      "blockConfirm": "Bloquer {name} ? Cette personne ne pourra plus se connecter jusqu'au déblocage.",
+      "unblockConfirm": "Débloquer {name} ?"
     },
     "acquisition": {
       "kpiLeads": "Leads au total",
@@ -349,6 +354,7 @@
     "errEmailNotConfirmed": "E-mail non confirmé. Vérifiez votre boîte de réception et cliquez sur le lien d'activation.",
     "errInvalidCredentials": "E-mail ou mot de passe incorrect.",
     "errTooManyRequests": "Trop de tentatives. Veuillez patienter quelques minutes.",
+    "errBlocked": "Votre compte est bloqué. Contactez-nous : contato@andregutto.com",
     "confirmPwd": "Confirmer le mot de passe",
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "acceptTerms": "J'ai lu et j'accepte les",
@@ -1399,7 +1405,9 @@
     "deleteSession": "Supprimer",
     "noSessions": "Aucune conversation pour l'instant.",
     "today": "Aujourd'hui",
-    "yesterday": "Hier"
+    "yesterday": "Hier",
+    "limitReached": "Vos conversations du mois sont épuisées. Arvo Plus les porte à 300 messages par mois, en plus de tout ce que Plus débloque.",
+    "limitCta": "Découvrir Plus"
   },
   "archived": {
     "title": "Archivés",
@@ -3210,7 +3218,12 @@
     "contributionsLabel": "Apports",
     "more": "de plus",
     "last30d": "30 derniers jours",
-    "walletShort": "Portefeuille"
+    "walletShort": "Portefeuille",
+    "teaserWealthTitle": "Patrimoine",
+    "teaserWealthBody": "Suivez vos investissements, la performance et l'évolution de ce qui est à vous.",
+    "teaserCommunityTitle": "Communauté",
+    "teaserCommunityBody": "Les membres partagent itinéraires, finances et vie à l'étranger.",
+    "teaserCta": "Découvrir"
   },
   "upgrade": {
     "eyebrow": "Upgrade",
@@ -3245,6 +3258,7 @@
       "import_accounts": "Comptes avec import",
       "ai_categorize": "Catégorisation par IA",
       "ai_categorize_month": "Catégorisations IA / mois",
+      "ai_chat_messages_month": "Parlez à votre Arvo (IA) / mois",
       "insights": "Insights",
       "diversification": "Diversification",
       "ir_france": "Impôts France (2DC/2TR)"
@@ -3293,6 +3307,7 @@
     "cardCurrentBadge": "Votre plan",
     "benefits": {
       "plus": {
+        "ai_chat": "Parlez à votre Arvo : votre copilote financier IA",
         "patrimonio": "Patrimoine complet : tableau de bord, performance et historique",
         "community": "Toute la communauté : lire, publier et échanger",
         "messaging": "Messages directs avec les personnes que vous connaissez",
@@ -3309,6 +3324,7 @@
         "everything_plus": "Tout Plus, sans les plafonds du quotidien"
       }
     },
-    "notifyDone": "Vous serez prévenu ✓"
+    "notifyDone": "Vous serez prévenu ✓",
+    "headerPill": "Découvrir {tier}"
   }
 }

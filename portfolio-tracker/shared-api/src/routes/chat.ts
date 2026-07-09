@@ -6,6 +6,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { haversineKm, buildCostSummary } from './voyage.js'
 import { userDisplay } from './people.js'
+import { checkQuota, getUsage, incrementUsage, usagePeriod } from '../lib/entitlements.js'
 
 const router = Router()
 
@@ -1227,6 +1228,15 @@ router.post('/', requireAuth, async (req, res: Response) => {
   if (!messages?.length) { res.status(400).json({ error: 'messages required' }); return }
   if (!process.env.ANTHROPIC_API_KEY) { res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' }); return }
 
+  // Cota mensal de mensagens do chat IA (ai_chat_messages_month). Todos os tiers
+  // têm o widget; o que varia é o teto de mensagens/mês (custo real por mensagem).
+  // Checado ANTES de qualquer chamada à Anthropic e ANTES de abrir o stream SSE,
+  // pra devolver um 403 upgrade_required limpo (JSON) que o ChatWidget intercepta.
+  const chatPeriod = usagePeriod('month')
+  const chatUsed = await getUsage(userId, 'ai_chat_messages_month', chatPeriod)
+  const chatQuota = await checkQuota(userId, 'ai_chat_messages_month', chatUsed)
+  if (!chatQuota.ok) { res.status(403).json(chatQuota.payload); return }
+
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -1301,6 +1311,11 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
       break
     }
+
+    // Conta EXATAMENTE 1 mensagem do usuário por request, após o stream terminar
+    // com sucesso (não conta em dobro apesar das até 6 iterações de tool_use, e
+    // não conta se a chamada estourou no meio — o catch abaixo pega esse caso).
+    await incrementUsage(userId, 'ai_chat_messages_month', chatPeriod, 1).catch(() => {})
 
     // Persist the user message + assistant response
     if (sessionId && userText && fullAssistantText) {

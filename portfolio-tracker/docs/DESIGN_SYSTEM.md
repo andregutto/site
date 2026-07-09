@@ -92,6 +92,16 @@ sem nova decisão. Atualize este arquivo quando uma decisão nova for tomada.
   subtítulo longo pode sumir abaixo de sm) — o usuário quer ver o conteúdo.
 - **TierBadge/TierGlyph**: sempre passar o tema real (`onDark`), nunca fixo.
 
+## Upsell (onde pode e onde não pode)
+
+- **Pill "Conhecer o Plus" no header: SÓ pra free e SÓ desktop.** Assinante
+  nunca vê upsell permanente ("quem paga comprou também o silêncio", decisão
+  2026-07-09). Plus → Pro acontece contextualmente: gates Pro, /planos.
+- Mobile não tem pill no header; upsell mobile = teasers da Hoje + gates.
+- Teasers da Hoje (free): card inteiro clicável, foto autoral clara
+  (opacity ~0.92, véu leve), borda dourada sutil, pill completo
+  "ARVO PLUS/PRO" no canto, CTA "Conhecer o Plus/Pro" espelhando o header.
+
 ## Botões
 
 - **`.arvo-btn` é pill por padrão** (border-radius 999px, decisão 2026-07-09)

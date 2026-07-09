@@ -111,6 +111,7 @@ export const ROW_ORDER: string[] = [
   'csv_import',
   'import_accounts',
   'ai_categorize_month',
+  'ai_chat_messages_month',
   'insights',
   'diversification',
   'ir_france',
@@ -127,6 +128,7 @@ export const DELTA_ROWS: Record<'plus' | 'pro', string[]> = {
     'patrimonio',
     'community',
     'messaging',
+    'ai_chat_messages_month',
     'import_accounts',
     'ai_categorize_month',
     'budget',
@@ -140,6 +142,7 @@ export const DELTA_ROWS: Record<'plus' | 'pro', string[]> = {
     'ir_france',
     'import_accounts',
     'ai_categorize_month',
+    'ai_chat_messages_month',
   ],
 }
 
@@ -156,13 +159,13 @@ export function tierTagline(t: Tier, s: Record<string, any>): string {
 // modal. Cada entrada é uma chave em upgrade.benefits.<tier>.<key>. Escolhidos
 // pelo apelo, não pela exaustividade (a matriz completa vive na /planos).
 const CURATED: Record<'plus' | 'pro', string[]> = {
-  plus: ['patrimonio', 'community', 'messaging', 'moments_create', 'budget', 'ai_categorize'],
+  plus: ['ai_chat', 'patrimonio', 'community', 'messaging', 'moments_create', 'budget', 'ai_categorize'],
   pro: ['insights', 'diversification', 'ir_france', 'ai_more', 'everything_plus'],
 }
 
 // Chaves de benefício que falam de IA — o modal usa o ícone `sparkle` de
 // icons.tsx (mesmo da categorização por IA) no lugar do marcador ✦ padrão.
-export const AI_BENEFIT_KEYS = new Set(['ai_categorize', 'ai_more'])
+export const AI_BENEFIT_KEYS = new Set(['ai_chat', 'ai_categorize', 'ai_more'])
 
 export interface Benefit { key: string; text: string }
 

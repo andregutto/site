@@ -69,6 +69,11 @@ export default function AppLayout() {
     entitlements?.tier === 'pro' || entitlements?.tier === 'beta' ? 'pro'
       : entitlements?.tier === 'plus' ? 'plus'
       : null
+  // Pill de upgrade fixo no topo direito (padrão Finary), SÓ pro free e SÓ no
+  // desktop. Quem paga comprou também o silêncio (decisão 2026-07-09): o Plus
+  // não vê upsell permanente; o convite pro Pro acontece contextualmente nos
+  // gates Pro (Insights/Diversification/IR) e na /planos.
+  const upsellTier: 'plus' | null = entitlements?.tier === 'free' ? 'plus' : null
   // Alterna direto light↔dark (sem passar por 'auto') — o ícone reflete o
   // estado atual: sol no dark (clica → light), lua no light (clica → dark).
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -473,8 +478,11 @@ export default function AppLayout() {
             {/* Wordmark + plano alinhados pela BASELINE (items-center deixava o
                 'pro' flutuando); o espaçamento entre eles vem do tracking final
                 do wordmark, sem textIndent no rótulo do plano. */}
-            <span className="hidden sm:inline-flex" style={{ alignItems: 'baseline' }}>
-              <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
+            {/* Wordmark some no mobile, mas o rótulo do plano FICA (pedido do
+                André 2026-07-09): glifo tingido + "pro"/"plus" é o lockup
+                compacto. Baseline compartilhada nos dois casos. */}
+            <span className="inline-flex" style={{ alignItems: 'baseline' }}>
+              <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
               {headerTier && (
                 <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.24em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1 }}>
                   {headerTier === 'pro' ? 'pro' : 'plus'}
@@ -533,6 +541,24 @@ export default function AppLayout() {
                 </svg>
               )}
             </button>
+            )}
+            {upsellTier && (
+              <Link
+                to="/planos"
+                className="shrink-0 hidden sm:inline-flex items-center"
+                style={{
+                  gap: 7, textDecoration: 'none', borderRadius: 999,
+                  padding: '6px 13px 6px 9px',
+                  background: resolvedTheme === 'dark' ? 'rgba(200,184,154,0.10)' : 'rgba(140,106,40,0.08)',
+                  border: `1px solid ${resolvedTheme === 'dark' ? 'rgba(200,184,154,0.35)' : 'rgba(140,106,40,0.3)'}`,
+                }}
+                title="Conhecer o Arvo Plus"
+              >
+                <TierGlyph tier={upsellTier} size={13} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)' }}>
+                  {(t as any).upgrade?.headerPill?.replace('{tier}', 'Plus') ?? 'Conhecer o Plus'}
+                </span>
+              </Link>
             )}
             {/* Theme toggle — ghost icon no header, desktop E mobile (decisão
                 2026-07-09: o André preferiu o ícone sempre visível ao controle

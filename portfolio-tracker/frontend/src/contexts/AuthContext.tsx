@@ -86,6 +86,10 @@ async function bootstrapSignupSource(u: User) {
   const pending = sessionStorage.getItem('signup_source')
   if (!pending || u.user_metadata?.signup_source) return
   sessionStorage.removeItem('signup_source')
+  // Atribuição é de CADASTRO, não de visita: conta que já existia (criada há
+  // mais de 15 min) e só passou pelo gate pra logar não pode ser carimbada —
+  // era isso que marcava usuários antigos como vindos de um recurso.
+  if (Date.now() - new Date(u.created_at).getTime() > 15 * 60 * 1000) return
   await supabase.auth.updateUser({ data: { signup_source: pending } }).catch(() => {})
 }
 
@@ -135,6 +139,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
+  }, [])
+
+  // Conta bloqueada com a sessão aberta (evento disparado pelo apiFetch quando o
+  // backend responde 403 account_blocked): desloga, marca o motivo pro LoginPage
+  // mostrar a mensagem e leva pra tela de login. Guarda contra loop.
+  useEffect(() => {
+    let handled = false
+    async function onBlocked() {
+      if (handled) return
+      handled = true
+      sessionStorage.setItem('arvo_account_blocked', '1')
+      await signOut().catch(() => {})
+      if (window.location.pathname !== '/login') window.location.assign('/login')
+    }
+    window.addEventListener('arvo:account-blocked', onBlocked)
+    return () => window.removeEventListener('arvo:account-blocked', onBlocked)
   }, [])
 
   async function signIn(email: string, password: string) {

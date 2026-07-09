@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useUpgrade, type GateTier } from '../../contexts/UpgradeContext'
 import UpgradeArt from './UpgradeArt'
-import { TierGlyph } from './TierBadge'
+import TierBadge, { TierGlyph } from './TierBadge'
 
 // Painel bloqueado premium mostrado NO LUGAR da página gated (o children nunca
 // monta — a página real nunca fica utilizável por trás). Segue o tema do app:
@@ -21,7 +21,6 @@ export default function GatedEmptyState({ gate, requiredTier = 'plus' }: { gate:
   const { registerInterest, interestedGates } = useUpgrade()
 
   const title = s.titles?.[gate] ?? (s.lockedTitle ?? 'Uma parte do Arvo que ainda não é sua')
-  const eyebrow = requiredTier === 'pro' ? (s.tierEyebrowPro ?? 'Arvo Pro') : (s.tierEyebrowPlus ?? 'Arvo Plus')
 
   // Botões partilham este layout: flex + center pra o texto ficar verticalmente
   // centrado (o bug do dono era texto desalinhado no botão).
@@ -56,11 +55,14 @@ export default function GatedEmptyState({ gate, requiredTier = 'plus' }: { gate:
               clara do tema. */}
           <UpgradeArt
             tier={requiredTier}
-            eyebrow={eyebrow}
             showWordmark={false}
             photoOpacity={onDark ? 0.5 : 0.92}
             style={onDark ? { position: 'absolute', inset: 0 } : { height: 132 }}
           />
+          {/* Tag do tier no canto superior direito do card (padrão Finary). */}
+          <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 2 }}>
+            <TierBadge tier={requiredTier} label={requiredTier === 'pro' ? 'Arvo Pro' : 'Arvo Plus'} onDark />
+          </div>
           <div
             style={{
               position: 'relative',

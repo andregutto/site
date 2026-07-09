@@ -58,6 +58,11 @@ export const QUOTA_DEFAULTS = {
   split_expenses_per_day: { limits: { free: 5, plus: null, pro: null, beta: null }, period: 'day' },
   import_accounts:        { limits: { free: 0, plus: 3,    pro: null, beta: null }, period: 'live' },
   ai_categorize_month:    { limits: { free: 0, plus: 100,  pro: 1000, beta: null }, period: 'month' },
+  // "Fale com seu Arvo" (chat IA). Todos os tiers têm acesso ao widget — o que
+  // varia é a cota mensal de mensagens (custo real por mensagem: IA nunca é
+  // ilimitada em tier vendável). Free tem degustação deliberada (é O diferencial
+  // de aquisição: prova a qualidade, bate no limite). Beta ilimitado.
+  ai_chat_messages_month: { limits: { free: 10, plus: 300, pro: 1000, beta: null }, period: 'month' },
 } satisfies Record<string, { limits: Record<Tier, number | null>, period: 'live' | 'day' | 'month' }>
 
 export type QuotaKey = keyof typeof QUOTA_DEFAULTS

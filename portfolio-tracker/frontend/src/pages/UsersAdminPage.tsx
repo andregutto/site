@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { PageLoader } from '../components/ArvoLoader'
@@ -26,6 +27,7 @@ interface UserRow {
   signup_source: string | null
   tier: Tier
   is_admin: boolean
+  banned: boolean
 }
 
 const sectionTitle: React.CSSProperties = { fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }
@@ -35,6 +37,7 @@ export default function UsersAdminPage() {
   const { t } = useI18n()
   const tu = (t as any).admin?.users ?? {}
   const navigate = useNavigate()
+  const { user: me } = useAuth()
   const { resolvedTheme } = useTheme()
   const onDark = resolvedTheme === 'dark'
 
@@ -109,6 +112,23 @@ export default function UsersAdminPage() {
     }
   }
 
+  async function toggleBlock(u: UserRow) {
+    if (busy) return
+    const msg = u.banned
+      ? (tu.unblockConfirm ?? 'Desbloquear {name}?')
+      : (tu.blockConfirm ?? 'Bloquear {name}? Essa pessoa não conseguirá mais entrar até ser desbloqueada.')
+    if (!confirm(msg.replace('{name}', u.name))) return
+    setBusy(u.id)
+    try {
+      await apiFetch(`/entitlements/admin/users/${u.id}/${u.banned ? 'unblock' : 'block'}`, { method: 'POST' })
+      setUsers(us => us.map(x => x.id === u.id ? { ...x, banned: !u.banned } : x))
+    } catch (err: any) {
+      alert(err?.message ?? tu.saveError ?? 'Erro')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   if (loading) return <PageLoader />
   if (forbidden) { navigate('/dashboard'); return null }
 
@@ -137,7 +157,7 @@ export default function UsersAdminPage() {
           <div
             key={u.id}
             className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3"
-            style={{ padding: '12px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}
+            style={{ padding: '12px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', opacity: u.banned ? 0.55 : 1 }}
           >
             {/* Identidade */}
             <div className="flex items-center gap-3 min-w-0 sm:flex-1">
@@ -146,6 +166,11 @@ export default function UsersAdminPage() {
                 <div className="flex items-center gap-1.5">
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
                   {u.is_admin && <img src="/brand/logo/arvo-symbol-gold.svg" width="11" height="11" alt={tu.adminBadge ?? 'Admin'} title={tu.adminBadge ?? 'Admin'} style={{ flexShrink: 0 }} />}
+                  {u.banned && (
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-red)', border: '1px solid var(--arvo-red)', borderRadius: 999, padding: '1px 7px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {tu.blockedBadge ?? 'Bloqueado'}
+                    </span>
+                  )}
                 </div>
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {u.username ? `@${u.username}` : ''}{u.username && u.email ? ' · ' : ''}{u.email ?? ''}
@@ -192,6 +217,21 @@ export default function UsersAdminPage() {
               >
                 {u.is_admin ? (tu.demote ?? 'Remover admin') : (tu.promote ?? 'Tornar admin')}
               </button>
+              {!u.is_admin && u.id !== me?.id && (
+                <button
+                  onClick={() => toggleBlock(u)}
+                  disabled={busy === u.id}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap',
+                    border: `1px solid ${u.banned ? 'var(--arvo-border)' : 'var(--arvo-red)'}`,
+                    background: 'none',
+                    color: u.banned ? 'var(--arvo-fg-soft)' : 'var(--arvo-red)',
+                    opacity: busy === u.id ? 0.5 : 1,
+                  }}
+                >
+                  {u.banned ? (tu.unblock ?? 'Desbloquear') : (tu.block ?? 'Bloquear')}
+                </button>
+              )}
             </div>
           </div>
         ))}

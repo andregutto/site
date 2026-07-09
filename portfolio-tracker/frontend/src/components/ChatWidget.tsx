@@ -2,12 +2,16 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import { apiFetch } from '../lib/api'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   loading?: boolean
+  // Quando a cota mensal de mensagens (ai_chat_messages_month) estoura, o Arvo
+  // responde com uma mensagem elegante + CTA pro Plus em vez de erro técnico.
+  upgrade?: boolean
 }
 
 interface ChatSession {
@@ -50,6 +54,7 @@ interface ChatWidgetProps {
 
 export default function ChatWidget({ visible = true, onDismiss, forceOpen, onForceOpenConsumed }: ChatWidgetProps) {
   const { t, locale } = useI18n()
+  const { openUpgrade } = useUpgrade()
   const location = useLocation()
   const [open, setOpen]         = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -166,6 +171,21 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
           session_id: currentSessionId,
         }),
       })
+
+      // Cota mensal esgotada (ai_chat_messages_month) → 403 upgrade_required.
+      // Em vez de erro técnico, o Arvo mesmo avisa e oferece o Plus, dentro do
+      // chat. O histórico segue legível; só o envio fica bloqueado até o upgrade.
+      if (res.status === 403) {
+        const body = await res.json().catch(() => null) as { error?: string } | null
+        if (body?.error === 'upgrade_required') {
+          setMessages(prev => {
+            const next = [...prev]
+            next[next.length - 1] = { role: 'assistant', content: t.chat.limitReached, loading: false, upgrade: true }
+            return next
+          })
+          return
+        }
+      }
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
 
@@ -480,7 +500,21 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
                               <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#D63B2F', animationDelay: '320ms' }} />
                             </span>
                           ) : m.role === 'assistant' ? (
-                            renderText(m.content)
+                            <>
+                              {renderText(m.content)}
+                              {m.upgrade && (
+                                <button
+                                  onClick={() => { setOpen(false); openUpgrade('ai_chat_messages_month', 'plus') }}
+                                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-semibold transition-all"
+                                  style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', fontFamily: 'var(--arvo-font-body)' }}
+                                >
+                                  {t.chat.limitCta}
+                                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M6 3l5 5-5 5" />
+                                  </svg>
+                                </button>
+                              )}
+                            </>
                           ) : (
                             m.content
                           )}

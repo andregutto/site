@@ -78,6 +78,22 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Se o servidor negar algo que o contexto achava liberado (tier mudou no
+  // meio da sessão), relê os acessos — o GateGuard então troca a página vazia
+  // pelo painel de bloqueio sozinho. Debounce de 5s evita tempestade quando
+  // várias chamadas da mesma página falham juntas.
+  const lastStaleRefetch = useRef(0)
+  useEffect(() => {
+    const onUpgradeRequired = () => {
+      const now = Date.now()
+      if (now - lastStaleRefetch.current < 5000) return
+      lastStaleRefetch.current = now
+      refetch()
+    }
+    window.addEventListener('arvo:upgrade-required', onUpgradeRequired)
+    return () => window.removeEventListener('arvo:upgrade-required', onUpgradeRequired)
+  }, [refetch])
+
   useEffect(() => {
     if (fetchedRef.current) return
     fetchedRef.current = true

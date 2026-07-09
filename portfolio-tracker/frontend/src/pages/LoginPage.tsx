@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
@@ -80,6 +80,15 @@ export default function LoginPage() {
   const [birthdate,  setBirthdate]  = useState('')
   const [currency,   setCurrency]   = useState<Currency>('BRL')
 
+  // Sessão viva cortada por bloqueio (AuthContext desloga e seta a flag): mostra
+  // a mensagem de conta bloqueada ao cair no /login.
+  useEffect(() => {
+    if (sessionStorage.getItem('arvo_account_blocked')) {
+      sessionStorage.removeItem('arvo_account_blocked')
+      setError(l.errBlocked)
+    }
+  }, [l.errBlocked])
+
   function resetExtras() {
     setFirstName(''); setLastName(''); setCountry('')
     setTaxCountry(''); setBirthdate(''); setCurrency('BRL')
@@ -154,7 +163,9 @@ export default function LoginPage() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
-      if (/email not confirmed/i.test(msg))            setError(l.errEmailNotConfirmed)
+      const code = (err as { code?: string })?.code ?? ''
+      if (/user.?banned|banned/i.test(msg) || code === 'user_banned') setError(l.errBlocked)
+      else if (/email not confirmed/i.test(msg))            setError(l.errEmailNotConfirmed)
       else if (/invalid login credentials/i.test(msg)) setError(l.errInvalidCredentials)
       else if (/too many requests|rate limit/i.test(msg)) setError(l.errTooManyRequests)
       else setError(msg || 'Erro desconhecido')

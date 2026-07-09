@@ -33,11 +33,19 @@ const QUOTA_KEYS = Object.keys(QUOTA_DEFAULTS) as QuotaKey[]
 function isGateKey(k: string): k is GateKey { return (GATE_KEYS as string[]).includes(k) }
 function isQuotaKey(k: string): k is QuotaKey { return (QUOTA_KEYS as string[]).includes(k) }
 
+// GoTrue expõe `banned_until` como ISO (ou ausente). Um usuário está de fato
+// bloqueado apenas se a data for no futuro — bans expirados não contam.
+export function isBannedUntil(bannedUntil: string | null | undefined): boolean {
+  if (!bannedUntil) return false
+  const t = Date.parse(bannedUntil)
+  return Number.isFinite(t) && t > Date.now()
+}
+
 // Contagem "live" das quotas que a UI mostra ("X de Y usados"). trips_own e
 // import_accounts contam linhas existentes; split/ai vêm de entitlement_usage
 // no período corrente.
 async function currentUsage(userId: string): Promise<Record<QuotaKey, number>> {
-  const [tripsOwn, importAccounts, splitDay, aiMonth] = await Promise.all([
+  const [tripsOwn, importAccounts, splitDay, aiMonth, aiChatMonth] = await Promise.all([
     supabaseAdmin.from('voyage_trips').select('id', { count: 'exact', head: true }).eq('user_id', userId)
       .then(r => r.count ?? 0),
     (async () => {
@@ -49,12 +57,14 @@ async function currentUsage(userId: string): Promise<Record<QuotaKey, number>> {
     })(),
     getUsage(userId, 'split_expenses_per_day', usagePeriod('day')),
     getUsage(userId, 'ai_categorize_month', usagePeriod('month')),
+    getUsage(userId, 'ai_chat_messages_month', usagePeriod('month')),
   ])
   return {
     trips_own: tripsOwn,
     import_accounts: importAccounts,
     split_expenses_per_day: splitDay,
     ai_categorize_month: aiMonth,
+    ai_chat_messages_month: aiChatMonth,
   }
 }
 
@@ -256,6 +266,9 @@ router.get('/admin/users', async (req: any, res: Response) => {
         signup_source: typeof meta.signup_source === 'string' ? meta.signup_source : null,
         tier: tierByUser.get(u.id) ?? 'free',
         is_admin: adminIds.has(u.id),
+        // banned_until vem do GoTrue como ISO (ou ausente). Considera bloqueado
+        // só se for uma data no futuro — bans expirados voltam a false.
+        banned: isBannedUntil((u as { banned_until?: string }).banned_until),
       }
     }))
 
@@ -329,6 +342,46 @@ router.post('/admin/users/:id/demote', async (req: any, res: Response) => {
     res.json({ ok: true })
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? 'Erro ao rebaixar admin' })
+  }
+})
+
+// ── POST /api/entitlements/admin/users/:id/block | /unblock ──────────────────
+// Bloqueio de conta via GoTrue ban (ban_duration). Bloqueado = não consegue
+// logar (o signInWithPassword retorna erro de banido) e, se já estava logado,
+// é cortado na próxima request pelo requireAuth (403 account_blocked).
+// GUARDAS: não pode bloquear a si mesmo nem outro admin.
+const BAN_DURATION = '876000h' // ~100 anos
+
+router.post('/admin/users/:id/block', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  if (targetId === adminId) {
+    res.status(400).json({ error: 'Você não pode bloquear a si mesmo' }); return
+  }
+  try {
+    const adminIds = await getAdminIds()
+    if (adminIds.has(targetId)) {
+      res.status(400).json({ error: 'Não é possível bloquear um admin' }); return
+    }
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(targetId, { ban_duration: BAN_DURATION })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao bloquear usuário' })
+  }
+})
+
+router.post('/admin/users/:id/unblock', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  try {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(targetId, { ban_duration: 'none' })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao desbloquear usuário' })
   }
 })
 

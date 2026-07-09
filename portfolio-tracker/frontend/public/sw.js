@@ -2,7 +2,7 @@
 // abertas (controllerchange em main.tsx) só dispara quando os BYTES deste
 // arquivo mudam — sem bump, sessões antigas (Safari/PWA suspensos) ficam
 // presas num bundle velho indefinidamente, mesmo com vários deploys novos.
-const CACHE = 'arvo-v45'
+const CACHE = 'arvo-v46'
 const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {

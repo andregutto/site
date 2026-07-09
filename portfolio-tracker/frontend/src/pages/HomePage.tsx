@@ -5,6 +5,9 @@ import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useUpgrade } from '../contexts/UpgradeContext'
+import { useTheme } from '../contexts/ThemeContext'
+import TierBadge from '../components/upgrade/TierBadge'
+import { TIER_IDENTITY } from '../components/upgrade/tierMeta'
 import { PageLoader } from '../components/ArvoLoader'
 import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
@@ -145,7 +148,8 @@ export default function HomePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { fmt, hideValues, fxRates } = useCurrency()
-  const { entitlements } = useUpgrade()
+  const { entitlements, openUpgrade } = useUpgrade()
+  const { resolvedTheme } = useTheme()
   // Free reorganiza a Hoje em torno do que ele PODE usar (dividir com amigos,
   // viagens, gastos do mês, recursos) — sem Patrimônio (gate 'patrimonio' = plus)
   // e sem teaser de comunidade (gate = plus). Plus/Pro/beta mantêm o bento atual.
@@ -487,6 +491,57 @@ export default function HomePage() {
               {tripCTA}
               {freeResource?.node}
             </div>
+          </div>
+
+          {/* Teasers das vertentes Plus (redesenhados 2026-07-09): mini-cards
+              PREMIUM com a mesma anatomia dos cards reais da Hoje (bloco de foto
+              do tier à esquerda, dark-treated, + conteúdo). Convidam em vez de
+              parecer vazio: TierGlyph + título, uma linha de copy, pill dourada
+              "Conhecer →" e um cadeado discreto no canto. Clique abre o
+              UpgradeModal do gate. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {([
+              // requiredTier dita a foto, o badge e o rótulo do CTA ("Conhecer o Plus/Pro").
+              // Patrimônio é gate PLUS: nada de identidade Pro aqui (feedback 2026-07-09).
+              { gate: 'patrimonio', requiredTier: 'plus' as 'plus' | 'pro', photoTier: 'plus' as const, title: th.teaserWealthTitle ?? 'Patrimônio', body: th.teaserWealthBody ?? 'Acompanhe investimentos, performance e a evolução do que é seu.' },
+              { gate: 'community', requiredTier: 'plus' as const, photoTier: 'free' as const, title: th.teaserCommunityTitle ?? 'Comunidade', body: th.teaserCommunityBody ?? 'Os membros trocam roteiros, finanças e vida fora do Brasil.' },
+            ] as const).map(tz => (
+              <button
+                key={tz.gate}
+                onClick={() => openUpgrade(tz.gate, tz.requiredTier)}
+                style={{ ...card, overflow: 'hidden', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'stretch', padding: 0, width: '100%', border: `1px solid ${resolvedTheme === 'dark' ? 'rgba(200,184,154,0.34)' : 'var(--arvo-gold-line)'}` }}
+              >
+                {/* Bloco de imagem: foto do tier dark-treated (preto sólido por
+                    baixo pra o fallback ficar elegante se a foto faltar). */}
+                <div style={{
+                  width: 96, flexShrink: 0, position: 'relative', overflow: 'hidden',
+                  background: '#0D0D0D',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <img
+                    src={TIER_IDENTITY[tz.photoTier].photo}
+                    alt=""
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: TIER_IDENTITY[tz.photoTier].photoPosition ?? 'center', opacity: 0.92 }}
+                  />
+                  {/* Foto limpa (glifo em cima do broto ficava estranho): só um véu
+                      leve de baixo pra amarrar com o corpo do card. */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(13,13,13,0) 0%, rgba(13,13,13,0.22) 100%)' }} />
+                </div>
+
+                {/* Conteúdo */}
+                <div style={{ flex: 1, minWidth: 0, padding: '15px 16px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tz.title}</p>
+                    <TierBadge tier={tz.requiredTier} label={tz.requiredTier === 'pro' ? 'Arvo Pro' : 'Arvo Plus'} onDark={resolvedTheme === 'dark'} size={11} />
+                  </div>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginTop: 6, lineHeight: 1.45, flex: 1 }}>{tz.body}</p>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', gap: 6, marginTop: 12, padding: '7px 14px', borderRadius: 999, background: 'var(--arvo-gold-tint)', border: '1px solid var(--arvo-gold-line)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--arvo-gold-text)' }}>
+                    {((t as any).upgrade?.headerPill ?? 'Conhecer o {tier}').replace('{tier}', tz.requiredTier === 'pro' ? 'Pro' : 'Plus')}
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </span>
+                </div>
+              </button>
+            ))}
           </div>
 
           {setup.visible && <SetupCard setup={setup} onNavigate={navigate} />}

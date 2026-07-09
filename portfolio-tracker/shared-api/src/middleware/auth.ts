@@ -21,6 +21,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: 'Token inválido ou expirado' })
       return
     }
+    // Corte de sessão viva: getUser já traz `banned_until`, então bloqueamos
+    // sem round-trip extra. Uma conta banida ainda tem JWT válido até expirar —
+    // aqui garantimos que qualquer request dela pare imediatamente.
+    const bannedUntil = (user as { banned_until?: string }).banned_until
+    if (bannedUntil && Date.parse(bannedUntil) > Date.now()) {
+      res.status(403).json({ error: 'account_blocked' })
+      return
+    }
     const validLocales = ['pt', 'en', 'fr']
     const headerLocale = req.headers['x-locale'] as string | undefined
     const meta = user.user_metadata as Record<string, string> | undefined
