@@ -470,11 +470,23 @@ export default function AppLayout() {
             style={{ textDecoration: 'none' }}
             title={headerTier ? (headerTier === 'pro' ? 'Arvo Pro' : 'Arvo Plus') : undefined}
           >
-            {headerTier ? (
-              <TierGlyph tier={headerTier} size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
-            ) : (
-              <ArvoGlyphSolid size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
-            )}
+            {/* No mobile o glifo fica sozinho com o rótulo do plano e 22px lia
+                pequeno perto do avatar/ícones — sobe pra 27px; no desktop o
+                wordmark acompanha e 22px é a proporção certa. */}
+            <span className="sm:hidden" style={{ display: 'flex' }}>
+              {headerTier ? (
+                <TierGlyph tier={headerTier} size={27} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+              ) : (
+                <ArvoGlyphSolid size={27} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+              )}
+            </span>
+            <span className="hidden sm:flex">
+              {headerTier ? (
+                <TierGlyph tier={headerTier} size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+              ) : (
+                <ArvoGlyphSolid size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+              )}
+            </span>
             {/* Wordmark + plano alinhados pela BASELINE (items-center deixava o
                 'pro' flutuando); o espaçamento entre eles vem do tracking final
                 do wordmark, sem textIndent no rótulo do plano. */}
@@ -484,7 +496,7 @@ export default function AppLayout() {
             <span className="inline-flex" style={{ alignItems: 'baseline' }}>
               <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
               {headerTier && (
-                <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.24em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1 }}>
+                <span className="text-[14px] sm:text-[12px]" style={{ fontFamily: "var(--arvo-font-display)", letterSpacing: '0.24em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1 }}>
                   {headerTier === 'pro' ? 'pro' : 'plus'}
                 </span>
               )}
