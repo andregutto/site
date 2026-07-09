@@ -6,9 +6,12 @@ import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../s
 import { getCurrentPrice, Asset, FITranche } from '../services/priceService.js'
 import { getYf } from '../services/yahooService.js'
 import { cache, TTL } from '../lib/cache.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 
 const router = Router()
+// Performance faz parte do Patrimônio — gate 'plus' (docs/TIERS_PLAN.md).
+router.use(requireAuth, requireGateMw('patrimonio'))
 
 // getFxRate(currency) only depends on the currency pair (it always returns AwesomeAPI's "current"
 // rate via the shared TTL cache — see lib/fx.ts), never on the historical date being valued. So

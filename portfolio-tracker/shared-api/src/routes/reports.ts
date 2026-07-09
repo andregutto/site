@@ -2,8 +2,12 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 const router = Router()
+// Relatórios fiscais são parte do Patrimônio — gate 'plus' no router inteiro.
+// A França (2DC/2TR) leva um gate 'pro' adicional por cima, na própria rota.
+router.use(requireAuth, requireGateMw('patrimonio'))
 
 // ─── France Tax Report ────────────────────────────────────────────────────────
 
@@ -382,7 +386,7 @@ function getYearEndRate(rateMap: Record<string, number>, year: number): number {
 }
 
 // GET /api/reports/france/:year
-router.get('/france/:year', requireAuth, async (req, res: Response) => {
+router.get('/france/:year', requireAuth, requireGateMw('ir_france'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const year = parseInt(req.params.year, 10)
   if (isNaN(year) || year < 2020 || year > 2100) {

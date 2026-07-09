@@ -7,8 +7,8 @@ import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import ProfileLink from '../../components/ProfileLink'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
-import MessagingPaywall from './MessagingPaywall'
 import PullToRefresh from '../../components/PullToRefresh'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 
 const GOLD = '#C8B89A'
 const RED = '#D63B2F'
@@ -120,26 +120,31 @@ export default function MessagesPage() {
   const navigate = useNavigate()
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [premiumBlocked, setPremiumBlocked] = useState(false)
+  const [gated, setGated] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const friends = useActiveFriends()
+  const { handleUpgradeError, openUpgrade } = useUpgrade()
 
   function load(archived: boolean) {
     setLoading(true)
     return apiFetch<{ conversations: ConversationSummary[] }>(`/messages/conversations${archived ? '?archived=true' : ''}`)
-      .then(res => setConversations(res.conversations))
-      .catch(err => { if (err?.message === 'premium_required') setPremiumBlocked(true) })
+      .then(res => { setConversations(res.conversations); setGated(false) })
+      .catch(err => { if (handleUpgradeError(err)) setGated(true) })
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { load(showArchived) }, [showArchived])
 
   async function startConversation(peerUserId: string) {
-    const res = await apiFetch<{ conversation: { id: number } }>('/messages/conversations', {
-      method: 'POST', body: JSON.stringify({ peer_user_id: peerUserId }),
-    })
-    navigate(`/messages/${res.conversation.id}`)
+    try {
+      const res = await apiFetch<{ conversation: { id: number } }>('/messages/conversations', {
+        method: 'POST', body: JSON.stringify({ peer_user_id: peerUserId }),
+      })
+      navigate(`/messages/${res.conversation.id}`)
+    } catch (err) {
+      if (!handleUpgradeError(err)) throw err
+    }
   }
 
   function archiveConversation(id: number) {
@@ -156,8 +161,6 @@ export default function MessagesPage() {
     setConversations(prev => prev.map(c => c.id === id ? { ...c, unread_count: Math.max(1, c.unread_count) } : c))
     apiFetch(`/messages/conversations/${id}/unread`, { method: 'POST' }).catch(() => load(showArchived))
   }
-
-  if (premiumBlocked) return <MessagingPaywall />
 
   return (
     <PullToRefresh onRefresh={() => load(showArchived)}>
@@ -217,7 +220,19 @@ export default function MessagesPage() {
         </div>
       )}
 
-      {loading ? (
+      {gated ? (
+        <div className="flex flex-col items-center justify-center gap-3" style={{ padding: '56px 24px', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--arvo-gold-text)' }}>
+            {tm.gatedTitle ?? 'As Mensagens fazem parte do Arvo Plus.'}
+          </p>
+          <button
+            onClick={() => openUpgrade('messaging', 'plus')}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '11px 22px', borderRadius: 10, background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', border: 'none', cursor: 'pointer' }}
+          >
+            {tm.gatedCta ?? 'Ver o que muda'}
+          </button>
+        </div>
+      ) : loading ? (
         <PageLoader />
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2" style={{ padding: '56px 0' }}>

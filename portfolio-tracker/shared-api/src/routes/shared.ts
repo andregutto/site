@@ -4,6 +4,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { revertSharedCategory, getOrCreateDefaultGroupMoment } from './finances.js'
 import { canAutoAccept } from './people.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 const router = Router()
 // NOTE: GET /invite/:token is intentionally public (no requireAuth)
@@ -231,7 +232,9 @@ router.post('/groups/:id/default-moment', requireAuth, async (req, res: Response
 })
 
 // POST /api/shared/groups
-router.post('/groups', requireAuth, async (req, res: Response) => {
+// Criar grupo compartilhado é gate 'plus' (shared_groups_create). Participar/
+// aceitar convite (invite/accept) fica livre — quem divide nunca é bloqueado.
+router.post('/groups', requireAuth, requireGateMw('shared_groups_create'), async (req, res: Response) => {
   const userId = uid(req)
   const { name } = req.body as { name: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }

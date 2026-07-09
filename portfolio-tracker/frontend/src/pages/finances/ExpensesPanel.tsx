@@ -3,6 +3,7 @@ import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import Avatar from '../voyage/_shared/Avatar'
 import type { MomentMember } from './FinancesMomentsPage'
 
@@ -68,6 +69,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const { t } = useI18n()
   const { user } = useAuth()
   const { currency: displayCurrency, fxRates } = useCurrency()
+  const { handleUpgradeError } = useUpgrade()
   const [expenses, setExpenses] = useState<MomentExpense[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
   const [myCategories, setMyCategories] = useState<ExpenseCategory[]>([])
@@ -232,6 +234,9 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
       resetForm()
       await load()
     } catch (e) {
+      // Cota diária de despesas de divisão (free = 5/dia) → 403 upgrade_required
+      // com used/limit. Abre o modal em vez de mostrar erro genérico.
+      if (handleUpgradeError(e)) { setShowForm(false); return }
       setError(e instanceof Error ? e.message : t.finances.expenseFormIncomplete)
     } finally {
       setSaving(false)

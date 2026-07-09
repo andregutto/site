@@ -10,7 +10,7 @@ import Avatar from '../voyage/_shared/Avatar'
 import ProfileLink from '../../components/ProfileLink'
 import { linkifyText } from '../community/_shared/linkify'
 import { useMessagingContext } from '../../contexts/MessagingContext'
-import MessagingPaywall from './MessagingPaywall'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 
 const GOLD = '#C8B89A'
 const TYPING_IDLE_MS = 2500
@@ -50,11 +50,11 @@ export default function ConversationPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { refresh: refreshUnread, notifyRead } = useMessagingContext()
+  const { handleUpgradeError } = useUpgrade()
 
   const [conversation, setConversation] = useState<ConversationDetail | null>(null)
   const [messages, setMessages] = useState<DmMessage[]>([])
   const [loading, setLoading] = useState(true)
-  const [premiumBlocked, setPremiumBlocked] = useState(false)
   const [notFriendsAnymore, setNotFriendsAnymore] = useState(false)
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
@@ -89,8 +89,8 @@ export default function ConversationPage() {
         setHasMore(msgRes.messages.length === 50)
         markRead(id) // fire-and-forget — não bloqueia a tela aparecer
       } catch (err: any) {
-        if (err?.message === 'premium_required') setPremiumBlocked(true)
-        else navigate('/messages')
+        handleUpgradeError(err)
+        navigate('/messages')
       } finally {
         setLoading(false)
       }
@@ -98,7 +98,7 @@ export default function ConversationPage() {
     load()
 
     return () => { notifyRead(-1) }
-  }, [conversationId, navigate, markRead, notifyRead])
+  }, [conversationId, navigate, markRead, notifyRead, handleUpgradeError])
 
   // Realtime: novas mensagens (INSERT) e edições de estado (UPDATE, usado por
   // apagar-pra-todos) chegam direto via postgres_changes filtrado pela conversa —
@@ -182,7 +182,8 @@ export default function ConversationPage() {
       setMessages(prev => prev.map(m => m.id === optimistic.id ? res.message : m))
     } catch (err: any) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id))
-      if (err?.message && /amigos/i.test(err.message)) setNotFriendsAnymore(true)
+      if (handleUpgradeError(err)) { /* modal aberto */ }
+      else if (err?.message && /amigos/i.test(err.message)) setNotFriendsAnymore(true)
     } finally {
       setSending(false)
     }
@@ -211,7 +212,6 @@ export default function ConversationPage() {
     }
   }
 
-  if (premiumBlocked) return <MessagingPaywall />
   if (loading || !conversation) return <PageLoader />
 
   const groups: { label: string; items: DmMessage[] }[] = []

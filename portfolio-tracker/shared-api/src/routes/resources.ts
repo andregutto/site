@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { isAdmin, pickUtm, backfillSignupSource, slugifyLabel, type UtmFields } from '../lib/leads.js'
-import { TIER_RANK } from './community.js'
+import { TIER_RANK, type Tier } from '../lib/entitlements.js'
 
 // Recursos (lead magnets do canal): página pública /resources/:slug com
 // preview, mas download/conteúdo só depois de cadastro/login — mesmo espírito
@@ -33,7 +33,7 @@ export interface ResourceRow {
   content_md: string | null
   preview_image_url: string | null
   cover_image_position: string | null
-  visibility: 'free' | 'plus' | 'beta'
+  visibility: 'free' | 'plus' | 'pro' | 'beta'
   kit_tag: string | null
   is_published: boolean
   sort_order: number
@@ -41,10 +41,10 @@ export interface ResourceRow {
   updated_at: string
 }
 
-async function getUserTier(userId: string): Promise<string> {
+async function getUserTier(userId: string): Promise<Tier> {
   const { data } = await supabaseAdmin
     .from('community_members').select('tier').eq('user_id', userId).maybeSingle()
-  return data?.tier ?? 'free'
+  return (data?.tier ?? 'free') as Tier
 }
 
 // Nunca lança: perder um evento de métrica não pode derrubar o request.
@@ -326,7 +326,7 @@ router.post('/admin', requireAuth, async (req, res: Response) => {
     content_md:           content_md ?? null,
     preview_image_url:    preview_image_url ?? null,
     cover_image_position: cover_image_position ?? '50% 50%',
-    visibility:           ['plus', 'beta'].includes(visibility) ? visibility : 'free',
+    visibility:           ['plus', 'pro', 'beta'].includes(visibility) ? visibility : 'free',
     kit_tag:              kit_tag ?? null,
     is_published:         !!is_published,
     sort_order:           Number(sort_order) || 0,
@@ -348,7 +348,7 @@ router.patch('/admin/:id', requireAuth, async (req, res: Response) => {
   const patch: Record<string, unknown> = {}
   for (const key of allowed) if (key in (req.body ?? {})) patch[key] = req.body[key]
   if (typeof patch.slug === 'string' && !SLUG_RE.test(patch.slug)) { res.status(400).json({ error: 'Slug inválido' }); return }
-  if ('visibility' in patch && !['free', 'plus', 'beta'].includes(patch.visibility as string)) { res.status(400).json({ error: 'Visibilidade inválida' }); return }
+  if ('visibility' in patch && !['free', 'plus', 'pro', 'beta'].includes(patch.visibility as string)) { res.status(400).json({ error: 'Visibilidade inválida' }); return }
   if (!Object.keys(patch).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
   patch.updated_at = new Date().toISOString()
 

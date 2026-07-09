@@ -3,6 +3,8 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
 import { userDisplay, getFriendshipStatuses, type FriendshipStatus } from './people.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
+import { TIER_RANK as ENTITLEMENTS_TIER_RANK, getUserTier, type Tier } from '../lib/entitlements.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -24,11 +26,10 @@ async function isAdmin(userId: string): Promise<boolean> {
   return (await getAdminIds()).has(userId)
 }
 
-// Hierarquia de tiers do Arvo: beta ⊃ plus ⊃ free (campo único por usuário,
-// não dois eixos separados). beta vê tudo, inclusive não lançado; plus vê
-// tudo já lançado; free vê o padrão. Fonte única — reaproveitado por
-// messaging.ts (gate premium) e resources.ts (gate por recurso).
-export const TIER_RANK: Record<string, number> = { free: 0, plus: 1, beta: 2 }
+// Hierarquia de tiers do Arvo — fonte única em lib/entitlements.ts
+// (free < plus < pro < beta). Reexportado aqui por compat com importadores
+// antigos (resources.ts). NÃO duplicar: qualquer mudança de ranking vive lá.
+export const TIER_RANK = ENTITLEMENTS_TIER_RANK
 
 // Garante que o usuário tem uma linha em community_members (tier 'free' por
 // padrão) — chamado no primeiro acesso a qualquer endpoint da comunidade.
@@ -36,13 +37,11 @@ async function ensureMember(userId: string): Promise<void> {
   await ensureMemberTier(userId)
 }
 
-// Mesma garantia acima, mas retornando o tier — usado pelo gate premium de
-// messaging.ts (MESSAGING_TIER_REQUIRED) sem duplicar a lógica de upsert.
-export async function ensureMemberTier(userId: string): Promise<'free' | 'plus' | 'beta'> {
-  const { data } = await supabaseAdmin.from('community_members').select('tier').eq('user_id', userId).maybeSingle()
-  if (data) return data.tier as 'free' | 'plus' | 'beta'
-  await supabaseAdmin.from('community_members').insert({ user_id: userId, tier: 'free' })
-  return 'free'
+// Mesma garantia acima, mas retornando o tier — delega pra getUserTier de
+// entitlements.ts (mesma lógica de upsert 'free' no 1º acesso), pra não manter
+// duas implementações.
+export async function ensureMemberTier(userId: string): Promise<Tier> {
+  return getUserTier(userId)
 }
 
 export interface CommunityCategory {
@@ -330,7 +329,7 @@ router.get('/categories/:slug/topics', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/topics ───────────────────────────────────────────────
-router.post('/topics', async (req: any, res: any) => {
+router.post('/topics', requireGateMw('community_post'), async (req: any, res: any) => {
   const userId = uid(req)
   const { category_slug, title, body, linked_trip_id } = req.body as {
     category_slug: string; title: string; body: string; linked_trip_id?: number
@@ -471,7 +470,7 @@ router.get('/topics/:id', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/topics/:id/posts ─────────────────────────────────────
-router.post('/topics/:id/posts', async (req: any, res: any) => {
+router.post('/topics/:id/posts', requireGateMw('community_post'), async (req: any, res: any) => {
   const userId = uid(req)
   const topicId = Number(req.params.id)
   const { body } = req.body as { body: string }
@@ -572,7 +571,7 @@ router.delete('/posts/:id', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/posts/:id/like ───────────────────────────────────────
-router.post('/posts/:id/like', async (req: any, res: any) => {
+router.post('/posts/:id/like', requireGateMw('community_post'), async (req: any, res: any) => {
   const userId = uid(req)
   const postId = Number(req.params.id)
   if (!Number.isFinite(postId)) { res.status(400).json({ error: 'invalid post id' }); return }
@@ -1002,7 +1001,7 @@ router.post('/admin/members/:id/demote', async (req: any, res: any) => {
 })
 
 // ── POST /api/community/admin/members/:id/tier ───────────────────────────────
-// Tier comercial do Arvo (free < plus < beta), diferente de community_admins
+// Tier comercial do Arvo (free < plus < pro < beta), diferente de community_admins
 // (papel de admin do workspace, mexido por promote/demote acima). Upsert
 // porque a linha em community_members pode não existir pra todo usuário.
 router.post('/admin/members/:id/tier', async (req: any, res: any) => {
@@ -1010,7 +1009,7 @@ router.post('/admin/members/:id/tier', async (req: any, res: any) => {
   if (!adminId) return
   const targetId = String(req.params.id)
   const tier = String(req.body?.tier ?? '')
-  if (!['free', 'plus', 'beta'].includes(tier)) { res.status(400).json({ error: 'tier inválido' }); return }
+  if (!['free', 'plus', 'pro', 'beta'].includes(tier)) { res.status(400).json({ error: 'tier inválido' }); return }
   try {
     await supabaseAdmin.from('community_members').upsert({ user_id: targetId, tier }, { onConflict: 'user_id' })
     res.json({ ok: true })

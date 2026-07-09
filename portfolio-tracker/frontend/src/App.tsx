@@ -83,6 +83,9 @@ import ResourcesPage from './pages/ResourcesPage'
 import ResourcePublicPage from './pages/ResourcePublicPage'
 import ResourceDetailPage from './pages/ResourceDetailPage'
 import AdminPage from './pages/AdminPage'
+import PlansPage from './pages/PlansPage'
+import { UpgradeProvider } from './contexts/UpgradeContext'
+import GateGuard from './components/upgrade/GateGuard'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -136,7 +139,7 @@ function ProtectedRoutes() {
 
   if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
-  return <AchievementProvider><NotificationsProvider><MessagingProvider><AppLayout /></MessagingProvider></NotificationsProvider></AchievementProvider>
+  return <UpgradeProvider><AchievementProvider><NotificationsProvider><MessagingProvider><AppLayout /></MessagingProvider></NotificationsProvider></AchievementProvider></UpgradeProvider>
 }
 
 function AppRoutes() {
@@ -168,37 +171,41 @@ function AppRoutes() {
           protegidas de /voyage, abaixo). */}
       {!user && <Route path="/voyage/shared/:tripId" element={<SharedTripGatePage />} />}
       <Route element={<ProtectedRoutes />}>
-        <Route path="/dashboard"      element={<DashboardPage />} />
-        <Route path="/assets"         element={<AssetsPage />} />
-        <Route path="/performance"    element={<PerformancePage />} />
-        <Route path="/assets/:id"     element={<AssetDetailPage />} />
+        {/* Patrimônio (gate 'patrimonio', Plus) — a seção inteira exceto
+            instituições/contas, que são compartilhadas com Finanças e ficam
+            fora do gate. Reports (IR França) tem gate próprio 'ir_france' (Pro). */}
+        <Route path="/dashboard"      element={<GateGuard gate="patrimonio"><DashboardPage /></GateGuard>} />
+        <Route path="/assets"         element={<GateGuard gate="patrimonio"><AssetsPage /></GateGuard>} />
+        <Route path="/performance"    element={<GateGuard gate="patrimonio"><PerformancePage /></GateGuard>} />
+        <Route path="/assets/:id"     element={<GateGuard gate="patrimonio"><AssetDetailPage /></GateGuard>} />
         <Route path="/profile"        element={<ProfilePage />} />
         <Route path="/institutions"          element={<InstitutionPage />} />
         <Route path="/institutions/profiles" element={<InstitutionsPage />} />
         <Route path="/import/b3"      element={<ImportB3Page />} />
         <Route path="/portfolio"      element={<PortfolioLayout />}>
-          <Route index                element={<ContributionsPage />} />
-          <Route path="rebalance"     element={<RebalancePage />} />
+          <Route index                element={<GateGuard gate="patrimonio"><ContributionsPage /></GateGuard>} />
+          <Route path="rebalance"     element={<GateGuard gate="patrimonio"><RebalancePage /></GateGuard>} />
           <Route path="institutions"  element={<Navigate to="/institutions" replace />} />
-          <Route path="classes"       element={<ClassesPage />} />
-          <Route path="reports"       element={<ReportsPage />} />
+          <Route path="classes"       element={<GateGuard gate="patrimonio"><ClassesPage /></GateGuard>} />
+          <Route path="reports"       element={<GateGuard gate="ir_france" requiredTier="pro"><ReportsPage /></GateGuard>} />
           <Route path="indices"       element={<IndicesPage />} />
           <Route path="indices/:code" element={<IndexDetailPage />} />
         </Route>
-        <Route path="/dividends"      element={<DividendsPage />} />
+        <Route path="/dividends"      element={<GateGuard gate="patrimonio"><DividendsPage /></GateGuard>} />
         <Route path="/favorites"      element={<Navigate to="/assets?view=favorites" replace />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/home"           element={<HomePage />} />
         <Route path="/people"         element={<PeoplePage />} />
         <Route path="/admin"           element={<AdminPage />} />
+        <Route path="/planos"          element={<PlansPage />} />
         <Route path="/resources"       element={<ResourcesPage />} />
         <Route path="/resources/admin" element={<Navigate to="/admin?tab=resources" replace />} />
         <Route path="/resources/:slug" element={<ResourceDetailPage />} />
         <Route path="/messages"       element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<ConversationPage />} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
-        <Route path="/diversification" element={<DiversificationPage />} />
+        <Route path="/diversification" element={<GateGuard gate="diversification" requiredTier="pro"><DiversificationPage /></GateGuard>} />
         <Route path="/voyage"          element={<VoyageLayout />}>
           <Route index                element={<VoyageTripsPage />} />
           <Route path="shared/:tripId" element={<SharedTripViewPage />} />
@@ -219,14 +226,14 @@ function AppRoutes() {
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />
           <Route path="transactions"  element={<FinancesTransactionsPage />} />
-          <Route path="budget"        element={<FinancesBudgetPage />} />
+          <Route path="budget"        element={<GateGuard gate="budget"><FinancesBudgetPage /></GateGuard>} />
           <Route path="moments"       element={<FinancesMomentsPage />} />
           <Route path="moments/:id"   element={<MomentDetailPage />} />
-          <Route path="freedom"       element={<FinancesFreedomPage />} />
+          <Route path="freedom"       element={<GateGuard gate="freedom_plans"><FinancesFreedomPage /></GateGuard>} />
           {/* Grupo criação/edição/membros migrou pra Amigos; categorias compartilhadas
               se editam direto no Planejamento (botão "Compartilhar" na categoria). */}
           <Route path="shared"         element={<Navigate to="/people" replace />} />
-          <Route path="insights"      element={<FinancesInsightsPage />} />
+          <Route path="insights"      element={<GateGuard gate="insights" requiredTier="pro"><FinancesInsightsPage /></GateGuard>} />
           <Route path="subscriptions" element={<Navigate to="/finances/insights" replace />} />
           <Route path="fees"          element={<Navigate to="/finances/insights" replace />} />
           <Route path="accounts"      element={<Navigate to="/institutions" replace />} />

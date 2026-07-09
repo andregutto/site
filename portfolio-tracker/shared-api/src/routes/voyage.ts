@@ -5,11 +5,23 @@ import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
 import { canAutoAccept } from './people.js'
 import { isAdmin, pickUtm, backfillSignupSource, slugifyLabel, type UtmFields } from '../lib/leads.js'
+import { checkQuota } from '../lib/entitlements.js'
 
 const router = Router()
 
 function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
+}
+
+// Cota trips_own (period 'live'): conta viagens PRÓPRIAS (user_id = userId).
+// Viagens onde é membro convidado não contam. Usado por POST /trips e
+// POST /from-moment (ambos criam um voyage_trips do próprio usuário).
+async function checkOwnTripsQuota(userId: string): Promise<{ ok: true } | { ok: false; status: number; payload: any }> {
+  const { count } = await supabaseAdmin
+    .from('voyage_trips').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+  const quota = await checkQuota(userId, 'trips_own', count ?? 0)
+  if (!quota.ok) return { ok: false, status: 403, payload: quota.payload }
+  return { ok: true }
 }
 
 async function userDisplay(userId: string): Promise<{ name: string; email: string; avatar_url?: string }> {
@@ -613,6 +625,9 @@ router.post('/trips', requireAuth, async (req, res: Response) => {
 
   if (!title?.trim()) { res.status(400).json({ error: 'title required' }); return }
 
+  const quota = await checkOwnTripsQuota(userId)
+  if (!quota.ok) { res.status(quota.status).json(quota.payload); return }
+
   // Compat: campo único destination/country mostrado em listas/cards reflete
   // o primeiro destino quando a viagem já nasce com vários (Eurotrip).
   const firstDest = destinations?.[0]
@@ -879,6 +894,11 @@ router.post('/from-moment/:momentId', requireAuth, async (req, res: Response) =>
     res.json({ trip: existingTrip, already_existed: true })
     return
   }
+
+  // Só consome cota quando de fato cria uma viagem nova (o retorno acima reusa
+  // a viagem já vinculada, sem criar nada).
+  const quota = await checkOwnTripsQuota(userId)
+  if (!quota.ok) { res.status(quota.status).json(quota.payload); return }
 
   // Cria nova viagem com dados do momento
   const { data: trip, error } = await supabaseAdmin

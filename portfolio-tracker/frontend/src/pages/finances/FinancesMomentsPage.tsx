@@ -6,6 +6,7 @@ import { normalizeStorageUrl } from '../../lib/storageUrl'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import { Icon } from '../../components/icons'
 import { SearchBox, FormSection, DateRangePicker, Switch } from '../../components/ui'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
@@ -970,6 +971,14 @@ export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { hasGate, openUpgrade, handleUpgradeError } = useUpgrade()
+
+  // Criar Momento nomeado do zero é gated (Plus). Sabemos o tier pelo context,
+  // então abrimos o modal direto no clique — sem esperar o 403 do backend.
+  function startCreate() {
+    if (!hasGate('moments_create')) { openUpgrade('moments_create', 'plus'); return }
+    setEditing(null); setShowForm(true)
+  }
 
   const [moments,     setMoments]     = useState<Moment[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -1036,6 +1045,10 @@ export default function FinancesMomentsPage() {
       setEditing(null)
       setSelectedTripId(null)
       await load()
+    } catch (e) {
+      // Rede de segurança: se o gate mudou entre abrir o form e salvar, o backend
+      // responde 403 upgrade_required — abre o modal em vez de estourar.
+      if (!handleUpgradeError(e)) throw e
     } finally {
       setSaving(false)
     }
@@ -1099,7 +1112,7 @@ export default function FinancesMomentsPage() {
       <div className="flex items-center justify-between gap-3">
         <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.momentsTitle}</h1>
         <button
-          onClick={() => { setEditing(null); setShowForm(true) }}
+          onClick={startCreate}
           title={t.finances.newMoment}
           className="w-8 h-8 flex items-center justify-center bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-lg leading-none rounded-full hover:opacity-80 transition-opacity shrink-0"
         >
@@ -1157,7 +1170,7 @@ export default function FinancesMomentsPage() {
           <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.momentEmptyTitle}</p>
           <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.momentEmptyBody}</p>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={startCreate}
             className="px-5 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-xl hover:opacity-80 transition-opacity"
           >
             {t.finances.momentCreateFirst}

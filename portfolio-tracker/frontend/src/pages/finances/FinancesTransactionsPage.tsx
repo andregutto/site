@@ -5,6 +5,7 @@ import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import { Icon } from '../../components/icons'
 import { DatePicker, DateRangePicker } from '../../components/ui'
 import { resolveMomentIcon } from '../../lib/momentIcons'
@@ -98,6 +99,7 @@ export default function FinancesTransactionsPage() {
   const { t, locale } = useI18n()
   const { user } = useAuth()
   const { hideValues } = useCurrency()
+  const { handleUpgradeError } = useUpgrade()
   const fmt = (n: number, currency = 'EUR') => hideValues ? '•••' : _fmt(n, currency)
   const [searchParams] = useSearchParams()
   const today = new Date()
@@ -723,7 +725,9 @@ export default function FinancesTransactionsPage() {
                 const catId = aiResult.map[String(idx)]
                 if (catId !== undefined) descToCatId.set(item.description, catId)
               })
-            } catch {
+            } catch (e) {
+              // Categorização IA é gated (ai_categorize + quota ai_categorize_month).
+              if (handleUpgradeError(e)) { setCsvAiLoading(false); return }
               lastError = 'Erro ao contactar IA'
               break
             }
@@ -747,6 +751,8 @@ export default function FinancesTransactionsPage() {
         setCsvAiDebug({ ran: false, assigned: 0, unmatched: 0, error: null })
       }
     } catch (e: unknown) {
+      // Import CSV é gated (csv_import + quota import_accounts). O 403 abre o modal.
+      if (handleUpgradeError(e)) { setCsvStep('idle'); return }
       setCsvError(e instanceof Error ? e.message : t.finances.csvAiError.replace('{msg}', 'CSV'))
       setCsvStep('idle')
     }

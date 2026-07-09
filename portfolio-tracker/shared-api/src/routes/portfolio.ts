@@ -8,8 +8,14 @@ import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
 import { buildPortfolioSnapshot } from '../services/snapshotService.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 const router = Router()
+// Patrimônio inteiro é gate 'plus' (docs/TIERS_PLAN.md). A página pública de
+// share de portfólio é servida por public.ts (sem auth), então fica fora deste
+// router. requireAuth roda antes do gate pra popular req.userId (as rotas
+// abaixo também chamam requireAuth — idempotente).
+router.use(requireAuth, requireGateMw('patrimonio'))
 
 export interface ByClassValue {
   name: string; name_key: string | null; color: string; value_brl: number; pct: number
@@ -727,7 +733,9 @@ export async function getSectorMap(userId: string): Promise<Record<string, strin
   return sectors
 }
 
-router.get('/sector-data', requireAuth, async (req, res: Response) => {
+// Diversification é gate 'pro' (mais restrito que o 'patrimonio' do router).
+// /sector-data é o endpoint distintivo da DiversificationPage.
+router.get('/sector-data', requireAuth, requireGateMw('diversification'), async (req, res: Response) => {
   try {
     const { userId } = (req as AuthRequest)
     const sectors = await getSectorMap(userId)

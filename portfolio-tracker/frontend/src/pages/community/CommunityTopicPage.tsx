@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import PostCard from './_shared/PostCard'
 import { useFriendshipActions } from '../../hooks/useFriendshipActions'
@@ -16,6 +17,7 @@ export default function CommunityTopicPage() {
   const { t } = useI18n()
   const tc = (t as any).community
   const { user } = useAuth()
+  const { handleUpgradeError } = useUpgrade()
   const navigate = useNavigate()
   const [topic, setTopic] = useState<CommunityTopicDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -65,17 +67,25 @@ export default function CommunityTopicPage() {
       await apiFetch(`/community/topics/${topicId}/posts`, { method: 'POST', body: JSON.stringify({ body: reply.trim() }) })
       setReply('')
       await reloadSilently()
+    } catch (e) {
+      // Postar é gated (community_post, Plus). Leitura segue livre; só a ação
+      // dispara o modal. O rascunho fica preservado.
+      if (!handleUpgradeError(e)) throw e
     } finally {
       setSending(false)
     }
   }
 
   async function likePost(postId: number) {
-    const res = await apiFetch<{ like_count: number; liked_by_me: boolean }>(`/community/posts/${postId}/like`, { method: 'POST' })
-    setTopic(prev => prev ? {
-      ...prev,
-      posts: prev.posts.map(p => p.id === postId ? { ...p, like_count: res.like_count, liked_by_me: res.liked_by_me } : p),
-    } : prev)
+    try {
+      const res = await apiFetch<{ like_count: number; liked_by_me: boolean }>(`/community/posts/${postId}/like`, { method: 'POST' })
+      setTopic(prev => prev ? {
+        ...prev,
+        posts: prev.posts.map(p => p.id === postId ? { ...p, like_count: res.like_count, liked_by_me: res.liked_by_me } : p),
+      } : prev)
+    } catch (e) {
+      if (!handleUpgradeError(e)) throw e
+    }
   }
 
   async function editPost(postId: number, body: string) {

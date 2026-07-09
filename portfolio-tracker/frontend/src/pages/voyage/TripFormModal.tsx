@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import { DateRangePicker, Switch } from '../../components/ui'
 import DestinationsEditor from './DestinationsEditor'
 import type { Trip, TripStatus, TripDestination } from './types'
@@ -18,6 +19,7 @@ interface Props {
 export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, onDeleted }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  const { handleUpgradeError } = useUpgrade()
 
   const [title, setTitle] = useState(trip?.title ?? '')
   // Destino único legado — não há mais campo de UI pra editar isso aqui
@@ -85,7 +87,10 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
         }
       }
       onSaved(result.trip)
-    } catch {
+    } catch (e) {
+      // Cota de viagens próprias (free = 1) → 403 upgrade_required. Deixa o
+      // POST responder e intercepta aqui, fechando o form e abrindo o modal.
+      if (handleUpgradeError(e)) { onClose(); return }
       setError(tv.errors?.save ?? 'Erro ao salvar')
     } finally {
       setSaving(false)

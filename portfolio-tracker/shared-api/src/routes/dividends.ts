@@ -2,8 +2,11 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { syncDividendsForUser } from '../services/dividendService.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 const router = Router()
+// Dividendos fazem parte do Patrimônio — gate 'plus' (docs/TIERS_PLAN.md).
+router.use(requireAuth, requireGateMw('patrimonio'))
 
 // POST /api/dividends/sync?force=true  — force=true deletes all dividends and re-fetches from scratch
 router.post('/sync', requireAuth, async (req, res: Response) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { useActiveFriends } from '../hooks/useActiveFriends'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import VoyageAvatar from '../pages/voyage/_shared/Avatar'
 
 // Peças reutilizáveis pra grupos de categoria compartilhada (shared_groups) —
@@ -68,6 +69,7 @@ export function GroupModal({ s, initial, onClose, onSaved }: {
 }) {
   const [name, setName] = useState(initial?.name ?? '')
   const [saving, setSaving] = useState(false)
+  const { handleUpgradeError } = useUpgrade()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -81,6 +83,10 @@ export function GroupModal({ s, initial, onClose, onSaved }: {
         const data = await apiFetch<{ id: number }>('/shared/groups', { method: 'POST', body: JSON.stringify({ name }) })
         onSaved(data.id)
       }
+    } catch (e) {
+      // Criar grupo compartilhado é gated (shared_groups_create, Plus).
+      if (handleUpgradeError(e)) { onClose(); return }
+      throw e
     } finally { setSaving(false) }
   }
 

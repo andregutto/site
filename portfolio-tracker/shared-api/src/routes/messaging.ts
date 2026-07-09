@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { userDisplay, areActiveFriends, getFriendshipStatuses } from './people.js'
-import { ensureMemberTier, TIER_RANK } from './community.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -11,20 +11,11 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
-// Ferramenta premium: por enquanto MESSAGING_TIER_REQUIRED=free libera todo mundo
-// pra testes. Quando virar 'plus' ou 'beta', qualquer usuário abaixo desse tier
-// recebe 403 em TODOS os endpoints deste router — o switch é só trocar a env var.
-const TIER_REQUIRED = (process.env.MESSAGING_TIER_REQUIRED ?? 'free') as 'free' | 'plus' | 'beta'
-router.use(async (req: any, res: any, next: any) => {
-  if (TIER_REQUIRED === 'free') { next(); return }
-  try {
-    const tier = await ensureMemberTier(uid(req))
-    if (TIER_RANK[tier] < TIER_RANK[TIER_REQUIRED]) { res.status(403).json({ error: 'premium_required' }); return }
-    next()
-  } catch (e: any) {
-    res.status(500).json({ error: e.message ?? 'Erro ao validar acesso' })
-  }
-})
+// Mensagens são gate `messaging` (entitlements.ts) — o router inteiro exige o
+// tier configurado na matriz. Em bloqueio, 403 com o payload UpgradeRequired
+// (error: 'upgrade_required'), que o frontend intercepta pra abrir o
+// UpgradeModal. Substitui o antigo gate por env MESSAGING_TIER_REQUIRED.
+router.use(requireGateMw('messaging'))
 
 function normalizePair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a]

@@ -334,6 +334,13 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.542 10.603 6 12.5l-.542-1.897a3 3 0 0 0-2.06-2.06L1.5 8l1.897-.542a3 3 0 0 0 2.06-2.06L6 3.5l.542 1.897a3 3 0 0 0 2.06 2.06L10.5 8l-1.897.542a3 3 0 0 0-2.06 2.06ZM12.173 5.81 12 6.5l-.173-.69a2.25 2.25 0 0 0-1.637-1.637L9.5 4l.691-.173a2.25 2.25 0 0 0 1.637-1.637L12 1.5l.173.69a2.25 2.25 0 0 0 1.637 1.637L15.5 4l-.69.173a2.25 2.25 0 0 0-1.637 1.637Z"/>
       </svg>
     )},
+    // Instituições/contas são compartilhadas com Patrimônio (que agora é gated)
+    // — o link vive aqui em Finanças pra continuar acessível a todos os tiers.
+    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
+      </svg>
+    )},
   ]
 
   const voyageItems = [

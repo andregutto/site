@@ -4,6 +4,8 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
 import { canAutoAccept } from './people.js'
+import { requireGateMw } from '../lib/gateMiddleware.js'
+import { checkQuota, getUsage, incrementUsage, usagePeriod } from '../lib/entitlements.js'
 
 const router = Router()
 
@@ -713,8 +715,12 @@ router.get('/envelopes', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+// Orçamento/envelopes é gate 'plus' (budget). Gateamos a criação/edição/exclusão
+// de envelopes (a estrutura de orçamento). GET /budget fica livre porque também
+// alimenta a tela de Transações (lista de categorias por envelope) e a PATCH
+// /income é usada no onboarding — não são exclusivas do orçamento.
 // POST /api/finances/envelopes
-router.post('/envelopes', requireAuth, async (req, res: Response) => {
+router.post('/envelopes', requireAuth, requireGateMw('budget'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { name, pct_target, color, type, icon, sort_order } = req.body
   if (!name || pct_target == null) { res.status(400).json({ error: 'name and pct_target required' }); return }
@@ -728,7 +734,7 @@ router.post('/envelopes', requireAuth, async (req, res: Response) => {
 })
 
 // PATCH /api/finances/envelopes/:id
-router.patch('/envelopes/:id', requireAuth, async (req, res: Response) => {
+router.patch('/envelopes/:id', requireAuth, requireGateMw('budget'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
   const { name, pct_target, color, type, icon, sort_order, description } = req.body
@@ -750,7 +756,7 @@ router.patch('/envelopes/:id', requireAuth, async (req, res: Response) => {
 })
 
 // DELETE /api/finances/envelopes/:id
-router.delete('/envelopes/:id', requireAuth, async (req, res: Response) => {
+router.delete('/envelopes/:id', requireAuth, requireGateMw('budget'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
   const { error } = await supabaseAdmin
@@ -1770,7 +1776,10 @@ async function aiCategorize(
 
 // POST /api/finances/transactions/csv-parse
 // Parses CSV text and returns preview rows with auto-suggested categories
-router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) => {
+// Import CSV é gate 'plus' (csv_import). A cota import_accounts (nº de contas
+// distintas com import) é checada no commit (csv-import), onde já se sabe a
+// conta destino.
+router.post('/transactions/csv-parse', requireAuth, requireGateMw('csv_import'), async (req, res: Response) => {
   const { userId, userLocale } = req as AuthRequest
   const csvNames = DEFAULT_NAMES[userLocale] ?? DEFAULT_NAMES.pt
   const reqDeadline = Date.now() + 25_000 // 25s budget — 5s buffer before Cloudflare's 30s wall
@@ -2036,11 +2045,33 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
 // POST /api/finances/transactions/ai-categorize
 // Separate endpoint so AI can have its own 25s budget independent of the parse request
-router.post('/transactions/ai-categorize', requireAuth, async (req, res: Response) => {
+// Categorização por IA: gate 'plus' (ai_categorize) + cota mensal
+// (ai_categorize_month, custo real por chamada). Se a cota do mês zerou → 403.
+// Se o batch pedido excede o que resta, processa só até o limite e devolve
+// parcial com aviso. incrementUsage pelo nº efetivamente categorizado, após
+// sucesso.
+router.post('/transactions/ai-categorize', requireAuth, requireGateMw('ai_categorize'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const reqDeadline = Date.now() + 25_000
   const { items } = req.body as { items: AiItem[] }
   if (!items || !Array.isArray(items) || items.length === 0) { res.json({ map: {}, error: null }); return }
+
+  const aiPeriod = usagePeriod('month')
+  const aiUsed = await getUsage(userId, 'ai_categorize_month', aiPeriod)
+  const aiQuota = await checkQuota(userId, 'ai_categorize_month', aiUsed)
+  if (!aiQuota.ok) { res.status(403).json(aiQuota.payload); return }
+
+  // limit === null → ilimitado (plus/pro/beta conforme override). Caso contrário,
+  // só processa o que couber no restante da cota.
+  const remaining = aiQuota.limit === null ? items.length : Math.max(0, aiQuota.limit - aiUsed)
+  const partial = aiQuota.limit !== null && items.length > remaining
+  const batch = partial ? items.slice(0, remaining) : items
+  if (batch.length === 0) {
+    // Não deveria acontecer (checkQuota já barraria com used >= limit), mas por
+    // segurança: cota esgotada.
+    res.status(403).json({ error: 'upgrade_required', gate: 'ai_categorize_month', required_tier: aiQuota.tier === 'free' ? 'plus' : 'pro', limit: aiQuota.limit ?? undefined, used: aiUsed })
+    return
+  }
 
   const { data: cats } = await supabaseAdmin
     .from('finance_categories')
@@ -2048,8 +2079,19 @@ router.post('/transactions/ai-categorize', requireAuth, async (req, res: Respons
     .eq('user_id', userId)
   const categories = (cats ?? []) as CatRow[]
 
-  const { map, error } = await aiCategorize(items, categories, reqDeadline)
-  res.json({ map, error: error ?? null })
+  const { map, error } = await aiCategorize(batch, categories, reqDeadline)
+
+  // Conta o nº de itens efetivamente categorizados (entradas resolvidas no map).
+  const categorizedCount = Object.keys(map ?? {}).length
+  if (categorizedCount > 0) {
+    await incrementUsage(userId, 'ai_categorize_month', aiPeriod, categorizedCount).catch(() => {})
+  }
+
+  res.json({
+    map,
+    error: error ?? null,
+    ...(partial ? { partial: true, processed: batch.length, requested: items.length, quota_limit: aiQuota.limit, quota_used: aiUsed } : {}),
+  })
 })
 
 // POST /api/finances/transactions/:id/adopt-import — user confirmed that a bank CSV row
@@ -2112,7 +2154,7 @@ function assignSourceKeys(transactions: { date: string; description: string; amo
 }
 
 // POST /api/finances/transactions/csv-import — insert parsed rows, skipping duplicates
-router.post('/transactions/csv-import', requireAuth, async (req, res: Response) => {
+router.post('/transactions/csv-import', requireAuth, requireGateMw('csv_import'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { transactions, learn_rules } = req.body as {
     transactions: { date: string; description: string; amount: number; currency: string; category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean; source?: string }[]
@@ -2120,6 +2162,26 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
   }
   if (!Array.isArray(transactions) || transactions.length === 0) {
     res.status(400).json({ error: 'transactions array required' }); return
+  }
+
+  // Cota import_accounts (period 'live'): nº de contas distintas que já têm
+  // transações de import (source csv:). Se este import direciona pra uma conta
+  // NOVA (ainda sem import) e a contagem atual já bate no limite → 403. Contas
+  // que já têm import não contam de novo (re-importar não consome cota).
+  {
+    const { data: existingCsv } = await supabaseAdmin
+      .from('finance_transactions').select('account_id')
+      .eq('user_id', userId).like('source', 'csv:%').not('account_id', 'is', null)
+    const existingAccounts = new Set<number>((existingCsv ?? []).map((r: any) => r.account_id))
+    const incomingAccounts = new Set<number>(
+      transactions.map(t => t.account_id).filter((id): id is number => id != null)
+    )
+    const newAccounts = [...incomingAccounts].filter(id => !existingAccounts.has(id))
+    if (newAccounts.length > 0) {
+      // used = contas já importadas; adicionar as novas não pode ultrapassar o limite.
+      const quota = await checkQuota(userId, 'import_accounts', existingAccounts.size + newAccounts.length - 1)
+      if (!quota.ok) { res.status(403).json(quota.payload); return }
+    }
   }
 
   const sourceKeys = assignSourceKeys(transactions)
@@ -2500,7 +2562,9 @@ router.get('/freedom-plans', requireAuth, async (req, res: Response) => {
 })
 
 // POST /api/finances/freedom-plans
-router.post('/freedom-plans', requireAuth, async (req, res: Response) => {
+// Criar plano de liberdade é gate 'plus' (freedom_plans). Ver/simular já
+// existentes fica livre.
+router.post('/freedom-plans', requireAuth, requireGateMw('freedom_plans'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const {
     name, initial_capital, monthly_contribution, monthly_return_rate,
@@ -2814,7 +2878,11 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   })
 })
 
-router.post('/moments', requireAuth, async (req, res: Response) => {
+// Criação avulsa de Momento nomeado é gate 'plus' (moments_create). NÃO cobre
+// o par oculto (default-with), a promoção (promote) nem momentos criados via
+// viagem (voyage create-moment/from-moment) — esses inserem em finance_moments
+// direto, sem passar por aqui, e são cobertos pela cota de viagem.
+router.post('/moments', requireAuth, requireGateMw('moments_create'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { name, description, icon, color, start_date, end_date, cover_image_url, cover_image_position, budget, moment_type } = req.body
   const { data, error } = await supabaseAdmin
@@ -3272,6 +3340,14 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
   const access = await assertMomentAccess(momentId, userId)
   if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
 
+  // Cota split_expenses_per_day: conta despesas de divisão CRIADAS pelo usuário
+  // no dia (via entitlement_usage). Settlements (POST /people/settle) usam outro
+  // caminho e não passam por aqui; participar/editar também não conta.
+  const splitPeriod = usagePeriod('day')
+  const splitUsed = await getUsage(userId, 'split_expenses_per_day', splitPeriod)
+  const splitQuota = await checkQuota(userId, 'split_expenses_per_day', splitUsed)
+  if (!splitQuota.ok) { res.status(403).json(splitQuota.payload); return }
+
   // Duas origens possíveis: (a) despesa manual do zero — cria uma finance_transactions
   // nova, pra contar no total gasto/lista do Momento como qualquer outra; ou (b) "dividir"
   // uma transação já existente (ex: veio do banco) — reaproveita ela, sem duplicar valor.
@@ -3399,6 +3475,9 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
     if (ownsTransaction) await supabaseAdmin.from('finance_transactions').delete().eq('id', transactionId)
     res.status(500).json({ error: sharesError.message }); return
   }
+
+  // Só conta pra cota após criar com sucesso.
+  await incrementUsage(userId, 'split_expenses_per_day', splitPeriod, 1).catch(() => {})
 
   res.json({ ...expense, shares })
 })
@@ -3759,7 +3838,9 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
   }
 }
 
-router.get('/subscriptions', requireAuth, async (req, res: Response) => {
+// Insights (assinaturas recorrentes + fee-scan) é gate 'pro'. Todos os
+// endpoints abaixo alimentam exclusivamente a FinancesInsightsPage.
+router.get('/subscriptions', requireAuth, requireGateMw('insights'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const result = await getActiveSubscriptions(userId)
   if (result.error) { res.status(500).json({ error: result.error }); return }
@@ -3767,7 +3848,7 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
 })
 
 // GET /api/finances/subscriptions/dismissed
-router.get('/subscriptions/dismissed', requireAuth, async (req, res: Response) => {
+router.get('/subscriptions/dismissed', requireAuth, requireGateMw('insights'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
     .from('finance_subscription_dismissals')
@@ -3779,7 +3860,7 @@ router.get('/subscriptions/dismissed', requireAuth, async (req, res: Response) =
 })
 
 // POST /api/finances/subscriptions/dismiss
-router.post('/subscriptions/dismiss', requireAuth, async (req, res: Response) => {
+router.post('/subscriptions/dismiss', requireAuth, requireGateMw('insights'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { key, name } = req.body as { key?: string; name?: string }
   if (!key) { res.status(400).json({ error: 'key required' }); return }
@@ -3791,7 +3872,7 @@ router.post('/subscriptions/dismiss', requireAuth, async (req, res: Response) =>
 })
 
 // DELETE /api/finances/subscriptions/dismiss/:key
-router.delete('/subscriptions/dismiss/:key', requireAuth, async (req, res: Response) => {
+router.delete('/subscriptions/dismiss/:key', requireAuth, requireGateMw('insights'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { key } = req.params
   const { error } = await supabaseAdmin
@@ -3804,7 +3885,7 @@ router.delete('/subscriptions/dismiss/:key', requireAuth, async (req, res: Respo
 })
 
 // GET /api/finances/fee-scan
-router.get('/fee-scan', requireAuth, async (req, res: Response) => {
+router.get('/fee-scan', requireAuth, requireGateMw('insights'), async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
   const since = new Date()

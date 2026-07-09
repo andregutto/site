@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useUpgrade } from '../../contexts/UpgradeContext'
 import { catName } from './_shared/catName'
 import type { CommunityCategory, VoyageTripOption } from './types'
 
@@ -16,6 +17,7 @@ interface NewTopicModalProps {
 export default function NewTopicModal({ categories, defaultCategorySlug, onClose, onCreated }: NewTopicModalProps) {
   const { t } = useI18n()
   const tc = (t as any).community ?? {}
+  const { handleUpgradeError } = useUpgrade()
   const [categorySlug, setCategorySlugState] = useState(defaultCategorySlug ?? categories[0]?.slug ?? '')
   function setCategorySlug(slug: string) {
     setCategorySlugState(slug)
@@ -48,6 +50,7 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
       })
       onCreated(categorySlug, res.topic.id)
     } catch (err: any) {
+      if (handleUpgradeError(err)) { onClose(); return }
       setError(err.message ?? tc.errors?.generic ?? 'Algo deu errado.')
     } finally {
       setSaving(false)
