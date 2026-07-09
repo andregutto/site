@@ -18,6 +18,13 @@ type PeopleResponse = { contacts: { email: string; name?: string; avatar_url?: s
 let cached: ActiveFriend[] | null = null
 let inFlight: Promise<ActiveFriend[]> | null = null
 
+// Chamar sempre que uma amizade muda (aceite, novo convite ativo, remoção) —
+// sem isso, um amigo adicionado no meio da sessão só aparecia nos overlays de
+// convite depois de recarregar a página (cache de módulo nunca expirava).
+export function invalidateActiveFriends(): void {
+  cached = null
+}
+
 function fetchActiveFriends(): Promise<ActiveFriend[]> {
   if (cached) return Promise.resolve(cached)
   if (!inFlight) {

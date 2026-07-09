@@ -36,9 +36,37 @@
   "admin": {
     "eyebrow": "ADMINISTRAÇÃO",
     "title": "Painel de administração",
+    "tabUsers": "Usuários",
     "tabCommunity": "Comunidade",
     "tabResources": "Recursos",
     "tabAcquisition": "Aquisição",
+    "users": {
+      "title": "Usuários",
+      "subtitle": "Todos os usuários da plataforma. Gerencie tier e papel de admin aqui.",
+      "search": "Buscar por nome, @ ou e-mail",
+      "colUser": "Usuário",
+      "colEmail": "E-mail",
+      "colJoined": "Cadastro",
+      "colSource": "Origem",
+      "colTier": "Tier",
+      "sourceDirect": "direto",
+      "since": "desde",
+      "tierFree": "Free",
+      "tierPlus": "Plus",
+      "tierPro": "Pro",
+      "tierBeta": "Beta",
+      "promote": "Tornar admin",
+      "demote": "Remover admin",
+      "promoteConfirm": "Promover {name} a admin? O papel de admin governa comunidade, recursos, aquisição e planos.",
+      "demoteConfirm": "Remover {name} como admin?",
+      "tierConfirm": "Aplicar tier {tier} para {name}?",
+      "loadMore": "Carregar mais",
+      "loading": "Carregando...",
+      "empty": "Nenhum usuário encontrado.",
+      "loadError": "Não foi possível carregar os usuários.",
+      "saveError": "Não foi possível salvar.",
+      "adminBadge": "Admin"
+    },
     "acquisition": {
       "kpiLeads": "Leads totais",
       "kpiLeadsMonth": "Leads este mês",
@@ -288,7 +316,9 @@
     "renderErrorBody": "Ocorreu um erro inesperado ao exibir esta tela. Recarregar a página geralmente resolve.",
     "renderErrorReload": "Recarregar página",
     "renderErrorHome": "Ir para o início",
-    "renderErrorDetails": "Detalhes técnicos"
+    "renderErrorDetails": "Detalhes técnicos",
+    "continue": "Continuar",
+    "done": "Concluir"
   },
   "login": {
     "subtitle": "Acompanhe seus investimentos globais",
@@ -1242,6 +1272,12 @@
     "momentByUserTitle": "Quem pagou o quê",
     "momentSectionExpenses": "Divisão de despesas",
     "expenseAdd": "Adicionar despesa",
+    "expenseAddPerson": "Adicionar pessoa",
+    "splitPromoteHint": "Ao entrar uma terceira pessoa, sua divisão vira um momento com nome. É só dar um nome pra ele.",
+    "splitPromoteNamePlaceholder": "Ex.: Jantar de sexta",
+    "splitPromoteNameRequired": "Dê um nome ao momento.",
+    "splitPromoteNameJoin": ", ",
+    "splitInviteHint": "Convide a nova pessoa por @usuário ou e-mail. Ela precisa aceitar para entrar na divisão.",
     "expenseDescription": "Descrição",
     "expenseAmount": "Valor",
     "expensePaidBy": "Pago por",
@@ -3069,7 +3105,8 @@
       "tierFree": "Free",
       "tierPlus": "Plus",
       "tierBeta": "Beta",
-      "tierChanged": "Tier atualizado"
+      "tierChanged": "Tier atualizado",
+      "tierMovedNote": "A gestão de tiers migrou para a aba Usuários. Aqui é só moderação do fórum."
     }
   },
   "userProfile": {
@@ -3135,6 +3172,8 @@
     "seeAll": "Ver tudo",
     "tripNow": "Viagem em andamento",
     "tripNext": "Próxima viagem",
+    "tripEmpty": "Planeje sua primeira viagem e organize tudo em um lugar.",
+    "tripCreate": "Criar viagem",
     "momentLabel": "Momento em andamento",
     "until": "até",
     "shortcuts": "Atalhos",

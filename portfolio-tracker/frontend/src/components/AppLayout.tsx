@@ -470,12 +470,17 @@ export default function AppLayout() {
             ) : (
               <ArvoGlyphSolid size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
             )}
-            <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
-            {headerTier && (
-              <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.30em', textIndent: '0.30em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1, marginLeft: -4 }}>
-                {headerTier === 'pro' ? 'pro' : 'plus'}
-              </span>
-            )}
+            {/* Wordmark + plano alinhados pela BASELINE (items-center deixava o
+                'pro' flutuando); o espaçamento entre eles vem do tracking final
+                do wordmark, sem textIndent no rótulo do plano. */}
+            <span className="hidden sm:inline-flex" style={{ alignItems: 'baseline' }}>
+              <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
+              {headerTier && (
+                <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.24em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1 }}>
+                  {headerTier === 'pro' ? 'pro' : 'plus'}
+                </span>
+              )}
+            </span>
           </Link>
           <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
             <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>

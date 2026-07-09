@@ -398,7 +398,8 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   border: 1px solid transparent;
-  border-radius: var(--arvo-radius-xs);
+  /* Pill por padrão em todos os arvo-btn (decisão do André, 2026-07-09). */
+  border-radius: 999px;
   padding: 12px 24px;
   cursor: pointer;
   transition: background var(--arvo-dur-fast) var(--arvo-ease),

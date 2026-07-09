@@ -5,7 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { useUpgrade } from '../../contexts/UpgradeContext'
 import Avatar from '../voyage/_shared/Avatar'
-import type { MomentMember } from './FinancesMomentsPage'
+import { MembersPanel, type MomentMember } from './FinancesMomentsPage'
 
 const CURRENCIES = ['BRL', 'EUR', 'USD'] as const
 const CURRENCY_SYMBOLS: Record<string, string> = { BRL: 'R$', EUR: '€', USD: '$' }
@@ -65,7 +65,9 @@ function convertBetween(value: number, from: string, to: string, fxRates: { USD:
   return (value * rateOf(from)) / rateOf(to)
 }
 
-export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: number; currency: string; fmt: (n: number, c: string) => string }) {
+interface MomentMeta { owner_id: string; name: string; is_pair_default: boolean; shared_group_id: number | null }
+
+export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: { momentId: number; currency: string; fmt: (n: number, c: string) => string; onPromoted?: () => void }) {
   const { t } = useI18n()
   const { user } = useAuth()
   const { currency: displayCurrency, fxRates } = useCurrency()
@@ -73,6 +75,8 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const [expenses, setExpenses] = useState<MomentExpense[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
   const [myCategories, setMyCategories] = useState<ExpenseCategory[]>([])
+  const [meta, setMeta] = useState<MomentMeta | null>(null)
+  const [addPerson, setAddPerson] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   // Recolhe saldos + lista de despesas assim que o form de nova despesa abre —
@@ -101,10 +105,11 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     try {
       const [expensesRes, membersRes] = await Promise.all([
         apiFetch<{ expenses: MomentExpense[] }>(`/finances/moments/${momentId}/expenses`),
-        apiFetch<{ members: MomentMember[] }>(`/finances/moments/${momentId}/members`),
+        apiFetch<{ members: MomentMember[]; moment_owner_id: string; moment_name: string; is_pair_default: boolean; shared_group_id: number | null }>(`/finances/moments/${momentId}/members`),
         apiFetch<ExpenseCategory[]>('/finances/categories').then(setMyCategories).catch(() => {}),
       ])
       setExpenses(expensesRes.expenses)
+      setMeta({ owner_id: membersRes.moment_owner_id, name: membersRes.moment_name, is_pair_default: membersRes.is_pair_default, shared_group_id: membersRes.shared_group_id })
       const active = membersRes.members.filter(m => m.status === 'active' && m.user_id)
       const parts = active.map(m => ({ user_id: m.user_id as string, display: m.display }))
       setParticipants(parts)
@@ -389,6 +394,15 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
         </button>
       )}
 
+      {!showForm && historyOpen && (
+        <button
+          onClick={() => setAddPerson(true)}
+          className="w-full text-center text-sm py-2.5 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
+        >
+          + {t.finances.expenseAddPerson}
+        </button>
+      )}
+
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
@@ -517,6 +531,113 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           </div>
         </div>
       )}
+
+      {addPerson && meta && (
+        <AddPersonFlow
+          momentId={momentId}
+          meta={meta}
+          otherParticipantName={participants.find(p => p.user_id !== user?.id)?.display?.name}
+          onClose={() => setAddPerson(false)}
+          onDone={async () => {
+            setAddPerson(false)
+            await load()
+            // Promover o par oculto o transforma num Momento nomeado visível — a lista de
+            // Momentos (e o modal que embrulha este painel) precisa recarregar pra refletir.
+            onPromoted?.()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Passo "adicionar 3ª pessoa" a um split. Quando o Momento é o par 1:1 oculto
+// (is_pair_default sem grupo), pede só o nome pra promover pra Momento nomeado
+// (POST /moments/:id/promote — sempre livre, não conta cota do free) e emenda
+// direto no convite. Se já é Momento nomeado, vai direto pro convite. O convite
+// reusa a MembersPanel (busca @, chips de amigos, aceite explícito) — mesma
+// maquinaria de qualquer colaborador de Momento.
+function AddPersonFlow({ momentId, meta, otherParticipantName, onClose, onDone }: {
+  momentId: number
+  meta: MomentMeta
+  otherParticipantName?: string
+  onClose: () => void
+  onDone: () => void
+}) {
+  const { t } = useI18n()
+  const { user } = useAuth()
+  const needsPromote = meta.is_pair_default && meta.shared_group_id == null
+  const [promoted, setPromoted] = useState(!needsPromote)
+
+  const myName = (user?.user_metadata?.first_name as string | undefined) || ''
+  const monthLabel = new Date().toLocaleDateString(undefined, { month: 'long' })
+  const defaultName = [myName, otherParticipantName].filter(Boolean).join(t.finances.splitPromoteNameJoin) ||
+    `${monthLabel.charAt(0).toUpperCase()}${monthLabel.slice(1)}`
+  const [name, setName] = useState(defaultName)
+  const [promoting, setPromoting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function promote() {
+    if (!name.trim()) { setError(t.finances.splitPromoteNameRequired); return }
+    setPromoting(true)
+    setError('')
+    try {
+      await apiFetch(`/finances/moments/${momentId}/promote`, { method: 'POST', body: JSON.stringify({ name: name.trim() }) })
+      setPromoted(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.finances.splitPromoteNameRequired)
+    } finally {
+      setPromoting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(20px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <h3 className="flex-1" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 600, color: 'var(--arvo-fg)' }}>{t.finances.expenseAddPerson}</h3>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
+          </button>
+        </div>
+
+        {!promoted ? (
+          <div className="space-y-3">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              {t.finances.splitPromoteHint}
+            </p>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={t.finances.splitPromoteNamePlaceholder}
+              autoFocus
+              className="w-full text-base px-3 py-2.5 rounded-lg bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)]"
+              onKeyDown={e => { if (e.key === 'Enter') promote() }}
+            />
+            {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
+            <div className="flex gap-2">
+              <button onClick={onClose} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">{t.common.cancel}</button>
+              <button onClick={promote} disabled={promoting} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+                {promoting ? '…' : t.common.continue}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              {t.finances.splitInviteHint}
+            </p>
+            <MembersPanel momentId={momentId} ownerId={meta.owner_id} />
+            <button onClick={onDone} className="w-full text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)]">
+              {t.common.done}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

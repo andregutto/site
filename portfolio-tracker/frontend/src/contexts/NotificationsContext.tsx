@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
+import { invalidateActiveFriends } from '../hooks/useActiveFriends'
 import type { NotificationItem, NotificationsResponse } from '../lib/types'
 
 interface NotificationsContextValue {
@@ -134,6 +135,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // sem precisar navegar até a página de aceite — mesma rota usada pelas
   // páginas públicas de convite, só que chamada inline.
   const acceptInvite = useCallback(async (item: NotificationItem) => {
+    // Amizade/convite pode ter acabado de virar ativo: os chips de amigos releem.
+    invalidateActiveFriends()
     const endpoint = ACCEPT_ENDPOINT[item.type]
     if (!endpoint) return
     const token = item.params.token

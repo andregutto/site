@@ -242,7 +242,12 @@ export default function CommunityAdminPage() {
       {/* ── Membros ── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h2 style={sectionTitle}>{ta.members ?? 'Membros'}</h2>
+          <div>
+            <h2 style={sectionTitle}>{ta.members ?? 'Membros'}</h2>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
+              {ta.tierMovedNote ?? 'A gestão de tiers migrou para a aba Usuários. Aqui é só moderação do fórum.'}
+            </p>
+          </div>
           <input
             value={memberQ}
             onChange={e => setMemberQ(e.target.value)}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, type FormEvent, type ReactNode } from
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
+import { invalidateActiveFriends } from '../hooks/useActiveFriends'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -109,7 +110,7 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
 // amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
 // despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
 // já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
-export function PairMomentModal({ friendUserId, friendName, initialMomentId, balancesByMoment, onClose }: {
+export function PairMomentModal({ friendUserId, friendName, initialMomentId, balancesByMoment, onClose, onPromoted }: {
   friendUserId: string
   friendName: string
   initialMomentId: number | null
@@ -119,6 +120,9 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   // dentro do saldo do grupo sem o usuário entender de onde veio (bug real relatado).
   balancesByMoment?: MomentBalance[]
   onClose: () => void
+  // Disparado quando o par 1:1 oculto é promovido a Momento nomeado (3ª pessoa) —
+  // o pai recarrega listas de amigos/momentos pra refletir a mudança de estrutura.
+  onPromoted?: () => void
 }) {
   const { t } = useI18n()
   const { currency, hideValues } = useCurrency()
@@ -209,7 +213,7 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
         ) : error ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
-          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onPromoted={onPromoted} />
         ) : null}
       </div>
     </div>,
@@ -495,6 +499,7 @@ function ContactCard({
           initialMomentId={pairModal.momentId}
           balancesByMoment={contact.balancesByMoment}
           onClose={() => { setPairModal(null); onFriendChanged() }}
+          onPromoted={onFriendChanged}
         />
       )}
 
@@ -1393,7 +1398,7 @@ export default function PeoplePage() {
           </p>
           {contacts.map((contact, i) => (
             <div key={contact.email} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 50}ms` }}>
-              <ContactCard contact={contact} trips={trips} groups={groups} moments={moments} onRemoved={handleRemoved} onFriendChanged={load} />
+              <ContactCard contact={contact} trips={trips} groups={groups} moments={moments} onRemoved={handleRemoved} onFriendChanged={() => { invalidateActiveFriends(); (load)() }} />
             </div>
           ))}
         </div>

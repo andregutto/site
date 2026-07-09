@@ -2899,7 +2899,7 @@ router.get('/moments/:id/members', requireAuth, async (req, res: Response) => {
   const momentId = Number(req.params.id)
 
   const { data: moment } = await supabaseAdmin
-    .from('finance_moments').select('user_id').eq('id', momentId).single()
+    .from('finance_moments').select('user_id, name, is_pair_default, shared_group_id').eq('id', momentId).single()
   if (!moment) { res.status(404).json({ error: 'Momento não encontrado' }); return }
 
   const isOwner = moment.user_id === userId
@@ -2929,7 +2929,16 @@ router.get('/moments/:id/members', requireAuth, async (req, res: Response) => {
     joined_at: null, created_at: null, display: ownerDisplay,
   }
 
-  res.json({ members: [ownerEntry, ...enriched] })
+  res.json({
+    // moment_owner_id / is_pair_default / shared_group_id: a UI de despesas usa isso pra
+    // decidir se oferece "adicionar 3ª pessoa" com o passo de promoção do split 1:1 oculto
+    // (só quando é par puro: is_pair_default e sem grupo).
+    moment_owner_id: moment.user_id,
+    moment_name: moment.name,
+    is_pair_default: moment.is_pair_default ?? false,
+    shared_group_id: moment.shared_group_id ?? null,
+    members: [ownerEntry, ...enriched],
+  })
 })
 
 // ── POST /finances/moments/:id/invite  (convidar por e-mail ou @username) ────

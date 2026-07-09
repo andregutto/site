@@ -151,6 +151,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     month_cycle_day:      meta.month_cycle_day       ?? 1,
     budget_reminder_freq: meta.budget_reminder_freq  ?? 0,
     home_card_order:      meta.home_card_order       ?? [],
+    preferred_locale:     meta.preferred_locale      ?? '',
   })
 })
 
@@ -159,14 +160,20 @@ router.patch('/', requireAuth, async (req, res: Response) => {
   const {
     first_name, last_name, country, tax_country, birthdate, default_currency,
     portfolio_start_date, allocation_targets, institution_data, avatar_url, default_section,
-    month_cycle_day, saida_fiscal_brasil, budget_reminder_freq, home_card_order,
+    month_cycle_day, saida_fiscal_brasil, budget_reminder_freq, home_card_order, preferred_locale,
   } = req.body as {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
     institution_data?: Record<string, Record<string, string>>; avatar_url?: string
     default_section?: string; month_cycle_day?: number; saida_fiscal_brasil?: boolean
-    budget_reminder_freq?: number; home_card_order?: string[]
+    budget_reminder_freq?: number; home_card_order?: string[]; preferred_locale?: string
+  }
+
+  // Idioma persistido no perfil (não só localStorage) — no login em novo
+  // dispositivo, vence o idioma do navegador. Valida contra a lista suportada.
+  if (preferred_locale !== undefined && !['pt', 'en', 'fr', ''].includes(preferred_locale)) {
+    res.status(400).json({ error: 'preferred_locale inválido' }); return
   }
 
   // avatar_url vai pro JWT (user_metadata) em toda sessão — um data: URI aqui
@@ -183,7 +190,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
       Object.entries({
         first_name, last_name, country, tax_country, birthdate, default_currency,
         portfolio_start_date, allocation_targets, institution_data, avatar_url, default_section,
-        month_cycle_day, saida_fiscal_brasil, budget_reminder_freq, home_card_order,
+        month_cycle_day, saida_fiscal_brasil, budget_reminder_freq, home_card_order, preferred_locale,
       }).filter(([, v]) => v !== undefined)
     ),
   }

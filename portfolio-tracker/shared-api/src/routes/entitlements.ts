@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 import { isAdmin } from '../lib/leads.js'
 import { userDisplay } from './people.js'
 import {
@@ -128,6 +129,15 @@ async function requireAdmin(req: any, res: Response): Promise<string | null> {
   return userId
 }
 
+// Set de admins — mesma chave/TTL de cache que community.ts e leads.ts usam
+// (`community:admins`), invalidada por cache.deletePattern nos promote/demote.
+async function getAdminIds(): Promise<Set<string>> {
+  return cache.getOrFetch('community:admins', 60_000, async () => {
+    const { data } = await supabaseAdmin.from('community_admins').select('user_id')
+    return new Set<string>((data ?? []).map((r: { user_id: string }) => r.user_id))
+  })
+}
+
 // ── GET /api/entitlements/admin ──────────────────────────────────────────────
 // Matriz efetiva por linha (default/override/effective) + métricas de interesse.
 router.get('/admin', async (req: any, res: Response) => {
@@ -195,6 +205,130 @@ router.get('/admin', async (req: any, res: Response) => {
     res.json({ gates, quotas, interest: { by_gate, recent, total: rows.length } })
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? 'Erro ao carregar admin de entitlements' })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Gestão de usuários (/api/entitlements/admin/users/*) — lista TODOS os
+// usuários da plataforma (não só quem entrou na comunidade) e permite atribuir
+// tier e papel de admin. A aba "Membros" da comunidade só enxerga quem tem
+// linha em community_members (criada no 1º acesso ao fórum), então não serve
+// pra gestão de tier de todo mundo.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const USERS_PAGE_SIZE = 30
+
+// ── GET /api/entitlements/admin/users?q=&page= ───────────────────────────────
+// Lista todos os usuários (auth.users, paginado). Enriquece com display/tier/
+// admin. Busca `q` filtra por nome/@username/email na página corrente.
+router.get('/admin/users', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const q = String(req.query.q ?? '').trim().toLowerCase()
+  const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1)
+
+  try {
+    // supabaseAdmin.auth.admin.listUsers pagina em 1-index; perPage máx 1000.
+    const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: USERS_PAGE_SIZE })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    const authUsers = list?.users ?? []
+
+    // LEFT JOIN manual: tiers de quem tem linha (resto = 'free') + set de admins.
+    const ids = authUsers.map(u => u.id)
+    const [{ data: memberRows }, adminIds] = await Promise.all([
+      ids.length
+        ? supabaseAdmin.from('community_members').select('user_id, tier').in('user_id', ids)
+        : Promise.resolve({ data: [] as any[] }),
+      getAdminIds(),
+    ])
+    const tierByUser = new Map<string, string>((memberRows ?? []).map((m: any) => [m.user_id, m.tier]))
+
+    const rows = await Promise.all(authUsers.map(async u => {
+      const d = await userDisplay(u.id)
+      const meta = u.user_metadata ?? {}
+      return {
+        id: u.id,
+        name: d.name ?? d.email,
+        username: d.username ?? null,
+        avatar_url: d.avatar_url ?? null,
+        email: u.email ?? d.email ?? null,
+        created_at: u.created_at ?? null,
+        signup_source: typeof meta.signup_source === 'string' ? meta.signup_source : null,
+        tier: tierByUser.get(u.id) ?? 'free',
+        is_admin: adminIds.has(u.id),
+      }
+    }))
+
+    const filtered = q
+      ? rows.filter(r =>
+          (r.name ?? '').toLowerCase().includes(q) ||
+          (r.username ?? '').toLowerCase().includes(q) ||
+          (r.email ?? '').toLowerCase().includes(q))
+      : rows
+
+    // has_more olha a página crua (antes do filtro): há mais páginas a carregar.
+    res.json({ users: filtered, page, has_more: authUsers.length === USERS_PAGE_SIZE })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao carregar usuários' })
+  }
+})
+
+// ── PUT /api/entitlements/admin/users/:id/tier  { tier } ─────────────────────
+// UPSERT em community_members (o usuário pode não ter linha ainda, então não
+// pode exigir linha existente como o endpoint de tier da comunidade fazia).
+router.put('/admin/users/:id/tier', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  const tier = String(req.body?.tier ?? '')
+  if (!['free', 'plus', 'pro', 'beta'].includes(tier)) {
+    res.status(400).json({ error: 'tier inválido (free|plus|pro|beta)' }); return
+  }
+  try {
+    const { error } = await supabaseAdmin
+      .from('community_members')
+      .upsert({ user_id: targetId, tier }, { onConflict: 'user_id' })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao gravar tier' })
+  }
+})
+
+// ── POST /api/entitlements/admin/users/:id/promote | /demote ─────────────────
+// Papel de admin (community_admins) — governa comunidade + recursos + aquisição
+// + planos. Upsert/delete por user_id (não exige linha de membro).
+router.post('/admin/users/:id/promote', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  try {
+    const { error } = await supabaseAdmin
+      .from('community_admins')
+      .upsert({ user_id: targetId, promoted_by: adminId }, { onConflict: 'user_id' })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    cache.deletePattern('community:admins')
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao promover admin' })
+  }
+})
+
+router.post('/admin/users/:id/demote', async (req: any, res: Response) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  try {
+    const adminIds = await getAdminIds()
+    if (adminIds.has(targetId) && adminIds.size <= 1) {
+      res.status(400).json({ error: 'cannot demote the last admin' }); return
+    }
+    const { error } = await supabaseAdmin.from('community_admins').delete().eq('user_id', targetId)
+    if (error) { res.status(500).json({ error: error.message }); return }
+    cache.deletePattern('community:admins')
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? 'Erro ao rebaixar admin' })
   }
 })
 

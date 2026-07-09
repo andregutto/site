@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import UsersAdminPage from './UsersAdminPage'
 import CommunityAdminPage from './community/CommunityAdminPage'
 import ResourcesAdminPage from './ResourcesAdminPage'
 import AcquisitionAdminPage from './AcquisitionAdminPage'
@@ -16,7 +17,7 @@ import PlansAdminPage from './PlansAdminPage'
 
 const OCRE = '#E8A020'
 
-type Tab = 'community' | 'resources' | 'acquisition' | 'plans'
+type Tab = 'users' | 'community' | 'resources' | 'acquisition' | 'plans'
 
 export default function AdminPage() {
   const { t } = useI18n()
@@ -28,7 +29,7 @@ export default function AdminPage() {
   const newResourceRef = useRef<() => void>(() => {})
 
   const rawTab = searchParams.get('tab')
-  const tab: Tab = rawTab === 'resources' ? 'resources' : rawTab === 'acquisition' ? 'acquisition' : rawTab === 'plans' ? 'plans' : 'community'
+  const tab: Tab = rawTab === 'users' ? 'users' : rawTab === 'resources' ? 'resources' : rawTab === 'acquisition' ? 'acquisition' : rawTab === 'plans' ? 'plans' : 'community'
 
   useEffect(() => {
     apiFetch<{ is_admin: boolean }>('/community/is-admin')
@@ -54,7 +55,7 @@ export default function AdminPage() {
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1 rounded-full p-1" style={{ background: 'var(--arvo-chip-bg)', width: 'fit-content' }}>
-          {(['community', 'resources', 'acquisition', 'plans'] as Tab[]).map(k => (
+          {(['users', 'community', 'resources', 'acquisition', 'plans'] as Tab[]).map(k => (
             <button
               key={k}
               onClick={() => setTab(k)}
@@ -65,13 +66,15 @@ export default function AdminPage() {
                 color: tab === k ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
               }}
             >
-              {k === 'community'
-                ? ((t as any).admin?.tabCommunity ?? 'Comunidade')
-                : k === 'resources'
-                  ? ((t as any).admin?.tabResources ?? 'Recursos')
-                  : k === 'acquisition'
-                    ? ((t as any).admin?.tabAcquisition ?? 'Aquisição')
-                    : ((t as any).admin?.tabPlans ?? 'Planos')}
+              {k === 'users'
+                ? ((t as any).admin?.tabUsers ?? 'Usuários')
+                : k === 'community'
+                  ? ((t as any).admin?.tabCommunity ?? 'Comunidade')
+                  : k === 'resources'
+                    ? ((t as any).admin?.tabResources ?? 'Recursos')
+                    : k === 'acquisition'
+                      ? ((t as any).admin?.tabAcquisition ?? 'Aquisição')
+                      : ((t as any).admin?.tabPlans ?? 'Planos')}
             </button>
           ))}
         </div>
@@ -86,7 +89,9 @@ export default function AdminPage() {
         )}
       </div>
 
-      {tab === 'community' ? (
+      {tab === 'users' ? (
+        <UsersAdminPage />
+      ) : tab === 'community' ? (
         <CommunityAdminPage />
       ) : tab === 'acquisition' ? (
         <AcquisitionAdminPage />

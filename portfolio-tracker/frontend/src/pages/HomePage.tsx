@@ -4,6 +4,7 @@ import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import { PageLoader } from '../components/ArvoLoader'
 import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
@@ -144,6 +145,11 @@ export default function HomePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { fmt, hideValues, fxRates } = useCurrency()
+  const { entitlements } = useUpgrade()
+  // Free reorganiza a Hoje em torno do que ele PODE usar (dividir com amigos,
+  // viagens, gastos do mês, recursos) — sem Patrimônio (gate 'patrimonio' = plus)
+  // e sem teaser de comunidade (gate = plus). Plus/Pro/beta mantêm o bento atual.
+  const isFree = entitlements?.tier === 'free'
   const setup = useSetupChecklist(user?.id)
 
   // Ordem dos cards Viagem/Momento/Recursos — vem da preferência salva no
@@ -334,7 +340,241 @@ export default function HomePage() {
 
   if (loading) return <PageLoader />
 
-  const showWealth = hasAssets !== false
+  // Patrimônio é gate 'patrimonio' (plus) — no free some por TIER, não por dados.
+  const showWealth = hasAssets !== false && !isFree
+
+  // Blocos reaproveitados entre o bento (plus/pro/beta) e a coluna única do free.
+  // Extraídos pra variável pra não duplicar a JSX quando a ORDEM muda por tier.
+  const financesBlock = data?.month_summary && (
+    <Link to="/finances" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
+        {data.month_summary.budget > 0 && !hideValues && (
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+            {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
+          </span>
+        )}
+      </div>
+      <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
+        {fmtCur(data.month_summary.spent, data.month_summary.currency)}
+        {data.month_summary.budget > 0 && (
+          <span style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+        )}
+      </p>
+      {data.month_summary.budget > 0 && (
+        <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
+          <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-gold)' }} />
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 32, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+        {forecast != null && (
+          <div>
+            <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
+            <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
+              {fmtCur(forecast, data.month_summary.currency)}
+            </p>
+          </div>
+        )}
+        <div>
+          <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.incomeLabel ?? 'Renda'}</p>
+          <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: 'var(--arvo-fg)', marginTop: 3 }}>
+            {fmtCur(data.month_summary.income, data.month_summary.currency)}
+          </p>
+        </div>
+        {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
+          <div>
+            <p style={{ ...cardLabel, fontSize: 10.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
+            <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
+              <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{saldo < 0 ? '−' : ''}{fmtCur(Math.abs(saldo), data.month_summary.currency)}</span>
+            </p>
+          </div>
+        )})()}
+      </div>
+    </Link>
+  )
+
+  const friendsBlock = friendsAndGroups.length > 0 && (
+    <div style={{ ...card, overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(140,106,40,0.12), transparent 70%)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#8C6A28', display: 'inline-flex' }}>
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+          </span>
+          <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
+        </div>
+        <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+      </div>
+      <div style={{ padding: '14px 20px 18px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {friendsAndGroups.map(entry => (
+            <div key={entry.type === 'friend' ? `f-${entry.user_id}` : `g-${entry.id}`} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              {entry.type === 'friend'
+                ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
+                : <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />}
+              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
+                {entry.type === 'group' && (
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                )}
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
+              </span>
+              {entry.balance && (
+                <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
+                  {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => entry.type === 'friend'
+                  ? setSplitFriend({ email: '', name: entry.name, user_id: entry.user_id } as ActiveFriend)
+                  : setSplitGroup({ id: entry.id, name: entry.name })}
+                title={th.splitExpense ?? 'Dividir despesa'}
+                style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, cursor: 'pointer' }}>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+          {th.splitExpense ?? 'Dividir despesa'}
+        </button>
+      </div>
+    </div>
+  )
+
+  // Free: coluna única na ordem Entre amigos → Viagem/Momento → Finanças →
+  // Recursos. Trip vem antes de Momento; Recursos por último (ordem fixa, não
+  // usa home_card_order). Sem Patrimônio, sem Comunidade, sem Metas.
+  if (isFree) {
+    const freeTrip = sidebarCards.find(c => c.id === 'trip')
+    const freeMoment = sidebarCards.find(c => c.id === 'moment')
+    const freeResource = sidebarCards.find(c => c.id === 'resource')
+    const tripCTA = !freeTrip && (
+      <Link to="/voyage" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+        <p style={{ ...cardLabel, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="13" height="13" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>
+          {th.tripNext ?? 'Próxima viagem'}
+        </p>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.tripEmpty ?? 'Planeje sua primeira viagem e organize tudo em um lugar.'}</p>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
+          {th.tripCreate ?? 'Criar viagem'}
+        </span>
+      </Link>
+    )
+    return (
+      <PullToRefresh onRefresh={loadHome}>
+        <div className="space-y-5">
+          <div>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
+            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 30, color: 'var(--arvo-fg)', marginTop: 4 }}>
+              {greeting}{data?.first_name ? `, ${data.first_name}` : ''}
+            </h1>
+          </div>
+
+          {/* Grid 2 colunas no desktop (coluna única deixava a página com um
+              vazio enorme à direita); mobile empilha. Ordem de leitura mantida:
+              Entre amigos → Viagem/Momento → Finanças → Recursos. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <div className="space-y-5">
+              {friendsBlock}
+              {financesBlock}
+            </div>
+            <div className="space-y-5">
+              {freeTrip?.node}
+              {freeMoment?.node}
+              {tripCTA}
+              {freeResource?.node}
+            </div>
+          </div>
+
+          {setup.visible && <SetupCard setup={setup} onNavigate={navigate} />}
+
+          <div>
+            <p style={{ ...cardLabel, marginBottom: 11 }}>{th.shortcuts ?? 'Atalhos'}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {shortcuts.map(s => (
+                <Link key={s.to} to={s.to} style={{ ...pillStyle, textDecoration: 'none' }}>
+                  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.7}>{s.icon}</svg>
+                  {s.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Modais de divisão (mesmos do bento) */}
+          {splitPicker && !splitFriend && !splitGroup && (
+            <div onClick={() => setSplitPicker(false)} className="flex items-end sm:items-center justify-center sm:p-4" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)' }}>
+              <div onClick={e => e.stopPropagation()} className="rounded-t-2xl sm:rounded-2xl" style={{ width: '100%', maxWidth: 400, maxHeight: '92vh', overflowY: 'auto', background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <p style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{th.splitWithWho ?? 'Dividir com quem?'}</p>
+                  <button type="button" onClick={() => setSplitPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
+                  </button>
+                </div>
+                {activeFriends.length === 0 && splitGroups.length === 0 ? (
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+                    {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
+                    <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {activeFriends.map(f => (
+                      <button key={`f-${f.user_id}`} type="button" onClick={() => setSplitFriend(f)} className="w-full text-left flex items-center gap-3"
+                        style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '')}
+                      >
+                        <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
+                          {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
+                        </span>
+                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
+                      </button>
+                    ))}
+                    {splitGroups.length > 0 && (
+                      <div style={{ marginTop: activeFriends.length > 0 ? 6 : 0, paddingTop: activeFriends.length > 0 ? 10 : 0, borderTop: activeFriends.length > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
+                        {splitGroups.map(g => (
+                          <button key={`g-${g.id}`} type="button" onClick={() => setSplitGroup(g)} className="w-full text-left flex items-center gap-3"
+                            style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = '')}
+                          >
+                            <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                            </span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {splitGroup && (
+            <GroupExpensesModal
+              groupId={splitGroup.id}
+              groupName={splitGroup.name}
+              initialMomentId={null}
+              onClose={() => { setSplitGroup(null); setSplitPicker(false) }}
+            />
+          )}
+          {splitFriend?.user_id && (
+            <PairMomentModal
+              friendUserId={splitFriend.user_id}
+              friendName={splitFriend.name ?? splitFriend.email}
+              initialMomentId={null}
+              balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
+              onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
+              onPromoted={loadHome}
+            />
+          )}
+        </div>
+      </PullToRefresh>
+    )
+  }
 
   return (
     <PullToRefresh onRefresh={loadHome}>
@@ -453,8 +693,9 @@ export default function HomePage() {
             </Link>
           )}
 
-          {/* Comunidade — cabeçalho com cor + ponto vermelho de respostas novas */}
-          {data && data.hot_topics.length > 0 && (
+          {/* Comunidade — cabeçalho com cor + ponto vermelho de respostas novas.
+              No free não há teaser de comunidade (gate = plus): esconde por tier. */}
+          {!isFree && data && data.hot_topics.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -674,6 +915,7 @@ export default function HomePage() {
           initialMomentId={null}
           balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
           onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
+          onPromoted={loadHome}
         />
       )}
     </div>

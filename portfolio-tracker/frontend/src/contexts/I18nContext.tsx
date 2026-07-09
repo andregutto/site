@@ -3,6 +3,7 @@ import pt from '../i18n/pt.json'
 import en from '../i18n/en.json'
 import fr from '../i18n/fr.json'
 import { supabase } from '../lib/supabase'
+import { apiFetch } from '../lib/api'
 
 export type Locale = 'pt' | 'en' | 'fr'
 
@@ -59,11 +60,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   function setLocale(l: Locale) {
     setLocaleState(l)
     localStorage.setItem(STORAGE_KEY, l)
-    // Persist to Supabase so every device/session gets the same preference.
-    // localStorage is the source of truth for this device regardless of whether this succeeds.
-    supabase.auth.updateUser({ data: { preferred_locale: l } }).catch(err => {
-      console.warn('[i18n] failed to persist locale preference to server:', err)
-    })
+    // Persiste no perfil (user_metadata.preferred_locale) via o mesmo endpoint
+    // canônico dos outros campos (default_section etc.), pra no login em outro
+    // dispositivo o idioma do perfil vencer o do navegador. localStorage é só o
+    // cache local; a persistência no banco é a fonte de verdade entre sessões.
+    // Só tenta quando há sessão (evita 401 na tela de login) e nunca bloqueia a UI.
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) return
+      apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ preferred_locale: l }) }).catch(err => {
+        console.warn('[i18n] failed to persist locale preference to server:', err)
+      })
+    }).catch(() => {})
   }
 
   useEffect(() => {

@@ -92,6 +92,11 @@ sem nova decisão. Atualize este arquivo quando uma decisão nova for tomada.
   subtítulo longo pode sumir abaixo de sm) — o usuário quer ver o conteúdo.
 - **TierBadge/TierGlyph**: sempre passar o tema real (`onDark`), nunca fixo.
 
+## Botões
+
+- **`.arvo-btn` é pill por padrão** (border-radius 999px, decisão 2026-07-09)
+  em todas as variantes (ghost/sm/etc). Não criar botões retangulares novos.
+
 ## Prompts e alertas pro usuário
 
 - **Não metralhar usuário novo**: nenhum prompt/banner opcional na primeira
