@@ -14,7 +14,7 @@ import { fmtDateRange, destinationsLabel, tripDurationDays } from './PublicTripP
 // padrão visual e de atribuição do gate de Recursos (ResourcePublicPage).
 
 const F_SANS    = 'var(--arvo-font-body)'
-const F_DISPLAY = "'Playfair Display', Georgia, serif"
+const F_DISPLAY = "'Fraunces', Georgia, serif"
 
 interface GatePreview {
   title: string

@@ -190,28 +190,31 @@ export default function FinancesOverviewPage() {
   const { active: activeNotifications, dismiss: dismissNotification } = useNotificationsContext()
   const budgetAlerts = activeNotifications.filter(i => i.type === 'budget_alert')
 
-  const [showHomePrompt, setShowHomePrompt] = useState(() =>
-    user?.user_metadata?.default_section !== 'finances' &&
-    !localStorage.getItem('arvo_finances_home_prompt_dismissed')
-  )
+  // A resposta (sim OU não) persiste no BANCO via default_section — respondeu
+  // uma vez, nunca mais pergunta, em qualquer dispositivo ('não' grava 'home').
+  // O localStorage só marca o ritmo: usuário novo não é metralhado — a pergunta
+  // só aparece a partir da 3ª visita a Finanças (decisão 2026-07-09).
+  const [showHomePrompt, setShowHomePrompt] = useState(() => {
+    if (user?.user_metadata?.default_section) return false
+    const visits = Number(localStorage.getItem('arvo_finances_visits') ?? '0') + 1
+    localStorage.setItem('arvo_finances_visits', String(visits))
+    return visits >= 3
+  })
   const [savingHome, setSavingHome] = useState(false)
 
-  async function confirmHomeSection() {
+  async function setHomeSection(section: 'finances' | 'home') {
     setSavingHome(true)
     try {
-      await apiFetch('/api/profile', { method: 'PATCH', body: JSON.stringify({ default_section: 'finances' }) })
+      await apiFetch('/api/profile', { method: 'PATCH', body: JSON.stringify({ default_section: section }) })
       await supabase.auth.refreshSession()
     } finally {
-      localStorage.setItem('arvo_finances_home_prompt_dismissed', '1')
       setShowHomePrompt(false)
       setSavingHome(false)
     }
   }
 
-  function dismissHomePrompt() {
-    localStorage.setItem('arvo_finances_home_prompt_dismissed', '1')
-    setShowHomePrompt(false)
-  }
+  const confirmHomeSection = () => setHomeSection('finances')
+  const dismissHomePrompt = () => setHomeSection('home')
   const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,

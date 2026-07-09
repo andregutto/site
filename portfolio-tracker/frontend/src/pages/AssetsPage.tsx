@@ -108,7 +108,7 @@ export default function AssetsPage() {
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>
             {view === 'favorites' ? t.favorites.empty : t.dashboard.noOpenPositions}
           </p>
-          <p className="text-sm mt-1" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>
+          <p className="text-sm mt-1" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>
             {view === 'favorites' ? t.favorites.emptyDescription : t.dashboard.addAssetsHint}
           </p>
         </div>

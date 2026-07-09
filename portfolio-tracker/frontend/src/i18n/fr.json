@@ -268,6 +268,11 @@
     "total": "Total",
     "hideValues": "Masquer les valeurs",
     "showValues": "Afficher les valeurs",
+    "theme": "Thème",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeToggleLight": "Thème clair",
+    "themeToggleDark": "Thème sombre",
     "quantity": "Qté",
     "noData": "Pas de données",
     "description": "Description",
@@ -3210,7 +3215,7 @@
     "tierPro": "Pro",
     "tierBeta": "Beta",
     "yourPlan": "votre plan",
-    "unlimited": "∞",
+    "unlimited": "Illimité",
     "perDay": "/jour",
     "perMonth": "/mois",
     "accounts": "comptes",
@@ -3222,10 +3227,11 @@
     "seeAllPlans": "Voir tous les plans",
     "plansEyebrow": "Plans",
     "plansTitle": "Choisissez ce qu'Arvo fait pour vous",
-    "plansIntro": "Vous faites déjà partie de la communauté. Les plans élargissent ce qu'Arvo automatise, connecte et analyse pour vous — et ils ouvrent bientôt.",
+    "plansIntro": "Vous faites déjà partie de la communauté. Les plans élargissent ce qu'Arvo automatise, connecte et analyse pour vous. Upgrades bientôt disponibles.",
     "plansCurrent": "Votre plan actuel : {tier}",
     "seeFullList": "Voir la liste complète",
     "showLess": "Voir moins",
+    "everythingIn": "Tout {tier}, et plus :",
     "included": {
       "unlimited_accounts": "Comptes et transactions illimités",
       "personal_finances": "Gestion des finances personnelles (manuelle)",
@@ -3263,6 +3269,7 @@
         "ai_more": "Catégorisation par IA avec des limites bien plus hautes",
         "everything_plus": "Tout Plus, sans les plafonds du quotidien"
       }
-    }
+    },
+    "notifyDone": "Vous serez prévenu ✓"
   }
 }

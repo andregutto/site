@@ -159,7 +159,7 @@ export default function ResourceDetailPage() {
             }}>
               {tierLabel}
             </span>
-            <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
+            <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400, fontSize: 'clamp(22px, 2.8vw, 28px)', color: 'var(--arvo-fg)', margin: 0, lineHeight: 1.2 }}>
               {resource.title}
             </h1>
           </div>
@@ -196,7 +196,7 @@ export default function ResourceDetailPage() {
 
           {resource.description && (
             <div style={{ borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))', paddingTop: 14 }}>
-              <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 20, color: 'var(--arvo-fg)', margin: '0 0 8px' }}>{r.aboutTitle}</h2>
+              <h2 style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400, fontSize: 20, color: 'var(--arvo-fg)', margin: '0 0 8px' }}>{r.aboutTitle}</h2>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>
                 {resource.description}
               </p>

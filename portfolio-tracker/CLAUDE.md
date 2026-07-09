@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Design e branding (LEIA ANTES de criar qualquer elemento visual)
+
+Toda decisão de branding/UI aprovada pelo André está consolidada em
+**`docs/DESIGN_SYSTEM.md`** — tipografia (Fraunces/Tenor/DM Sans), regras de
+tema light/dark, identidade dos tiers (glifo, degradês, fotos autorais), copy
+(sem travessão, "upgrade" não "assine"), padrões de modal/cards/bloqueio e o
+processo de aprovação elemento-a-elemento. Elementos novos nascem seguindo
+esse documento; decisões novas devem ser registradas nele.
+
 ## Commands
 
 **Frontend** (`frontend/`):

@@ -54,20 +54,27 @@ export default function UpgradeCta({
         {done ? (s.notifiedDone ?? 'Você será avisado ✓') : busy ? (s.notifying ?? '...') : (s.notifyCta ?? 'Avisar quando abrir')}
       </button>
       {showSubcopy && (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, lineHeight: 1.55, color: dark ? 'rgba(242,237,228,0.6)' : 'var(--arvo-fg-soft)', textAlign: 'center', marginTop: 11 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, lineHeight: 1.55, color: dark ? 'rgba(242,237,228,0.6)' : 'var(--arvo-fg-soft)', textAlign: 'center', marginTop: 11 }}>
           {s.notifySubcopy ?? 'Os upgrades ainda não estão à venda. Quem registra interesse fica sabendo primeiro quando abrirem.'}
         </p>
       )}
       {showPlansLink && (
-        <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <Link
-            to="/planos"
-            onClick={onNavigate}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: dark ? 'rgba(242,237,228,0.72)' : 'var(--arvo-fg-muted)', textDecoration: 'underline', textUnderlineOffset: 3 }}
-          >
-            {s.seeAllPlans ?? 'Ver todos os planos'}
-          </Link>
-        </div>
+        <Link
+          to="/planos"
+          onClick={onNavigate}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '100%', minHeight: 44, marginTop: 12, boxSizing: 'border-box',
+            padding: '11px 20px', borderRadius: 12, textDecoration: 'none',
+            fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600,
+            letterSpacing: '0.04em',
+            background: dark ? 'rgba(242,237,228,0.08)' : 'var(--arvo-chip-bg)',
+            color: dark ? 'rgba(242,237,228,0.92)' : 'var(--arvo-fg)',
+            border: dark ? '1px solid rgba(200,184,154,0.2)' : '1px solid var(--arvo-border)',
+          }}
+        >
+          {s.seeAllPlans ?? 'Ver todos os planos'}
+        </Link>
       )}
     </div>
   )

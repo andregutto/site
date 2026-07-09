@@ -12,7 +12,7 @@ import GoogleLogo from './GoogleLogo'
 // a mesma chave depois do redirect.
 
 const F_SANS = 'var(--arvo-font-body)'
-const F_DISPLAY = "'Playfair Display', Georgia, serif"
+const F_DISPLAY = "'Fraunces', Georgia, serif"
 
 const inputBase: React.CSSProperties = {
   width: '100%', border: '1px solid var(--arvo-border)', borderRadius: 3, padding: '11px 14px',

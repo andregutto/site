@@ -2,7 +2,7 @@
    ARVO — colors_and_type.css
    The two foundations of the brand. Import this file before anything else.
 
-   Fonts: self-hosted. Display/wordmark → Tenor Sans. Body/UI → DM Sans (variable). Editorial accent → Playfair Display (italic).
+   Fonts: self-hosted. Display/wordmark → Tenor Sans. Body/UI → DM Sans (variable). Editorial accent → Fraunces (italic).
    If you need self-hosted fonts, drop .woff2 files into /fonts and replace
    the @import below with @font-face declarations.
    ===================================================================== */
@@ -30,18 +30,18 @@
   font-display: swap;
 }
 @font-face {
-  font-family: 'Playfair Display';
-  src: url('./fonts/PlayfairDisplay-VariableFont_wght.ttf') format('truetype-variations'),
-       url('./fonts/PlayfairDisplay-VariableFont_wght.ttf') format('truetype');
-  font-weight: 400 900;
+  font-family: 'Fraunces';
+  src: url('./fonts/Fraunces-VariableFont.ttf') format('truetype-variations'),
+       url('./fonts/Fraunces-VariableFont.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Playfair Display';
-  src: url('./fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf') format('truetype-variations'),
-       url('./fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf') format('truetype');
-  font-weight: 400 900;
+  font-family: 'Fraunces';
+  src: url('./fonts/Fraunces-Italic-VariableFont.ttf') format('truetype-variations'),
+       url('./fonts/Fraunces-Italic-VariableFont.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: italic;
   font-display: swap;
 }
@@ -130,7 +130,7 @@
 
   /* ── TYPOGRAPHY ────────────────────────────────────────────────────── */
   --arvo-font-display: 'Tenor Sans', 'Times New Roman', serif;
-  --arvo-font-serif:   'Playfair Display', Georgia, serif;   /* italic accent */
+  --arvo-font-serif:   'Fraunces', Georgia, serif;   /* italic accent */
   --arvo-font-body:    'DM Sans', system-ui, sans-serif;
 
   /* Letter-spacing — DM Sans needs no extra tracking; Tenor Sans headings keep theirs */

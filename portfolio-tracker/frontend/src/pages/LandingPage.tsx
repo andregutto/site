@@ -37,7 +37,7 @@ const CSS = `
   .lv3 .hero-copy{max-width:540px;padding-bottom:clamp(56px,9vh,110px)}
   .lv3 .hero-eb{display:inline-flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.66)}
   .lv3 .hero-eb .dot{width:5px;height:5px;border-radius:50%;background:#C8B89A}
-  .lv3 .hero h1{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(2.4rem,4.6vw,3.9rem);line-height:1.08;color:#fff;letter-spacing:-.5px;margin:22px 0 0}
+  .lv3 .hero h1{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(2.4rem,4.6vw,3.9rem);line-height:1.08;color:#fff;letter-spacing:-.5px;margin:22px 0 0}
   .lv3 .hero h1 em{font-style:italic;color:#C8B89A}
   .lv3 .hero .sub{font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;color:rgba(255,255,255,.66);max-width:420px;margin-top:18px}
   .lv3 .hero-ctas{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-top:34px}
@@ -156,10 +156,10 @@ const CSS = `
   @media (prefers-reduced-motion: reduce){.lv3 .marq-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto}.lv3 .draw{animation:none;stroke-dashoffset:0}}
 
   .lv3 .acts{padding:clamp(84px,10vw,140px) 0 0}
-  .lv3 .acts-head h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.8rem,3.4vw,2.6rem);line-height:1.15;letter-spacing:-.3px;max-width:600px;margin-top:16px}
+  .lv3 .acts-head h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.8rem,3.4vw,2.6rem);line-height:1.15;letter-spacing:-.3px;max-width:600px;margin-top:16px}
   .lv3 .act{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,90px);align-items:center;margin-top:clamp(72px,9vw,120px)}
   .lv3 .act.flip .vis{order:-1}
-  .lv3 .act h3{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.2;margin:14px 0 12px;letter-spacing:-.2px}
+  .lv3 .act h3{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.2;margin:14px 0 12px;letter-spacing:-.2px}
   .lv3 .act .desc{font-size:15px;line-height:1.8;color:rgba(13,13,13,.75);max-width:400px}
   .lv3 .act ul{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
   .lv3 .act ul li{font-size:13.5px;color:rgba(13,13,13,.75);display:flex;gap:10px;align-items:baseline}
@@ -210,11 +210,11 @@ const CSS = `
   .lv3 .quote .bg{position:absolute;inset:0;background:url('/brand/imagery/03-capins-dourados.jpg') center/cover;filter:brightness(.38) sepia(.30) saturate(1.25)}
   .lv3 .quote .in{position:relative;text-align:center;max-width:680px;margin:0 auto}
   .lv3 .quote .rule{width:34px;height:1px;background:#C8B89A;margin:0 auto 28px}
-  .lv3 .quote .q{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.4rem);color:#fff;line-height:1.45}
+  .lv3 .quote .q{font-family:'Fraunces',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.4rem);color:#fff;line-height:1.45}
   .lv3 .quote .a{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:24px}
 
   .lv3 .how{border-top:1px solid rgba(13,13,13,.09);border-bottom:1px solid rgba(13,13,13,.09);background:#fff;padding:clamp(70px,9vw,110px) 0}
-  .lv3 .how h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.7rem,3vw,2.3rem);margin-top:14px}
+  .lv3 .how h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.7rem,3vw,2.3rem);margin-top:14px}
   .lv3 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px;position:relative}
   .lv3 .steps::before{content:'';position:absolute;top:34px;left:11%;right:11%;height:1px;background:rgba(13,13,13,.09)}
   .lv3 .steps .prog{position:absolute;top:34px;left:11%;height:1px;background:#C8B89A;width:0;transition:width 1.1s cubic-bezier(.22,.61,.36,1)}
@@ -237,13 +237,13 @@ const CSS = `
   }
 
   .lv3 .faq{max-width:720px;margin:0 auto;padding:clamp(76px,9vw,120px) 24px}
-  .lv3 .faq h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.6rem,2.8vw,2.2rem);margin-top:14px}
+  .lv3 .faq h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.6rem,2.8vw,2.2rem);margin-top:14px}
   .lv3 .faq .list{margin-top:40px}
   .lv3 .faq details{border-top:1px solid rgba(13,13,13,.09)}
   .lv3 .faq details:last-child{border-bottom:1px solid rgba(13,13,13,.09)}
   .lv3 .faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:18px;padding:21px 0;font-size:15px;color:rgba(13,13,13,.92)}
   .lv3 .faq summary::-webkit-details-marker{display:none}
-  .lv3 .faq summary .n{font-family:'Playfair Display',serif;font-size:17px;color:rgba(13,13,13,.18);width:26px;flex-shrink:0}
+  .lv3 .faq summary .n{font-family:'Fraunces',serif;font-size:17px;color:rgba(13,13,13,.18);width:26px;flex-shrink:0}
   .lv3 .faq summary .chev{margin-left:auto;transition:transform .28s;flex-shrink:0}
   .lv3 .faq details[open] summary .chev{transform:rotate(180deg)}
   .lv3 .faq .ans{padding:0 0 22px 44px;font-size:14.5px;line-height:1.85;color:rgba(13,13,13,.75)}
@@ -253,7 +253,7 @@ const CSS = `
   .lv3 .cta .ov{position:absolute;inset:0;background:rgba(8,8,8,.6)}
   .lv3 .cta .in{position:relative;text-align:center;max-width:560px;margin:0 auto}
   .lv3 .cta .rule{width:34px;height:1px;background:#C8B89A;margin:0 auto 28px}
-  .lv3 .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.9rem,4vw,3rem);color:#fff;line-height:1.12;letter-spacing:-.4px}
+  .lv3 .cta h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.9rem,4vw,3rem);color:#fff;line-height:1.12;letter-spacing:-.4px}
   .lv3 .cta p{font-size:15px;color:rgba(255,255,255,.6);line-height:1.75;margin:16px 0 34px}
 `
 
@@ -647,7 +647,7 @@ export default function LandingPage() {
               </button>
               {loginOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: '24px 22px', width: 288, zIndex: 10 }}>
-                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, color: DARK, marginBottom: 18 }}>{l.loginTitle}</p>
+                  <p style={{ fontFamily: "'Fraunces', serif", fontSize: 17, color: DARK, marginBottom: 18 }}>{l.loginTitle}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
                     {googleLoginBlock}
                   </div>

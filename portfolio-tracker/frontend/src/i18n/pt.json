@@ -268,6 +268,11 @@
     "total": "Total",
     "hideValues": "Ocultar valores",
     "showValues": "Mostrar valores",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "themeToggleLight": "Tema claro",
+    "themeToggleDark": "Tema escuro",
     "quantity": "Qtd",
     "noData": "Sem dados",
     "description": "Descrição",
@@ -3210,7 +3215,7 @@
     "tierPro": "Pro",
     "tierBeta": "Beta",
     "yourPlan": "seu plano",
-    "unlimited": "∞",
+    "unlimited": "Ilimitado",
     "perDay": "/dia",
     "perMonth": "/mês",
     "accounts": "contas",
@@ -3222,10 +3227,11 @@
     "seeAllPlans": "Ver todos os planos",
     "plansEyebrow": "Planos",
     "plansTitle": "Escolha quanto o Arvo faz por você",
-    "plansIntro": "Você já faz parte da comunidade. Os planos ampliam o que o Arvo automatiza, conecta e analisa por você — e abrem em breve.",
+    "plansIntro": "Você já faz parte da comunidade. Os planos ampliam o que o Arvo automatiza, conecta e analisa por você. Upgrades em breve.",
     "plansCurrent": "Seu plano atual: {tier}",
     "seeFullList": "Ver lista completa",
     "showLess": "Ver menos",
+    "everythingIn": "Tudo do {tier}, e mais:",
     "included": {
       "unlimited_accounts": "Contas e transações ilimitadas",
       "personal_finances": "Gestão de finanças pessoais (manual)",
@@ -3263,6 +3269,7 @@
         "ai_more": "Categorização por IA com limites bem maiores",
         "everything_plus": "Tudo do Plus, sem os tetos do dia a dia"
       }
-    }
+    },
+    "notifyDone": "Você será avisado ✓"
   }
 }

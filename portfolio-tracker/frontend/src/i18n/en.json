@@ -268,6 +268,11 @@
     "total": "Total",
     "hideValues": "Hide values",
     "showValues": "Show values",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeToggleLight": "Light theme",
+    "themeToggleDark": "Dark theme",
     "quantity": "Qty",
     "noData": "No data",
     "description": "Description",
@@ -3210,7 +3215,7 @@
     "tierPro": "Pro",
     "tierBeta": "Beta",
     "yourPlan": "your plan",
-    "unlimited": "∞",
+    "unlimited": "Unlimited",
     "perDay": "/day",
     "perMonth": "/mo",
     "accounts": "accounts",
@@ -3222,10 +3227,11 @@
     "seeAllPlans": "See all plans",
     "plansEyebrow": "Plans",
     "plansTitle": "Choose how much Arvo does for you",
-    "plansIntro": "You're already part of the community. The plans expand what Arvo automates, connects and analyzes for you — and they open soon.",
+    "plansIntro": "You're already part of the community. The plans expand what Arvo automates, connects and analyzes for you. Upgrades coming soon.",
     "plansCurrent": "Your current plan: {tier}",
     "seeFullList": "See full list",
     "showLess": "Show less",
+    "everythingIn": "Everything in {tier}, plus:",
     "included": {
       "unlimited_accounts": "Unlimited accounts and transactions",
       "personal_finances": "Personal finance management (manual)",
@@ -3263,6 +3269,7 @@
         "ai_more": "AI categorization with much higher limits",
         "everything_plus": "Everything in Plus, without the day-to-day caps"
       }
-    }
+    },
+    "notifyDone": "You'll be notified ✓"
   }
 }

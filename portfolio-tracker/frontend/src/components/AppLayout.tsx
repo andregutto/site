@@ -8,6 +8,7 @@ import type React from 'react'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { useMessagingContext } from '../contexts/MessagingContext'
 import { useUpgrade } from '../contexts/UpgradeContext'
+import { TierGlyph, ArvoGlyphSolid } from './upgrade/TierBadge'
 import { resolveNotificationText, SEVERITY_COLORS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
@@ -57,11 +58,20 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => voi
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency, hideValues, toggleHideValues } = useCurrency()
-  const { resolvedTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const { t, locale } = useI18n()
   const { active: activeNotifications, unreadCount, dismissAll, acceptInvite } = useNotificationsContext()
   const { unreadTotal: messagesUnreadTotal } = useMessagingContext()
-  const { hasGate } = useUpgrade()
+  const { hasGate, entitlements } = useUpgrade()
+  // Tier do usuário no header (glifo ao lado do logo). Beta lê como Pro
+  // visualmente por ora; Free não ganha glifo extra.
+  const headerTier: 'plus' | 'pro' | null =
+    entitlements?.tier === 'pro' || entitlements?.tier === 'beta' ? 'pro'
+      : entitlements?.tier === 'plus' ? 'plus'
+      : null
+  // Alterna direto light↔dark (sem passar por 'auto') — o ícone reflete o
+  // estado atual: sol no dark (clica → light), lua no light (clica → dark).
+  const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   const [acceptingKey, setAcceptingKey] = useState<string | null>(null)
   const location = useLocation()
 
@@ -444,14 +454,28 @@ export default function AppLayout() {
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
 
-          {/* Logo wordmark + product name */}
+          {/* Logo como lockup do plano (variante C aprovada 2026-07-09): com
+              Plus/Pro, o glifo do PRÓPRIO logo ganha o degradê do tier e o nome
+              do plano entra na linha, na mesma Tenor Sans e mesmo tracking do
+              wordmark, menor e dourado. Free = logo puro. Sem glifo duplicado.
+              Mobile mostra glifo tingido + nome do plano (wordmark some). */}
           <Link
             to="/home"
             className="shrink-0 flex items-center gap-2.5 hover:opacity-70 transition-opacity"
             style={{ textDecoration: 'none' }}
+            title={headerTier ? (headerTier === 'pro' ? 'Arvo Pro' : 'Arvo Plus') : undefined}
           >
-            <img src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} width="22" height="22" alt="" />
+            {headerTier ? (
+              <TierGlyph tier={headerTier} size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+            ) : (
+              <ArvoGlyphSolid size={22} onDark={resolvedTheme === 'dark'} style={{ display: 'block' }} />
+            )}
             <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
+            {headerTier && (
+              <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.30em', textIndent: '0.30em', color: resolvedTheme === 'dark' ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', lineHeight: 1, marginLeft: -4 }}>
+                {headerTier === 'pro' ? 'pro' : 'plus'}
+              </span>
+            )}
           </Link>
           <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
             <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
@@ -505,6 +529,31 @@ export default function AppLayout() {
               )}
             </button>
             )}
+            {/* Theme toggle — ghost icon no header, desktop E mobile (decisão
+                2026-07-09: o André preferiu o ícone sempre visível ao controle
+                no menu do avatar). Sol no dark (→ light), lua no light (→ dark). */}
+            <button
+              onClick={toggleTheme}
+              title={resolvedTheme === 'dark' ? ((t.common as any).themeToggleLight ?? 'Tema claro') : ((t.common as any).themeToggleDark ?? 'Tema escuro')}
+              aria-label={resolvedTheme === 'dark' ? ((t.common as any).themeToggleLight ?? 'Tema claro') : ((t.common as any).themeToggleDark ?? 'Tema escuro')}
+              className="flex h-8 w-8"
+              style={{ borderRadius: 8, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              {resolvedTheme === 'dark' ? (
+                // Sol
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
+                  <circle cx="12" cy="12" r="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8" />
+                </svg>
+              ) : (
+                // Lua
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 13.5A8 8 0 0 1 10.5 4a7 7 0 1 0 9.5 9.5Z" />
+                </svg>
+              )}
+            </button>
             {/* Balloon: messages — visível em qualquer tamanho de tela; escondê-lo só no
                 mobile machucava a descoberta da feature (ficava enterrado no menu do
                 avatar), então volta a aparecer no header em ambos. */}

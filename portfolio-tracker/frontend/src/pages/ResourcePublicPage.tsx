@@ -16,7 +16,7 @@ import GateAuthPanel, { GateShell } from '../components/GateAuthPanel'
 // si (e o auto-unlock via pending_resource_slug) vive lá, não aqui.
 
 const F_SANS    = "var(--arvo-font-body)"
-const F_DISPLAY = "'Playfair Display', Georgia, serif"
+const F_DISPLAY = "'Fraunces', Georgia, serif"
 
 interface ResourcePreview {
   slug: string

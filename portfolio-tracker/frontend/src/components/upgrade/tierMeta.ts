@@ -27,11 +27,14 @@ export const TIER_RANK: Record<GateTier, number> = { free: 0, plus: 1, pro: 2 }
 export interface GradientStop { color: string; offset: number } // offset 0..1
 
 export interface TierIdentity {
-  /** Paradas do degradê do glifo arvo (linearGradient x1=0 y1=0 x2=1 y2=1). */
+  /** Paradas do degradê do glifo arvo em superfície ESCURA (dark / foto). */
   gradient: GradientStop[]
-  /** drop-shadow do glifo sobre superfície escura (px de raio via helper). */
-  glowColor: string | null
+  /** Variante do degradê em superfície CLARA — o dourado claro do dark "lava"
+   *  no branco. Se ausente, usa `gradient` nos dois. */
+  gradientOnLight?: GradientStop[]
   photo: string
+  /** objectPosition da foto (enquadra o broto/vaso nas faixas baixas). */
+  photoPosition?: string
   chipBorder: string
   labelColor: (onDark: boolean) => string
 }
@@ -40,34 +43,42 @@ export const TIER_IDENTITY: Record<GateTier, TierIdentity> = {
   free: {
     // Free não tem badge; guardamos a foto pra usar no card Free da /planos.
     gradient: [{ color: '#C8B89A', offset: 0 }, { color: '#8C6A28', offset: 1 }],
-    glowColor: null,
-    photo: '/brand/tiers/tier-free.jpg',
+    photo: '/brand/tiers/tier-free-v2.jpg',
     chipBorder: 'rgba(200,184,154,0.3)',
     labelColor: onDark => (onDark ? 'rgba(242,237,228,0.8)' : 'var(--arvo-fg-muted)'),
   },
   plus: {
-    // Degradê dourado, sem glow.
+    // Dourado. No dark o degradê claro brilha; no light ele lavava no branco,
+    // então a variante clara começa mais fechada e desce pro âmbar escuro.
     gradient: [
       { color: '#E9DCBC', offset: 0 },
       { color: '#C8B89A', offset: 0.45 },
       { color: '#8C6A28', offset: 1 },
     ],
-    glowColor: null,
-    photo: '/brand/tiers/tier-plus.jpg',
+    gradientOnLight: [
+      { color: '#C8B89A', offset: 0 },
+      { color: '#A8905C', offset: 0.45 },
+      { color: '#6E5320', offset: 1 },
+    ],
+    photo: '/brand/tiers/tier-plus-v2.jpg',
+    photoPosition: 'center 68%',
     chipBorder: 'rgba(200,184,154,0.4)',
     labelColor: onDark => (onDark ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)'),
   },
   pro: {
-    // Bronze → grafite com tons erguidos (nada de preto puro no fim) + glow
-    // dourado sobre dark: leitura "cartão black" com reflexo.
+    // Bronze → grafite com tons erguidos (nada de preto puro no fim). O degradê
+    // ergido já contrasta em claro e em escuro — mesmo gradiente nos dois. Glow
+    // removido (o halo borrava sobre dark). Leitura "cartão black" com reflexo.
     gradient: [
-      { color: '#C9A257', offset: 0 },
-      { color: '#5A4E40', offset: 0.35 },
-      { color: '#33302B', offset: 0.7 },
-      { color: '#1E1C19', offset: 1 },
+      // Reflexo de bronze mais vivo no topo (aprovado 2026-07-09): presença no
+      // dark sem glow, corpo grafite "cartão black" preservado.
+      { color: '#E0B76A', offset: 0 },
+      { color: '#6B5D4A', offset: 0.35 },
+      { color: '#453F36', offset: 0.7 },
+      { color: '#2E2A25', offset: 1 },
     ],
-    glowColor: '#C9A257', // opacidade vem dos stops do halo radial no TierGlyph
-    photo: '/brand/tiers/tier-pro.jpg',
+    photo: '/brand/tiers/tier-pro-v2.jpg',
+    photoPosition: 'center 62%',
     chipBorder: 'rgba(201,162,87,0.45)',
     labelColor: onDark => (onDark ? 'rgba(224,206,168,0.95)' : '#5A4A2E'),
   },
@@ -105,6 +116,33 @@ export const ROW_ORDER: string[] = [
   'ir_france',
 ]
 
+// Modelo "delta" (padrão Finary/Stripe) dos cards da /planos: cada tier pago
+// mostra "Tudo do <anterior>, e mais:" seguido SÓ do que ele acrescenta,
+// ordenado por desejo. O Free não usa delta — lista o que tem (✓) e depois o
+// que não tem (✕ esmaecido) pra gerar vontade de assinar. As chaves abaixo são
+// gates/quotas de ROW_ORDER; a label vem de upgrade.rows.<key>. Quotas (ex.
+// ai_categorize_month, import_accounts) mostram o valor do tier ao lado.
+export const DELTA_ROWS: Record<'plus' | 'pro', string[]> = {
+  plus: [
+    'patrimonio',
+    'community',
+    'messaging',
+    'import_accounts',
+    'ai_categorize_month',
+    'budget',
+    'moments_create',
+    'shared_groups_create',
+    'freedom_plans',
+  ],
+  pro: [
+    'insights',
+    'diversification',
+    'ir_france',
+    'import_accounts',
+    'ai_categorize_month',
+  ],
+}
+
 export function tierLabel(t: GateTier, s: Record<string, string>): string {
   return t === 'free' ? (s.tierFree ?? 'Free') : t === 'plus' ? (s.tierPlus ?? 'Plus') : (s.tierPro ?? 'Pro')
 }
@@ -122,8 +160,8 @@ const CURATED: Record<'plus' | 'pro', string[]> = {
   pro: ['insights', 'diversification', 'ir_france', 'ai_more', 'everything_plus'],
 }
 
-// Chaves de benefício que falam de IA — o modal usa o ✨ (mesmo ícone da
-// categorização por IA em Transações) no lugar do marcador ✦ padrão.
+// Chaves de benefício que falam de IA — o modal usa o ícone `sparkle` de
+// icons.tsx (mesmo da categorização por IA) no lugar do marcador ✦ padrão.
 export const AI_BENEFIT_KEYS = new Set(['ai_categorize', 'ai_more'])
 
 export interface Benefit { key: string; text: string }

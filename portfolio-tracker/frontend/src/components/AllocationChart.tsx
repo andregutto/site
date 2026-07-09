@@ -34,7 +34,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   return (
     <div className="rounded-2xl p-4 sm:p-6 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
-      <p className="mb-2" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
+      <p className="mb-2" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
       <div className="flex-1 min-h-[280px] flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         <div className="w-full sm:flex-1 sm:h-full" style={{ minHeight: 220 }}>
           <ResponsiveContainer width="100%" height="100%">

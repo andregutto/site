@@ -5,6 +5,7 @@ import { curatedBenefits, AI_BENEFIT_KEYS } from './tierMeta'
 import UpgradeArt from './UpgradeArt'
 import UpgradeCta from './UpgradeCta'
 import TierBadge from './TierBadge'
+import { Icon } from '../icons'
 
 // Peça central do sistema de tiers. O CORPO do modal segue o tema do app
 // (superfície clara no light, escura no dark). A coluna lateral (UpgradeArt)
@@ -56,12 +57,14 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-[680px] rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        className="w-full sm:max-w-[800px] rounded-t-2xl sm:rounded-2xl overflow-hidden"
         style={{
           background: onDark ? '#0D0D0D' : 'var(--arvo-surface)',
           maxHeight: '100dvh',
           boxShadow: onDark ? '0 30px 80px -20px rgba(0,0,0,0.7)' : 'var(--arvo-shadow-lg)',
-          border: onDark ? '1px solid rgba(200,184,154,0.14)' : '1px solid var(--arvo-border)',
+          // No dark uma borda fina dourada dá o recorte; no light a sombra do
+          // tema já separa — nada de linha branca por cima (feio, feedback dono).
+          border: onDark ? '1px solid rgba(200,184,154,0.14)' : 'none',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -71,7 +74,7 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
               tier no eyebrow. É o próprio fundo do modal, não um banner solto. ── */}
           <UpgradeArt
             tier={requiredTier}
-            className="shrink-0 sm:w-[210px]"
+            className="shrink-0 sm:w-[300px]"
             style={{ minHeight: 118 }}
           />
 
@@ -99,16 +102,18 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
                 {quotaLine}
               </p>
             ) : (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: onDark ? 'rgba(242,237,228,0.6)' : 'var(--arvo-fg-muted)', marginTop: 8 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: onDark ? 'rgba(242,237,228,0.6)' : 'var(--arvo-fg-muted)', marginTop: 8 }}>
                 {s.modalIntro ?? 'Veja o que passa a fazer parte do seu Arvo:'}
               </p>
             )}
 
             <ul style={{ listStyle: 'none', margin: '14px 0 18px', padding: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
               {benefits.map((b, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.4, color: onDark ? 'rgba(242,237,228,0.86)' : 'var(--arvo-fg)' }}>
-                  <span style={{ color: onDark ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', flexShrink: 0, fontSize: 12, transform: 'translateY(-1px)' }}>
-                    {AI_BENEFIT_KEYS.has(b.key) ? '✨' : '✦'}
+                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, lineHeight: 1.4, color: onDark ? 'rgba(242,237,228,0.86)' : 'var(--arvo-fg)' }}>
+                  <span style={{ color: onDark ? 'var(--arvo-gold)' : 'var(--arvo-gold-text)', flexShrink: 0, display: 'inline-flex', transform: 'translateY(2px)' }}>
+                    {AI_BENEFIT_KEYS.has(b.key)
+                      ? <Icon name="sparkle" size={14} />
+                      : <span style={{ fontSize: 12 }}>✦</span>}
                   </span>
                   <span>{b.text}</span>
                 </li>

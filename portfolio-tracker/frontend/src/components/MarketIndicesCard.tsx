@@ -82,7 +82,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
         {t.indices.title ?? 'Índices'}
       </h2>
-      <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>
+      <p className="mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 14, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
       <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: `1fr auto auto${portfolioReturnPct != null ? ' auto' : ''}`, columnGap: 14, rowGap: 10 }}>
