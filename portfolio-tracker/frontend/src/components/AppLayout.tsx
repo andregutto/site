@@ -774,6 +774,19 @@ export default function AppLayout() {
                     </svg>
                     {t.nav.profile}
                   </Link>
+                  {/* Planos: relembrar benefícios e, no futuro, mudar plano ou
+                      cancelar assinatura moram na /planos (decisão 2026-07-09).
+                      O glifo do tier atual identifica o plano de quem já tem. */}
+                  <Link to="/planos" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    {headerTier
+                      ? <TierGlyph tier={headerTier} size={16} onDark={resolvedTheme === 'dark'} style={{ display: 'block', flexShrink: 0 }} />
+                      : (
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 5.5 8 2l6 3.5v5L8 14l-6-3.5z"/><path strokeLinecap="round" d="M8 8v6M2 5.5 8 8l6-2.5"/>
+                        </svg>
+                      )}
+                    {(t as any).nav?.plans ?? 'Planos'}
+                  </Link>
                   <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(27,79,216,0.05)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none">
                       <defs>

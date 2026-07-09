@@ -49,7 +49,7 @@ export interface SetupStep { key: string; done: boolean; label: string; to: stri
 // e pelo card da página Hoje — uma fonte de verdade só, sem duplicação.
 export function useSetupChecklist(userId?: string) {
   const { t } = useI18n()
-  const { hasGate } = useUpgrade()
+  const { hasGate, entitlements } = useUpgrade()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
   const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null
   const [hidden, setHidden] = useState(() => !!(storageKey && localStorage.getItem(storageKey)))
@@ -122,8 +122,12 @@ export function useSetupChecklist(userId?: string) {
     { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom',   gate: 'freedom_plans' },
     { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget',    gate: 'budget' },
   ] : []
+  // Passo gated só entra DEPOIS que os acessos carregaram e confirmaram: o
+  // hasGate é otimista no loading (retorna true) e isso fazia o free ver
+  // passos de Patrimônio/orçamento que ele não pode completar quando o fetch
+  // de entitlements atrasava ou falhava. Conservador: na dúvida, esconde.
   const steps: SetupStep[] = allSteps
-    .filter(st => !st.gate || hasGate(st.gate))
+    .filter(st => !st.gate || (entitlements != null && hasGate(st.gate)))
     .map(({ gate: _gate, ...rest }) => rest)
   const doneCount = steps.filter(st => st.done).length
   const total = steps.length || 5

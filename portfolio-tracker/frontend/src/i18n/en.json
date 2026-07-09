@@ -31,7 +31,8 @@
     "voyage": "Trips",
     "community": "Community",
     "admin": "Admin",
-    "aprender": "Learn"
+    "aprender": "Learn",
+    "plans": "Plans"
   },
   "admin": {
     "eyebrow": "ADMIN",
