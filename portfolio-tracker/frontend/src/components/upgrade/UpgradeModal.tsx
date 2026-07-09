@@ -1,8 +1,9 @@
 import { useI18n } from '../../contexts/I18nContext'
 import type { GateTier, UpgradeExtra } from '../../contexts/UpgradeContext'
-import { curatedBenefits } from './tierMeta'
+import { curatedBenefits, AI_BENEFIT_KEYS } from './tierMeta'
 import UpgradeArt from './UpgradeArt'
 import UpgradeCta from './UpgradeCta'
+import TierBadge from './TierBadge'
 
 // Peça central do sistema de tiers. SEMPRE dark premium (independe do tema do
 // app — resolve o bug de "claro no modo dark"). Sem scroll interno, cabe no
@@ -61,11 +62,12 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
       >
         <div className="flex flex-col sm:flex-row">
           {/* ── Composição visual: faixa fina no topo (mobile) / coluna lateral
-              (desktop). É o próprio fundo do modal, não um banner solto. ── */}
+              (desktop). Foto autoral do tier requerido como fundo, com badge do
+              tier no eyebrow. É o próprio fundo do modal, não um banner solto. ── */}
           <UpgradeArt
-            eyebrow={eyebrow}
+            tier={requiredTier}
             className="shrink-0 sm:w-[210px]"
-            style={{ minHeight: 96 }}
+            style={{ minHeight: 118 }}
           />
 
           {/* ── Conteúdo ── */}
@@ -78,6 +80,10 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
               aria-label={s.close ?? 'Fechar'}
               style={{ position: 'absolute', top: 14, right: 14, width: 30, height: 30, borderRadius: 999, border: 'none', background: 'rgba(242,237,228,0.08)', color: 'rgba(242,237,228,0.7)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}
             >×</button>
+
+            <div style={{ marginBottom: 12 }}>
+              <TierBadge tier={requiredTier} label={eyebrow} onDark />
+            </div>
 
             <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 23, lineHeight: 1.2, color: 'var(--arvo-fg-on-dark)', maxWidth: 320, marginTop: 2 }}>
               {title}
@@ -96,13 +102,15 @@ export default function UpgradeModal({ gate, requiredTier, extra, onClose }: Pro
             <ul style={{ listStyle: 'none', margin: '14px 0 18px', padding: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
               {benefits.map((b, i) => (
                 <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, lineHeight: 1.4, color: 'rgba(242,237,228,0.86)' }}>
-                  <span style={{ color: 'var(--arvo-gold)', flexShrink: 0, fontSize: 12, transform: 'translateY(-1px)' }}>✦</span>
-                  <span>{b}</span>
+                  <span style={{ color: 'var(--arvo-gold)', flexShrink: 0, fontSize: 12, transform: 'translateY(-1px)' }}>
+                    {AI_BENEFIT_KEYS.has(b.key) ? '✨' : '✦'}
+                  </span>
+                  <span>{b.text}</span>
                 </li>
               ))}
             </ul>
 
-            <UpgradeCta gate={gate} dark />
+            <UpgradeCta gate={gate} dark onNavigate={onClose} />
           </div>
         </div>
       </div>

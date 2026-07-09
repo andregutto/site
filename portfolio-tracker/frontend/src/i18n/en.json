@@ -527,7 +527,9 @@
     "capFreedom": "Financial freedom",
     "capFreedomDesc": "Simulate your path to financial independence.",
     "capShared": "Shared categories",
-    "capSharedDesc": "Track expenses together with people you invite."
+    "capSharedDesc": "Track expenses together with people you invite.",
+    "capCommunity": "Community",
+    "capCommunityDesc": "Connect with others building their wealth too."
   },
   "achievements": {
     "title": "Achievements",
@@ -3190,8 +3192,8 @@
       "budget": "Budget & envelopes",
       "freedom_plans": "Freedom plans",
       "shared_groups_create": "Create shared groups",
-      "trips_own": "Own trips",
-      "split_expenses_per_day": "Split expenses per day",
+      "trips_own": "Full trips of your own",
+      "split_expenses_per_day": "Split expenses with friends",
       "community": "Full community access",
       "community_post": "Full community access",
       "messaging": "Messaging",
@@ -3219,9 +3221,17 @@
     "notifySubcopy": "Upgrades aren't for sale yet. People who register interest hear about it first when they open.",
     "seeAllPlans": "See all plans",
     "plansEyebrow": "Plans",
-    "plansTitle": "Arvo, from the inside",
-    "plansIntro": "Everyone here is already part of the community. Plans unlock what you can automate and analyze — and they're not for sale yet.",
+    "plansTitle": "Choose how much Arvo does for you",
+    "plansIntro": "You're already part of the community. The plans expand what Arvo automates, connects and analyzes for you — and they open soon.",
     "plansCurrent": "Your current plan: {tier}",
+    "seeFullList": "See full list",
+    "showLess": "Show less",
+    "included": {
+      "unlimited_accounts": "Unlimited accounts and transactions",
+      "personal_finances": "Personal finance management (manual)",
+      "resources": "Free resources",
+      "participate_shared": "Join everything shared with you"
+    },
     "gatedPageBody": "This opens with the upgrade. You stay in the community as usual in the meantime.",
     "gatedPageCta": "See what changes",
     "close": "Close",
@@ -3243,7 +3253,8 @@
         "messaging": "Direct messages with people you know",
         "moments_create": "Named Moments and shared groups from scratch",
         "budget": "Envelope budgeting and freedom plans",
-        "csv_import": "Import statements and categorize with AI"
+        "csv_import": "Import statements and categorize with AI",
+        "ai_categorize": "AI categorization of your transactions"
       },
       "pro": {
         "insights": "Automatic insights on your spending and income",

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
+import { useUpgrade } from '../contexts/UpgradeContext'
 import { apiFetch } from '../lib/api'
 
 const STORAGE_PREFIX = 'arvo_setup_checklist_hidden_'
@@ -48,6 +49,7 @@ export interface SetupStep { key: string; done: boolean; label: string; to: stri
 // e pelo card da página Hoje — uma fonte de verdade só, sem duplicação.
 export function useSetupChecklist(userId?: string) {
   const { t } = useI18n()
+  const { hasGate } = useUpgrade()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
   const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null
   const [hidden, setHidden] = useState(() => !!(storageKey && localStorage.getItem(storageKey)))
@@ -108,16 +110,24 @@ export function useSetupChecklist(userId?: string) {
     setHidden(true)
   }
 
-  const steps: SetupStep[] = state ? [
-    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   to: '/import-b3' },
+  // Cada passo declara o gate da funcionalidade a que leva. Passos gated pro tier
+  // do usuário são REMOVIDOS — não faz sentido mandar o free "criar patrimônio"
+  // ou "montar orçamento" se ele nem tem acesso (terminaria num paywall). O free
+  // fica só com o que consegue de fato completar (conta, renda). hasGate é
+  // otimista até os entitlements carregarem, então nada some antes da hora.
+  const allSteps: (SetupStep & { gate?: string })[] = state ? [
+    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   to: '/import-b3',          gate: 'patrimonio' },
     { key: 'account',  done: state.hasAccount,     label: s.stepAccount,  to: '/finances/accounts' },
     { key: 'income',   done: state.hasIncome,      label: s.stepIncome,   to: '/finances' },
-    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom' },
-    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget' },
+    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom',   gate: 'freedom_plans' },
+    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget',    gate: 'budget' },
   ] : []
+  const steps: SetupStep[] = allSteps
+    .filter(st => !st.gate || hasGate(st.gate))
+    .map(({ gate: _gate, ...rest }) => rest)
   const doneCount = steps.filter(st => st.done).length
   const total = steps.length || 5
-  const visible = !hidden && !!state && doneCount < total
+  const visible = !hidden && !!state && steps.length > 0 && doneCount < total
 
   return { state, steps, doneCount, total, hidden, hide, visible }
 }

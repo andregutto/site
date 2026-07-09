@@ -527,7 +527,9 @@
     "capFreedom": "Liberdade financeira",
     "capFreedomDesc": "Simule sua trajetória até a independência financeira.",
     "capShared": "Categorias compartilhadas",
-    "capSharedDesc": "Acompanhe gastos em conjunto com quem você convida."
+    "capSharedDesc": "Acompanhe gastos em conjunto com quem você convida.",
+    "capCommunity": "Comunidade",
+    "capCommunityDesc": "Troque com quem também constrói seu patrimônio."
   },
   "achievements": {
     "title": "Conquistas",
@@ -3190,8 +3192,8 @@
       "budget": "Orçamento e envelopes",
       "freedom_plans": "Planos de liberdade",
       "shared_groups_create": "Criar grupos compartilhados",
-      "trips_own": "Viagens próprias",
-      "split_expenses_per_day": "Despesas de divisão por dia",
+      "trips_own": "Viagens completas próprias",
+      "split_expenses_per_day": "Divisão de despesas com amigos",
       "community": "Comunidade completa",
       "community_post": "Comunidade completa",
       "messaging": "Mensagens",
@@ -3219,9 +3221,17 @@
     "notifySubcopy": "Os upgrades ainda não estão à venda. Quem registra interesse fica sabendo primeiro quando abrirem.",
     "seeAllPlans": "Ver todos os planos",
     "plansEyebrow": "Planos",
-    "plansTitle": "O Arvo por dentro",
-    "plansIntro": "Todo mundo aqui já faz parte da comunidade. Os planos abrem o que dá pra automatizar e analisar — e ainda não estão à venda.",
+    "plansTitle": "Escolha quanto o Arvo faz por você",
+    "plansIntro": "Você já faz parte da comunidade. Os planos ampliam o que o Arvo automatiza, conecta e analisa por você — e abrem em breve.",
     "plansCurrent": "Seu plano atual: {tier}",
+    "seeFullList": "Ver lista completa",
+    "showLess": "Ver menos",
+    "included": {
+      "unlimited_accounts": "Contas e transações ilimitadas",
+      "personal_finances": "Gestão de finanças pessoais (manual)",
+      "resources": "Recursos gratuitos",
+      "participate_shared": "Participa de tudo que compartilham com você"
+    },
     "gatedPageBody": "Isso abre com o upgrade. Você segue na comunidade normalmente enquanto isso.",
     "gatedPageCta": "Ver o que muda",
     "close": "Fechar",
@@ -3243,7 +3253,8 @@
         "messaging": "Mensagens diretas com quem você conhece",
         "moments_create": "Momentos nomeados e grupos compartilhados do zero",
         "budget": "Orçamento por envelopes e planos de liberdade",
-        "csv_import": "Importar extratos e categorizar com IA"
+        "csv_import": "Importar extratos e categorizar com IA",
+        "ai_categorize": "Categorizações por IA das suas transações"
       },
       "pro": {
         "insights": "Insights automáticos sobre seus gastos e receitas",

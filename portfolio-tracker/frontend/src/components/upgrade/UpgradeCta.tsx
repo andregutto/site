@@ -16,7 +16,8 @@ export default function UpgradeCta({
   showPlansLink = true,
   showSubcopy = true,
   dark = false,
-}: { gate: string; showPlansLink?: boolean; showSubcopy?: boolean; dark?: boolean }) {
+  onNavigate,
+}: { gate: string; showPlansLink?: boolean; showSubcopy?: boolean; dark?: boolean; onNavigate?: () => void }) {
   const { t } = useI18n()
   const s = ((t as any).upgrade ?? {}) as Record<string, string>
   const { registerInterest, interestedGates } = useUpgrade()
@@ -61,6 +62,7 @@ export default function UpgradeCta({
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <Link
             to="/planos"
+            onClick={onNavigate}
             style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: dark ? 'rgba(242,237,228,0.72)' : 'var(--arvo-fg-muted)', textDecoration: 'underline', textUnderlineOffset: 3 }}
           >
             {s.seeAllPlans ?? 'Ver todos os planos'}

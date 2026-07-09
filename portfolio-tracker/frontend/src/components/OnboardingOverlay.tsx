@@ -73,9 +73,11 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   // Passos dinâmicos, montados conforme o tier. Cada entrada é uma chave de
   // conteúdo; a barra de progresso e a navegação (next/back) derivam desta lista,
   // então nunca sobra um passo "vazio" ou que leve a paywall.
-  const stepKeys: string[] = ['welcome', 'income', 'account']
+  // Capabilities é o SEGUNDO card (logo após o intro) — apresenta o Arvo antes
+  // de pedir dados sensíveis (salário). Só depois vêm income/account/envelopes.
+  const stepKeys: string[] = ['welcome', 'capabilities', 'income', 'account']
   if (canBudget) stepKeys.push('envelopes')
-  stepKeys.push('capabilities', 'done')
+  stepKeys.push('done')
   const TOTAL_STEPS = stepKeys.length
   const currentKey = stepKeys[step]
 
@@ -135,21 +137,21 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
     next()
   }
 
-  // "O que dá pra fazer no Arvo" — adaptado ao tier. Free foca no que ele PODE
-  // fazer sem esbarrar num gate; capacidades gated só aparecem para quem tem o
-  // gate correspondente. Cada item usa cópia já existente do i18n quando possível.
+  // "O que dá pra fazer no Arvo" — os pilares que a landing anuncia, adaptados
+  // ao tier. Free foca no que ele PODE fazer sem esbarrar num gate; capacidades
+  // gated só aparecem para quem tem o gate correspondente. Cada item usa cópia
+  // já existente do i18n quando possível.
   const capabilities: { icon: IconName; label: string; desc: string }[] = [
     { icon: 'chart-bars', label: o.capTransactions, desc: o.capTransactionsDesc },
-    { icon: 'bank',       label: o.capAccounts,     desc: o.capAccountsDesc },
     { icon: 'globe',      label: o.capVoyage,       desc: o.capVoyageDesc },
     { icon: 'scissors',   label: o.capSplit,        desc: o.capSplitDesc },
     { icon: 'file',       label: o.capResources,    desc: o.capResourcesDesc },
   ]
   if (canBudget) {
-    capabilities.push(
-      { icon: 'chart-line', label: o.capBudget,  desc: o.capBudgetDesc },
-      { icon: 'seal',       label: o.capFreedom, desc: o.capFreedomDesc },
-    )
+    capabilities.push({ icon: 'chart-line', label: o.capBudget, desc: o.capBudgetDesc })
+  }
+  if (hasGate('community')) {
+    capabilities.push({ icon: 'users', label: o.capCommunity, desc: o.capCommunityDesc })
   }
   if (hasGate('shared_groups_create')) {
     capabilities.push({ icon: 'share', label: o.capShared, desc: o.capSharedDesc })
@@ -359,20 +361,31 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Capacidades — o que dá pra fazer (adaptado ao tier) */}
+          {/* Capacidades — o que dá pra fazer (adaptado ao tier). Segundo card,
+              logo depois do intro: apresenta os pilares do Arvo (alinhados com a
+              landing) antes de pedir qualquer dado. Mini-cards com ícone dourado. */}
           {currentKey === 'capabilities' && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.capabilitiesTitle}</h2>
                 <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.capabilitiesBody}</p>
               </div>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {capabilities.map(c => (
-                  <div key={c.label} className="w-full flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <Icon name={c.icon} size={20} className="shrink-0" style={{ color: 'var(--arvo-fg-muted)' }} />
+                  <div
+                    key={c.label}
+                    className="flex flex-col gap-2 rounded-2xl px-3.5 py-3.5"
+                    style={{ background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)' }}
+                  >
+                    <span
+                      className="flex items-center justify-center shrink-0"
+                      style={{ width: 34, height: 34, borderRadius: 11, background: 'var(--arvo-gold-tint, rgba(200,184,154,0.16))', border: '1px solid rgba(200,184,154,0.28)' }}
+                    >
+                      <Icon name={c.icon} size={18} style={{ color: 'var(--arvo-gold-text)' }} />
+                    </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--arvo-fg)]">{c.label}</p>
-                      <p className="text-xs text-[var(--arvo-fg-soft)]">{c.desc}</p>
+                      <p className="font-semibold text-[var(--arvo-fg)]" style={{ fontSize: 13.5, lineHeight: 1.25 }}>{c.label}</p>
+                      <p className="text-[var(--arvo-fg-soft)]" style={{ fontSize: 12, lineHeight: 1.4, marginTop: 3 }}>{c.desc}</p>
                     </div>
                   </div>
                 ))}

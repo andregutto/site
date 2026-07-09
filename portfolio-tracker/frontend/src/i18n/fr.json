@@ -527,7 +527,9 @@
     "capFreedom": "Liberté financière",
     "capFreedomDesc": "Simulez votre parcours vers l'indépendance financière.",
     "capShared": "Catégories partagées",
-    "capSharedDesc": "Suivez les dépenses avec les personnes que vous invitez."
+    "capSharedDesc": "Suivez les dépenses avec les personnes que vous invitez.",
+    "capCommunity": "Communauté",
+    "capCommunityDesc": "Échangez avec ceux qui bâtissent aussi leur patrimoine."
   },
   "achievements": {
     "title": "Succès",
@@ -3190,8 +3192,8 @@
       "budget": "Budget et enveloppes",
       "freedom_plans": "Plans de liberté",
       "shared_groups_create": "Créer des groupes partagés",
-      "trips_own": "Voyages personnels",
-      "split_expenses_per_day": "Dépenses partagées par jour",
+      "trips_own": "Voyages complets à vous",
+      "split_expenses_per_day": "Partage de dépenses entre amis",
       "community": "Communauté complète",
       "community_post": "Communauté complète",
       "messaging": "Messagerie",
@@ -3219,9 +3221,17 @@
     "notifySubcopy": "Les upgrades ne sont pas encore en vente. Ceux qui manifestent leur intérêt seront prévenus en premier à l'ouverture.",
     "seeAllPlans": "Voir tous les plans",
     "plansEyebrow": "Plans",
-    "plansTitle": "Arvo, de l'intérieur",
-    "plansIntro": "Tout le monde ici fait déjà partie de la communauté. Les plans débloquent ce qu'on peut automatiser et analyser — et ils ne sont pas encore en vente.",
+    "plansTitle": "Choisissez ce qu'Arvo fait pour vous",
+    "plansIntro": "Vous faites déjà partie de la communauté. Les plans élargissent ce qu'Arvo automatise, connecte et analyse pour vous — et ils ouvrent bientôt.",
     "plansCurrent": "Votre plan actuel : {tier}",
+    "seeFullList": "Voir la liste complète",
+    "showLess": "Voir moins",
+    "included": {
+      "unlimited_accounts": "Comptes et transactions illimités",
+      "personal_finances": "Gestion des finances personnelles (manuelle)",
+      "resources": "Ressources gratuites",
+      "participate_shared": "Participez à tout ce qu'on partage avec vous"
+    },
     "gatedPageBody": "Cela s'ouvre avec l'upgrade. Vous restez dans la communauté comme d'habitude en attendant.",
     "gatedPageCta": "Voir ce qui change",
     "close": "Fermer",
@@ -3243,7 +3253,8 @@
         "messaging": "Messages directs avec les personnes que vous connaissez",
         "moments_create": "Moments nommés et groupes partagés à partir de zéro",
         "budget": "Budget par enveloppes et plans de liberté",
-        "csv_import": "Importer des relevés et catégoriser avec l'IA"
+        "csv_import": "Importer des relevés et catégoriser avec l'IA",
+        "ai_categorize": "Catégorisation par IA de vos transactions"
       },
       "pro": {
         "insights": "Analyses automatiques de vos dépenses et revenus",
