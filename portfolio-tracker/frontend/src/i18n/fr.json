@@ -1316,7 +1316,9 @@
     "momentViewTrip": "Voir le voyage",
     "accountsPageEmpty": "Aucun compte pour l'instant. Créez le premier pour suivre vos transactions.",
     "accountsPageOne": "1 compte",
-    "accountsPageMany": "{n} comptes"
+    "accountsPageMany": "{n} comptes",
+    "splitPromotedNotice": "Ce partage est maintenant un Moment avec son propre nom. Les invités rejoignent le partage dès qu'ils acceptent.",
+    "splitPendingBadge": "en attente"
   },
   "classes": {
     "title": "Classes d'actifs",

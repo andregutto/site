@@ -1316,7 +1316,9 @@
     "momentViewTrip": "View trip",
     "accountsPageEmpty": "No accounts yet. Create your first one to start tracking transactions.",
     "accountsPageOne": "1 account",
-    "accountsPageMany": "{n} accounts"
+    "accountsPageMany": "{n} accounts",
+    "splitPromotedNotice": "This split is now a named Moment. Invitees join the split as soon as they accept.",
+    "splitPendingBadge": "pending"
   },
   "classes": {
     "title": "Asset Classes",

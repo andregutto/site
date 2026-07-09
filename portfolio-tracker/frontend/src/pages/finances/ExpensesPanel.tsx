@@ -67,7 +67,7 @@ function convertBetween(value: number, from: string, to: string, fxRates: { USD:
 
 interface MomentMeta { owner_id: string; name: string; is_pair_default: boolean; shared_group_id: number | null }
 
-export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: { momentId: number; currency: string; fmt: (n: number, c: string) => string; onPromoted?: () => void }) {
+export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onMetaChange }: { momentId: number; currency: string; fmt: (n: number, c: string) => string; onPromoted?: () => void; onMetaChange?: (meta: MomentMeta) => void }) {
   const { t } = useI18n()
   const { user } = useAuth()
   const { currency: displayCurrency, fxRates } = useCurrency()
@@ -98,6 +98,8 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: {
   const [customValues, setCustomValues] = useState<Record<string, string>>({})
   const [customPercents, setCustomPercents] = useState<Record<string, string>>({})
   const [categoryId, setCategoryId] = useState<number | ''>('')
+  const [pendingMembers, setPendingMembers] = useState<MomentMember[]>([])
+  const [promoNotice, setPromoNotice] = useState<string | null>(null)
   const [categoryTouched, setCategoryTouched] = useState(false)
 
   const load = useCallback(async () => {
@@ -109,7 +111,14 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: {
         apiFetch<ExpenseCategory[]>('/finances/categories').then(setMyCategories).catch(() => {}),
       ])
       setExpenses(expensesRes.expenses)
-      setMeta({ owner_id: membersRes.moment_owner_id, name: membersRes.moment_name, is_pair_default: membersRes.is_pair_default, shared_group_id: membersRes.shared_group_id })
+      const newMeta = { owner_id: membersRes.moment_owner_id, name: membersRes.moment_name, is_pair_default: membersRes.is_pair_default, shared_group_id: membersRes.shared_group_id }
+      setMeta(newMeta)
+      // O modal que embrulha este painel precisa saber quando o par oculto virou
+      // Momento nomeado (troca o título "Despesas com X" pelo nome do momento).
+      onMetaChange?.(newMeta)
+      // Convidados pendentes ficam visíveis (sem isso a 3ª pessoa recém-convidada
+      // era invisível e o fluxo parecia não ter feito nada).
+      setPendingMembers(membersRes.members.filter(m => m.status === 'pending'))
       const active = membersRes.members.filter(m => m.status === 'active' && m.user_id)
       const parts = active.map(m => ({ user_id: m.user_id as string, display: m.display }))
       setParticipants(parts)
@@ -394,6 +403,21 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: {
         </button>
       )}
 
+      {promoNotice && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 14px', borderRadius: 12, background: 'var(--arvo-gold-tint)', border: '1px solid var(--arvo-gold-line)' }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-gold-text)', lineHeight: 1.5, flex: 1 }}>{promoNotice}</p>
+          <button onClick={() => setPromoNotice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-gold-text)', fontSize: 14, lineHeight: 1 }}>✕</button>
+        </div>
+      )}
+      {pendingMembers.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          {pendingMembers.map(m => (
+            <span key={m.id ?? m.invite_email} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 999, border: '1px dashed var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+              {(m.display?.name ?? m.invite_email ?? '')} · {(t as any).finances?.splitPendingBadge ?? 'aguardando aceite'}
+            </span>
+          ))}
+        </div>
+      )}
       {!showForm && historyOpen && (
         <button
           onClick={() => setAddPerson(true)}
@@ -544,6 +568,7 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted }: {
             // Promover o par oculto o transforma num Momento nomeado visível — a lista de
             // Momentos (e o modal que embrulha este painel) precisa recarregar pra refletir.
             onPromoted?.()
+            setPromoNotice((t as any).finances?.splitPromotedNotice ?? 'Essa divisão agora é um Momento com nome próprio. Convidados entram na divisão assim que aceitarem.')
           }}
         />
       )}

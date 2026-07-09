@@ -125,6 +125,8 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   onPromoted?: () => void
 }) {
   const { t } = useI18n()
+  // Depois da promoção, o título troca 'Despesas com X' pelo nome do Momento.
+  const [promotedName, setPromotedName] = useState<string | null>(null)
   const { currency, hideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
   // shared_group_id != null é o único sinal confiável de "Momento de grupo" — is_pair_default
@@ -164,7 +166,7 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
-            {t.people.expensesWithPrefix} {friendName}
+            {promotedName ?? `${t.people.expensesWithPrefix} ${friendName}`}
           </p>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -213,7 +215,7 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
         ) : error ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
-          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onPromoted={onPromoted} />
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onPromoted={onPromoted} onMetaChange={m => setPromotedName(m.is_pair_default ? null : m.name)} />
         ) : null}
       </div>
     </div>,

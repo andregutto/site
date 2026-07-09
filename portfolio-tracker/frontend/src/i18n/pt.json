@@ -1316,7 +1316,9 @@
     "momentViewTrip": "Ver viagem",
     "accountsPageEmpty": "Nenhuma conta ainda. Crie a primeira pra começar a registrar transações.",
     "accountsPageOne": "1 conta",
-    "accountsPageMany": "{n} contas"
+    "accountsPageMany": "{n} contas",
+    "splitPromotedNotice": "Essa divisão agora é um Momento com nome próprio. Convidados entram na divisão assim que aceitarem.",
+    "splitPendingBadge": "aguardando aceite"
   },
   "classes": {
     "title": "Classes de Ativos",
