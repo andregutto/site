@@ -328,22 +328,22 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
     <div className="space-y-3">
       {historyOpen ? (
         <>
-          <p className="text-[11px] italic text-[var(--arvo-fg-soft)]">{isHiddenPair ? ((t as any).finances?.expenseSectionHintPair ?? t.finances.expenseSectionHint) : t.finances.expenseSectionHint}</p>
+          <p className="text-[12.5px] italic text-[var(--arvo-fg-soft)]">{isHiddenPair ? ((t as any).finances?.expenseSectionHintPair ?? t.finances.expenseSectionHint) : t.finances.expenseSectionHint}</p>
 
           {/* Saldos vivos deste Momento — inclui quem deve o quê pra mim, com acerto direto,
               sem precisar sair pra página Pessoas (que só mostra o agregado entre TODOS os Momentos). */}
-          <div className="p-3 rounded-xl border border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] space-y-1.5">
-            <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{isHiddenPair ? ((t as any).finances?.expenseBalancesPair ?? t.finances.expenseBalances) : t.finances.expenseBalances}</p>
+          <div className="p-3.5 rounded-xl border border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] space-y-2">
+            <p className="text-[11px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{isHiddenPair ? ((t as any).finances?.expenseBalancesPair ?? t.finances.expenseBalances) : t.finances.expenseBalances}</p>
             {balances.length === 0 ? (
-              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.expenseBalancesSettled}</p>
+              <p className="text-[13.5px] text-[var(--arvo-fg-soft)]">{t.finances.expenseBalancesSettled}</p>
             ) : balances.map(b => {
               const name = b.display?.name ?? b.display?.email ?? b.user_id
               return (
                 <div key={b.user_id} className="flex items-center gap-2">
-                  <Avatar name={b.display?.name} email={b.display?.email} avatarUrl={b.display?.avatar_url} size={18} />
-                  <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{name}</span>
+                  <Avatar name={b.display?.name} email={b.display?.email} avatarUrl={b.display?.avatar_url} size={22} />
+                  <span className="text-[14px] text-[var(--arvo-fg)] flex-1 truncate">{name}</span>
                   {Object.entries(b.perCurrency).map(([cur, amt]) => (
-                    <span key={cur} className="text-xs font-semibold" style={{ color: amt > 0 ? '#1F8A5B' : '#D63B2F' }}>
+                    <span key={cur} className="text-[14px] font-semibold" style={{ color: amt > 0 ? '#1F8A5B' : '#D63B2F' }}>
                       {amt > 0 ? '+' : '−'}{fmt(Math.abs(amt), cur)}
                     </span>
                   ))}
@@ -366,25 +366,25 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
                   ? convertBetween(e.amount, e.currency, displayCurrency, fxRates)
                   : null
                 return (
-                  <div key={e.id} className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
-                    <Avatar name={e.paid_by_display?.name} email={e.paid_by_display?.email} avatarUrl={e.paid_by_display?.avatar_url} size={22} />
+                  <div key={e.id} className={`flex items-center gap-2.5 px-4 py-3 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
+                    <Avatar name={e.paid_by_display?.name} email={e.paid_by_display?.email} avatarUrl={e.paid_by_display?.avatar_url} size={26} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-[var(--arvo-fg)] truncate text-xs flex items-center gap-1.5">
+                      <span className="text-[var(--arvo-fg)] truncate text-[14px] flex items-center gap-1.5">
                         {e.description}
                         {e.category && (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: e.category.color + '22', color: e.category.color }}>
+                          <span className="inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: e.category.color + '22', color: e.category.color }}>
                             {e.category.icon} {e.category.name}
                           </span>
                         )}
                       </span>
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)] block truncate">
+                      <span className="text-[11.5px] text-[var(--arvo-fg-soft)] block truncate">
                         {t.finances.expensePaidBy}: {e.paid_by_display?.name} · {e.shares.length} {t.finances.expenseParticipants.toLowerCase()}
                       </span>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-semibold block text-[var(--arvo-fg)]">{fmt(e.amount, e.currency)}</span>
+                      <span className="text-[14px] font-semibold block text-[var(--arvo-fg)]">{fmt(e.amount, e.currency)}</span>
                       {converted != null && (
-                        <span className="text-[10px] block text-[var(--arvo-fg-soft)]">≈ {fmt(converted, displayCurrency)}</span>
+                        <span className="text-[11px] block text-[var(--arvo-fg-soft)]">≈ {fmt(converted, displayCurrency)}</span>
                       )}
                     </div>
                     {!e.is_settlement && (
@@ -404,14 +404,14 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
               })}
             </div>
           ) : (
-            <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.expenseNoEntries}</p>
+            <p className="text-[13.5px] text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.expenseNoEntries}</p>
           )}
         </>
       ) : (
         <button
           type="button"
           onClick={() => setHistoryOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-[var(--arvo-border)] text-[13.5px] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors"
         >
           <span>{(t.finances.expenseHistorySummary ?? '{count} despesas · ver saldos').replace('{count}', String(expenses.length))}</span>
           <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -421,15 +421,15 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
       )}
 
       {promoNotice && (
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 14px', borderRadius: 12, background: 'var(--arvo-gold-tint)', border: '1px solid var(--arvo-gold-line)' }}>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-gold-text)', lineHeight: 1.5, flex: 1 }}>{promoNotice}</p>
-          <button onClick={() => setPromoNotice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-gold-text)', fontSize: 14, lineHeight: 1 }}>✕</button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 14px', borderRadius: 12, background: 'var(--arvo-gold-tint)', border: '1px solid var(--arvo-gold-line)' }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-gold-text)', lineHeight: 1.5, flex: 1 }}>{promoNotice}</p>
+          <button onClick={() => setPromoNotice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-gold-text)', fontSize: 15, lineHeight: 1 }}>✕</button>
         </div>
       )}
       {pendingMembers.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
           {pendingMembers.map(m => (
-            <span key={m.id ?? m.invite_email} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 999, border: '1px dashed var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+            <span key={m.id ?? m.invite_email} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999, border: '1px dashed var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>
               {(m.display?.name ?? m.invite_email ?? '')} · {(t as any).finances?.splitPendingBadge ?? 'aguardando aceite'}
             </span>
           ))}
@@ -438,7 +438,7 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
       {!showForm && historyOpen && (
         <button
           onClick={() => setAddPerson(true)}
-          className="w-full text-center text-sm py-2.5 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
+          className="arvo-pill-btn arvo-pill-btn--ghost w-full"
         >
           + {meta?.is_pair_default && !meta?.shared_group_id ? ((t as any).finances?.splitWithMore ?? 'Dividir com mais pessoas') : t.finances.expenseAddPerson}
         </button>
@@ -447,7 +447,7 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full text-center text-sm py-3 rounded-lg border border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-border-strong,var(--arvo-border))] transition-colors"
+          className="arvo-pill-btn arvo-pill-btn--primary w-full"
         >
           + {t.finances.expenseAdd}
         </button>
@@ -556,16 +556,16 @@ export default function ExpensesPanel({ momentId, currency, fmt, onPromoted, onM
 
           {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <button
               onClick={() => { setShowForm(false); resetForm() }}
-              className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]"
+              className="arvo-pill-btn arvo-pill-btn--ghost flex-1"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={submit} disabled={saving}
-              className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60"
+              className="arvo-pill-btn arvo-pill-btn--primary flex-1"
             >
               {t.common.save}
             </button>
@@ -690,34 +690,34 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <h3 className="flex-1" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 600, color: 'var(--arvo-fg)' }}>{needsPromote ? ((t as any).finances?.splitWithMore ?? 'Dividir com mais pessoas') : t.finances.expenseAddPerson}</h3>
+          <h3 className="flex-1" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 17, fontWeight: 600, color: 'var(--arvo-fg)' }}>{needsPromote ? ((t as any).finances?.splitWithMore ?? 'Dividir com mais pessoas') : t.finances.expenseAddPerson}</h3>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
           </button>
         </div>
 
         {!needsPromote ? (
           // Momento já nomeado: convite direto, sem passo de nome.
-          <div className="space-y-3">
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+          <div className="space-y-3.5">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.55 }}>
               {t.finances.splitInviteHint}
             </p>
             <MembersPanel momentId={momentId} ownerId={meta.owner_id} />
-            <button onClick={onDone} className="w-full text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)]">
+            <button onClick={onDone} className="arvo-pill-btn arvo-pill-btn--primary w-full">
               {t.common.done}
             </button>
           </div>
         ) : step === 'people' ? (
-          <div className="space-y-3">
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+          <div className="space-y-3.5">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.55 }}>
               {((t as any).finances?.splitPeopleHint ?? t.finances.splitPromoteHint).replace('{name}', pairFriend?.display?.name ?? '')}
             </p>
             {picked.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {picked.map((p, i) => (
-                  <div key={p.user_id ?? p.email ?? p.username} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Avatar name={p.name} email={p.email} avatarUrl={p.avatar_url} size={24} />
-                    <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div key={p.user_id ?? p.email ?? p.username} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <Avatar name={p.name} email={p.email} avatarUrl={p.avatar_url} size={28} />
+                    <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.name || p.email || `@${p.username}`}
                     </span>
                     <button
@@ -726,7 +726,7 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4 }}
                       title={t.common.remove}
                     >
-                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
                     </button>
                   </div>
                 ))}
@@ -737,17 +737,17 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
               onSelect={p => setPicked(prev => [...prev, p])}
               actionLabel={(t as any).finances?.splitPickAdd ?? 'Adicionar'}
             />
-            {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
-            <div className="flex gap-2">
-              <button onClick={onClose} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">{t.common.cancel}</button>
-              <button onClick={goToName} disabled={picked.length === 0} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+            {error && <p className="text-[13px] text-[var(--arvo-red)]">{error}</p>}
+            <div className="flex gap-2.5">
+              <button onClick={onClose} className="arvo-pill-btn arvo-pill-btn--ghost flex-1">{t.common.cancel}</button>
+              <button onClick={goToName} disabled={picked.length === 0} className="arvo-pill-btn arvo-pill-btn--primary flex-1">
                 {t.common.continue}
               </button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+          <div className="space-y-3.5">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.55 }}>
               {(t as any).finances?.splitNameHint ?? t.finances.splitPromoteHint}
             </p>
             <input
@@ -755,7 +755,7 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
               onChange={e => setName(e.target.value)}
               placeholder={t.finances.splitPromoteNamePlaceholder}
               autoFocus
-              className="w-full text-base px-3 py-2.5 rounded-lg bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)]"
+              className="w-full text-base px-3.5 py-3 rounded-lg bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)]"
               onKeyDown={e => { if (e.key === 'Enter') createAndInvite() }}
             />
             {suggestions.length > 0 && (
@@ -764,10 +764,10 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
                   <button
                     key={s} type="button" onClick={() => setName(s)}
                     style={{
-                      padding: '4px 12px', borderRadius: 999, cursor: 'pointer',
+                      padding: '6px 14px', borderRadius: 999, cursor: 'pointer',
                       border: `1px solid ${name === s ? 'var(--arvo-gold-line)' : 'var(--arvo-border)'}`,
                       background: name === s ? 'var(--arvo-gold-tint)' : 'var(--arvo-hover-bg)',
-                      fontFamily: 'var(--arvo-font-body)', fontSize: 12.5,
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 13.5,
                       color: name === s ? 'var(--arvo-gold-text)' : 'var(--arvo-fg-soft)',
                     }}
                   >
@@ -776,12 +776,12 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
                 ))}
               </div>
             )}
-            {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
-            <div className="flex gap-2">
-              <button onClick={() => { setStep('people'); setError('') }} disabled={saving} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
+            {error && <p className="text-[13px] text-[var(--arvo-red)]">{error}</p>}
+            <div className="flex gap-2.5">
+              <button onClick={() => { setStep('people'); setError('') }} disabled={saving} className="arvo-pill-btn arvo-pill-btn--ghost flex-1">
                 {(t as any).common?.back ?? 'Voltar'}
               </button>
-              <button onClick={createAndInvite} disabled={saving} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+              <button onClick={createAndInvite} disabled={saving} className="arvo-pill-btn arvo-pill-btn--primary flex-1">
                 {saving ? '…' : ((t as any).finances?.splitCreateCta ?? 'Criar e convidar')}
               </button>
             </div>
@@ -874,8 +874,8 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
         onClick={e => e.stopPropagation()}
       >
         <div>
-          <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitTransactionTitle}</h3>
-          <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{transaction.description} · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: transaction.currency }).format(Math.abs(transaction.amount))}</p>
+          <h3 className="font-semibold text-[var(--arvo-fg)] text-[16px]">{t.finances.expenseSplitTransactionTitle}</h3>
+          <p className="text-[13px] text-[var(--arvo-fg-soft)] truncate">{transaction.description} · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: transaction.currency }).format(Math.abs(transaction.amount))}</p>
         </div>
 
         {loading ? <div className="flex justify-center py-4"><ArvoLoader size={24} style={{ color: 'var(--arvo-gold)' }} /></div> : (<>
@@ -922,13 +922,13 @@ export function SplitTransactionModal({ momentId, transaction, onDone, onClose }
             ))}
           </div>
 
-          {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
+          {error && <p className="text-[13px] text-[var(--arvo-red)]">{error}</p>}
 
-          <div className="flex gap-2">
-            <button onClick={onClose} className="flex-1 text-sm py-3 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
+          <div className="flex gap-2.5">
+            <button onClick={onClose} className="arvo-pill-btn arvo-pill-btn--ghost flex-1">
               {t.common.cancel}
             </button>
-            <button onClick={submit} disabled={saving} className="flex-1 text-sm py-3 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+            <button onClick={submit} disabled={saving} className="arvo-pill-btn arvo-pill-btn--primary flex-1">
               {t.common.save}
             </button>
           </div>

@@ -698,43 +698,43 @@ export function PersonPicker({ excludePerson, onSelect, busy, actionLabel }: {
   return (
     <div>
       {friends.length > 0 && (
-        <div className="flex flex-wrap gap-2" style={{ marginBottom: 8 }}>
+        <div className="flex flex-wrap gap-2" style={{ marginBottom: 9 }}>
           {friends.filter(f => !excludePerson(f)).map(f => (
             <button
               key={f.email} type="button" disabled={busy}
               onClick={() => pick({ user_id: f.user_id, email: f.email, name: f.name, avatar_url: f.avatar_url })}
               title={f.name || f.email}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
+                display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px 5px 5px',
                 borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
-                cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
+                cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
               }}
             >
-              <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
+              <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={22} />
               {f.name || f.email}
               <span style={{ color: 'var(--arvo-fg-soft)' }}>+</span>
             </button>
           ))}
         </div>
       )}
-      <form onSubmit={submit} style={{ display: 'flex', gap: 6, position: 'relative' }}>
+      <form onSubmit={submit} style={{ display: 'flex', gap: 7, position: 'relative' }}>
         <input
           type="text" placeholder={t.finances.momentInvitePlaceholder}
           value={value} onChange={e => setValue(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-xs bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
+          className="flex-1 border border-[var(--arvo-border)] rounded-full px-4 py-2.5 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
         />
         <button type="submit" disabled={busy || !value.trim()}
-          className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40">
+          className="px-4 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-[13.5px] font-medium rounded-full hover:opacity-80 transition-opacity disabled:opacity-40 shrink-0">
           {busy ? '…' : actionLabel}
         </button>
 
         {showSuggestions && visibleSuggestions.length > 0 && (
           <div style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: -4, zIndex: 30,
+            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 2, zIndex: 30,
             background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-            borderRadius: 10, boxShadow: 'var(--arvo-shadow-md)', overflow: 'hidden',
+            borderRadius: 12, boxShadow: 'var(--arvo-shadow-md)', overflow: 'hidden',
           }}>
             {visibleSuggestions.map(sg => (
               <button
@@ -742,14 +742,14 @@ export function PersonPicker({ excludePerson, onSelect, busy, actionLabel }: {
                 onClick={() => pick({ user_id: sg.user_id, username: sg.username, name: sg.name, avatar_url: sg.avatar_url })}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
-                  padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '10px 13px', background: 'none', border: 'none', cursor: 'pointer',
                 }}
               >
-                <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
+                <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={28} />
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>
                   {sg.name || `@${sg.username}`}
                 </span>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
                   @{sg.username}
                 </span>
               </button>
@@ -825,8 +825,8 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
           {activeMembers.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar name={m.display?.name} email={m.display?.email} avatarUrl={m.display?.avatar_url} size={24} tone={m.status === 'active' ? 'active' : 'neutral'} />
-              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Avatar name={m.display?.name} email={m.display?.email} avatarUrl={m.display?.avatar_url} size={26} tone={m.status === 'active' ? 'active' : 'neutral'} />
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {m.display?.name || m.display?.email || m.invite_email}
               </span>
               <RoleChip role={m.role} />
@@ -834,7 +834,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
               {isOwner && m.role !== 'owner' && (
                 <button
                   type="button" onClick={() => revoke(m)} disabled={removing === m.id}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
                 >
                   {removing === m.id ? '…' : t.finances.momentRevoke}
                 </button>
@@ -842,7 +842,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
             </div>
           ))}
           {activeMembers.length === 0 && (
-            <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentNoCollaborators}</p>
+            <p className="text-[13.5px] text-[var(--arvo-fg-soft)]">{t.finances.momentNoCollaborators}</p>
           )}
         </div>
       )}

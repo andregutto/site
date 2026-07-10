@@ -216,7 +216,7 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
               </div>
             )
           })()}
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {promotedName ?? `${t.people.expensesWithPrefix} ${friendName}`}
           </p>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
@@ -227,7 +227,7 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
         </div>
         {momentId == null && needsChoice && !choiceMade ? (
           <div>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg-soft)', marginBottom: 12, lineHeight: 1.5 }}>
               {t.people.splitWhereTitle}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -238,13 +238,13 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
                   disabled={groupBusy}
                   onClick={() => setMomentId(m.moment_id)}
                   className="w-full text-left flex items-center gap-3"
-                  style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ padding: '13px 12px', borderRadius: 12, background: 'none', border: 'none', cursor: 'pointer' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
-                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{m.moment_name}</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: 'var(--arvo-fg)' }}>{m.moment_name}</span>
                   {m.balances.map(b => (
-                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
                       {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
                     </span>
                   ))}
@@ -257,12 +257,12 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
                   disabled={groupBusy}
                   onClick={() => openGroup(g.group_id)}
                   className="w-full text-left flex items-center gap-3"
-                  style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', opacity: groupBusy ? 0.5 : 1 }}
+                  style={{ padding: '13px 12px', borderRadius: 12, background: 'none', border: 'none', cursor: 'pointer', opacity: groupBusy ? 0.5 : 1 }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
-                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 8px' }}>
+                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '3px 9px' }}>
                     {(t as any).people?.splitGroupTag ?? 'Grupo'}
                   </span>
                 </button>
@@ -272,14 +272,14 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
                 disabled={groupBusy}
                 onClick={() => setChoiceMade(true)}
                 className="w-full text-left flex items-center gap-3"
-                style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--arvo-border-soft)', marginTop: 4, paddingTop: 14 }}
+                style={{ padding: '13px 12px', borderRadius: 12, background: 'none', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--arvo-border-soft)', marginTop: 4, paddingTop: 15 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
               >
-                <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
+                <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
               </button>
             </div>
-            {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED, marginTop: 8 }}>{error}</p>}
+            {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED, marginTop: 8 }}>{error}</p>}
           </div>
         ) : loading ? (
           <div className="flex justify-center py-5"><ArvoLoader size={26} style={{ color: 'var(--arvo-gold)' }} /></div>
@@ -913,7 +913,7 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
               )}
             </div>
           )}
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {groupName}
           </p>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>

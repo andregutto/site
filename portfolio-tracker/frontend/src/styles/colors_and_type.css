@@ -427,6 +427,39 @@
 }
 .arvo-btn--link:hover:not(:disabled) { color: var(--arvo-gold-text); }
 
+/* Botão de AÇÃO de modal/form — pill legível de caixa-normal, ao contrário do
+   .arvo-btn (CTA em uppercase tracked, pesado demais pra "Cancelar/Salvar"
+   dentro de um formulário). Fonte grande e presença clara (pedido do André
+   2026-07-10: "botões mais visíveis, tipo pill"). Primário sólido, secundário
+   com borda. Usado nos modais de divisão de despesas. */
+.arvo-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--arvo-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 13px 22px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--arvo-dur-fast) var(--arvo-ease),
+              color      var(--arvo-dur-fast) var(--arvo-ease),
+              border-color var(--arvo-dur-fast) var(--arvo-ease),
+              opacity    var(--arvo-dur-fast) var(--arvo-ease);
+}
+.arvo-pill-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.arvo-pill-btn--primary { background: var(--arvo-fg); color: var(--arvo-bg); }
+.arvo-pill-btn--primary:hover:not(:disabled) { opacity: 0.85; }
+.arvo-pill-btn--ghost {
+  background: transparent;
+  border-color: var(--arvo-border);
+  color: var(--arvo-fg-soft);
+}
+.arvo-pill-btn--ghost:hover:not(:disabled) { background: var(--arvo-hover-bg); color: var(--arvo-fg); }
+
 /* Interactive card — flat by default, md shadow on hover (§ cards) */
 .arvo-card-interactive {
   transition: box-shadow var(--arvo-dur-fast) var(--arvo-ease);
