@@ -825,10 +825,12 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const { user } = useAuth()
   const { currency, hideValues } = useCurrency()
   const [momentId, setMomentId] = useState<number | null>(initialMomentId)
   const [loading, setLoading] = useState(!initialMomentId)
   const [error, setError] = useState('')
+  const [headerMeta, setHeaderMeta] = useState<MomentMeta | null>(null)
   const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
 
   useEffect(() => {
@@ -839,6 +841,8 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
       .finally(() => setLoading(false))
   }, [groupId, initialMomentId])
 
+  const others = (headerMeta?.participants ?? []).filter(p => p.user_id !== user?.id)
+
   return (
     // Bottom-sheet no mobile, mesmo padrão do PairMomentModal (ver comentário lá).
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
@@ -848,6 +852,25 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          {/* Pilha de avatares dos membros do grupo — mesmo padrão do PairMomentModal. */}
+          {others.length > 0 && (
+            <div className="flex -space-x-2" style={{ flexShrink: 0 }}>
+              {others.slice(0, 3).map(p => (
+                <div key={p.user_id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                  <Avatar name={p.name} email={p.email} avatarUrl={p.avatar_url} size={26} />
+                </div>
+              ))}
+              {others.length > 3 && (
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%', border: '2px solid var(--arvo-surface)',
+                  background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)',
+                }}>
+                  +{others.length - 3}
+                </div>
+              )}
+            </div>
+          )}
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {t.people.expensesWithPrefix} {groupName}
           </p>
@@ -858,11 +881,11 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
           </button>
         </div>
         {loading ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+          <div className="flex justify-center py-5"><ArvoLoader size={26} style={{ color: 'var(--arvo-gold)' }} /></div>
         ) : error ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
-          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onMetaChange={setHeaderMeta} />
         ) : null}
       </div>
     </div>
