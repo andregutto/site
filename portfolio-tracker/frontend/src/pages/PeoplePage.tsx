@@ -9,7 +9,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
-import ExpensesPanel from './finances/ExpensesPanel'
+import ExpensesPanel, { type MomentMeta } from './finances/ExpensesPanel'
+import ArvoLoader from '../components/ArvoLoader'
 import { _fmt } from './finances/FinancesMomentsPage'
 import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from '../components/SharedGroupModals'
 import GroupSplitSection from '../components/GroupSplitSection'
@@ -110,9 +111,10 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
 // amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
 // despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
 // já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
-export function PairMomentModal({ friendUserId, friendName, initialMomentId, balancesByMoment, onClose, onPromoted }: {
+export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, initialMomentId, balancesByMoment, onClose, onPromoted }: {
   friendUserId: string
   friendName: string
+  friendAvatarUrl?: string
   initialMomentId: number | null
   // Saldos por Momento com esse amigo (inclui Momentos de grupo compartilhado). Quando
   // existe saldo pendente num Momento que NÃO é o 1:1 oculto, a despesa provavelmente
@@ -125,14 +127,20 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
   onPromoted?: () => void
 }) {
   const { t } = useI18n()
-  // Depois da promoção, o título troca 'Despesas com X' pelo nome do Momento.
-  const [promotedName, setPromotedName] = useState<string | null>(null)
+  const { user } = useAuth()
+  // Meta do Momento aberto (vinda do ExpensesPanel): nome quando não é o 1:1
+  // puro, e participantes ativos pros avatares do header.
+  const [headerMeta, setHeaderMeta] = useState<MomentMeta | null>(null)
+  const promotedName = headerMeta && !headerMeta.is_pair_default ? headerMeta.name : null
   const { currency, hideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
-  // shared_group_id != null é o único sinal confiável de "Momento de grupo" — is_pair_default
-  // sozinho não serve, pois também marca o Momento padrão de grupos compartilhados (não só
-  // o 1:1 puro), o que fazia esse card nunca aparecer mesmo com saldo real pendente no grupo.
-  const groupOptions = (balancesByMoment ?? []).filter(m => m.shared_group_id != null && m.balances.some(b => Math.abs(b.amount) >= 0.01))
+  // Qualquer Momento com saldo pendente que NÃO seja o 1:1 puro entra na escolha —
+  // Momentos nomeados (ex.: uma viagem) e Momentos de grupo compartilhado. Antes só
+  // grupos (shared_group_id) apareciam: com saldo vivo num Momento nomeado, o card da
+  // pessoa mostrava €X mas o modal abria o 1:1 vazio ("0 despesas") sem explicação.
+  // O 1:1 puro = is_pair_default sem shared_group_id (o flag também marca o Momento
+  // padrão de grupos compartilhados, então precisa das duas condições).
+  const groupOptions = (balancesByMoment ?? []).filter(m => !(m.is_pair_default && m.shared_group_id == null) && m.balances.some(b => Math.abs(b.amount) >= 0.01))
   const needsChoice = initialMomentId == null && groupOptions.length > 0
   const [momentId, setMomentId] = useState<number | null>(initialMomentId)
   const [choiceMade, setChoiceMade] = useState(!needsChoice)
@@ -165,6 +173,30 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          {/* Avatares antes do título: no 1:1 o avatar do amigo; num Momento com
+              mais gente, a pilha dos participantes (sem o próprio usuário). */}
+          {(() => {
+            const others = (headerMeta?.participants ?? []).filter(p => p.user_id !== user?.id)
+            const shown = others.length > 0 ? others.slice(0, 3) : [{ user_id: friendUserId, name: friendName, email: undefined, avatar_url: friendAvatarUrl }]
+            return (
+              <div className="flex -space-x-2" style={{ flexShrink: 0 }}>
+                {shown.map(p => (
+                  <div key={p.user_id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                    <Avatar name={p.name} email={p.email} avatarUrl={p.avatar_url} size={26} />
+                  </div>
+                ))}
+                {others.length > 3 && (
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%', border: '2px solid var(--arvo-surface)',
+                    background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)',
+                  }}>
+                    +{others.length - 3}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
             {promotedName ?? `${t.people.expensesWithPrefix} ${friendName}`}
           </p>
@@ -211,11 +243,11 @@ export function PairMomentModal({ friendUserId, friendName, initialMomentId, bal
             </div>
           </div>
         ) : loading ? (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+          <div className="flex justify-center py-5"><ArvoLoader size={26} style={{ color: 'var(--arvo-gold)' }} /></div>
         ) : error ? (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: RED }}>{error}</p>
         ) : momentId ? (
-          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onPromoted={onPromoted} onMetaChange={m => setPromotedName(m.is_pair_default ? null : m.name)} />
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onPromoted={onPromoted} onMetaChange={setHeaderMeta} />
         ) : null}
       </div>
     </div>,
@@ -498,6 +530,7 @@ function ContactCard({
         <PairMomentModal
           friendUserId={contact.user_id}
           friendName={displayName}
+          friendAvatarUrl={contact.avatar_url}
           initialMomentId={pairModal.momentId}
           balancesByMoment={contact.balancesByMoment}
           onClose={() => { setPairModal(null); onFriendChanged() }}

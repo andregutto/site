@@ -620,6 +620,7 @@ export default function HomePage() {
             <PairMomentModal
               friendUserId={splitFriend.user_id}
               friendName={splitFriend.name ?? splitFriend.email}
+              friendAvatarUrl={splitFriend.avatar_url}
               initialMomentId={null}
               balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
               onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
@@ -967,6 +968,7 @@ export default function HomePage() {
         <PairMomentModal
           friendUserId={splitFriend.user_id}
           friendName={splitFriend.name ?? splitFriend.email}
+          friendAvatarUrl={splitFriend.avatar_url}
           initialMomentId={null}
           balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
           onClose={() => { setSplitFriend(null); setSplitPicker(false) }}

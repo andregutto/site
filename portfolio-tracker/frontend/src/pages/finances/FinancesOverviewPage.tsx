@@ -166,7 +166,8 @@ function SparkTooltip({ active, payload, label, fmt, cx, currency, tf }: {
   fmt: (v: number, cur: string, compact?: boolean) => string
   cx: (v: number) => number
   currency: string
-  tf: Record<string, string>
+  // t.finances inteiro — nem toda chave é string (ex.: splitNameSuggestions é lista)
+  tf: Record<string, unknown>
 }) {
   if (!active || !payload?.length) return null
   const actual    = payload.find(p => p.dataKey === 'actual'    && p.value != null)
@@ -175,8 +176,8 @@ function SparkTooltip({ active, payload, label, fmt, cx, currency, tf }: {
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
       <p style={{ color: 'var(--arvo-fg-soft)', marginBottom: 4, fontSize: 12 }}>Dia {label}</p>
-      {actual    && <p style={{ color: 'var(--arvo-fg)',      fontWeight: 600, margin: 0 }}>{tf.overviewChartActual}:    {fmt(cx(Number(actual.value)),    currency, true)}</p>}
-      {projected && <p style={{ color: 'var(--arvo-fg-soft)', margin: 0 }}>{tf.overviewChartProjected}: {fmt(cx(Number(projected.value)), currency, true)}</p>}
+      {actual    && <p style={{ color: 'var(--arvo-fg)',      fontWeight: 600, margin: 0 }}>{String(tf.overviewChartActual)}:    {fmt(cx(Number(actual.value)),    currency, true)}</p>}
+      {projected && <p style={{ color: 'var(--arvo-fg-soft)', margin: 0 }}>{String(tf.overviewChartProjected)}: {fmt(cx(Number(projected.value)), currency, true)}</p>}
     </div>
   )
 }

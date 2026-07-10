@@ -324,7 +324,8 @@
     "renderErrorHome": "Ir para o início",
     "renderErrorDetails": "Detalhes técnicos",
     "continue": "Continuar",
-    "done": "Concluir"
+    "done": "Concluir",
+    "back": "Voltar"
   },
   "login": {
     "subtitle": "Acompanhe seus investimentos globais",
@@ -1320,7 +1321,16 @@
     "splitPromotedNotice": "Essa divisão agora é um Momento com nome próprio. Convidados entram na divisão assim que aceitarem.",
     "splitPendingBadge": "aguardando aceite",
     "splitWithMore": "Dividir com mais pessoas",
-    "splitNewMomentNotice": "Momento criado. Sua divisão 1:1 continua aqui, intocada. A nova divisão vive no Momento, na sua lista de Momentos."
+    "splitNewMomentNotice": "Momento criado. Sua divisão 1:1 continua aqui, intocada. A nova divisão vive no Momento, na sua lista de Momentos.",
+    "expenseSectionHintPair": "Cada divisão também vira uma transação normal nas finanças de quem pagou.",
+    "expenseBalancesPair": "Saldos entre vocês",
+    "splitPeopleHint": "Escolha quem entra na nova divisão. Sua divisão com {name} continua como está, separada e privada. Todo mundo recebe um convite pra aceitar.",
+    "splitNameHint": "Dê um nome pra essa divisão. Ela vira um Momento na sua lista, começando do zero.",
+    "splitNameSuggestions": ["Viagem da turma", "Jantar entre amigos", "Fim de semana", "Casa de praia"],
+    "splitNameJoinLast": " e ",
+    "splitPickAdd": "Adicionar",
+    "splitCreateCta": "Criar e convidar",
+    "splitInviteFailed": "Não foi possível convidar: {names}. Tente de novo."
   },
   "classes": {
     "title": "Classes de Ativos",
