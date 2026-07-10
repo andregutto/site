@@ -22,6 +22,15 @@ interface HomeGroupEntry {
   members: { name?: string; avatar_url?: string }[] // até 4, pra pilha de avatares no card — ver member_count pro total
   member_count: number
 }
+// Momento NOMEADO (não o 1:1 puro nem o momento-default de grupo) com saldo
+// pendente comigo — linha própria no card "Entre amigos" (lente "onde", ao lado
+// das lentes "com quem" = amigo/grupo). Ícone + pilha de participantes dão cara
+// de evento, então não lê como repetição do saldo agregado do amigo.
+interface HomeMomentEntry {
+  type: 'moment'; id: number; name: string; icon: string; balance: { currency: string; amount: number } | null; last_activity: string | null
+  members: { name?: string; avatar_url?: string }[]
+  member_count: number
+}
 
 function topBalance(balance: Map<string, number>): { currency: string; amount: number } | null {
   let best: { currency: string; amount: number } | null = null
@@ -44,7 +53,7 @@ function topBalance(balance: Map<string, number>): { currency: string; amount: n
 // Consultas independentes são agrupadas em Promise.all por "onda" — cada
 // onda só espera o resultado da anterior quando existe dependência real de
 // dado (ex.: buscar detalhes dos grupos só depois de saber os IDs).
-async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeFriendEntry[]; groups: HomeGroupEntry[] }> {
+async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeFriendEntry[]; groups: HomeGroupEntry[]; moments: HomeMomentEntry[] }> {
   const [
     { data: friendRowsA }, { data: friendRowsB },
     { data: memberRows }, { data: createdRows },
@@ -54,7 +63,7 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     supabaseAdmin.from('user_friends').select('owner_user_id').eq('friend_user_id', userId).eq('status', 'active'),
     supabaseAdmin.from('shared_group_members').select('group_id').eq('user_id', userId).eq('status', 'active'),
     supabaseAdmin.from('shared_groups').select('id, name').eq('created_by', userId),
-    supabaseAdmin.from('finance_moments').select('id, shared_group_id, is_pair_default').eq('user_id', userId),
+    supabaseAdmin.from('finance_moments').select('id, shared_group_id, is_pair_default, name, icon, user_id').eq('user_id', userId),
     supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active'),
   ])
   const friendIds = new Set<string>([
@@ -69,20 +78,27 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
       ? supabaseAdmin.from('shared_groups').select('id, name').in('id', memberGroupIds)
       : Promise.resolve({ data: [] as any[] }),
     memberMomentIds.length
-      ? supabaseAdmin.from('finance_moments').select('id, shared_group_id, is_pair_default').in('id', memberMomentIds)
+      ? supabaseAdmin.from('finance_moments').select('id, shared_group_id, is_pair_default, name, icon, user_id').in('id', memberMomentIds)
       : Promise.resolve({ data: [] as any[] }),
   ])
   const groupMap = new Map<number, { id: number; name: string }>()
   for (const g of [...(createdRows ?? []), ...(memberGroupsRaw ?? [])]) groupMap.set(g.id, g)
 
-  if (friendIds.size === 0 && groupMap.size === 0) return { friends: [], groups: [] }
-
   const allMoments = [...(ownedMoments ?? []), ...(extraMoments ?? [])]
   const allMomentIds = allMoments.map((m: any) => m.id)
-  const momentInfo = new Map(allMoments.map((m: any) => [m.id, { groupId: m.shared_group_id as number | null, isPairDefault: !!m.is_pair_default }]))
+  const momentInfo = new Map(allMoments.map((m: any) => [m.id, {
+    groupId: m.shared_group_id as number | null, isPairDefault: !!m.is_pair_default,
+    name: m.name as string, icon: (m.icon as string) ?? '🤝', ownerId: m.user_id as string,
+  }]))
+  // Momentos nomeados = nem 1:1 puro nem momento-default de grupo (esses já são
+  // as linhas de amigo/grupo). Só estes viram linha própria "onde".
+  const namedMomentIds = allMoments.filter((m: any) => !m.is_pair_default).map((m: any) => m.id)
+
+  if (friendIds.size === 0 && groupMap.size === 0 && namedMomentIds.length === 0) return { friends: [], groups: [], moments: [] }
 
   const friendAgg = new Map<string, { balance: Map<string, number>; lastActivity: string }>()
   const groupAgg = new Map<number, { balance: Map<string, number>; lastActivity: string }>()
+  const momentAgg = new Map<number, { balance: Map<string, number>; lastActivity: string }>()
   function touchFriend(id: string, createdAt: string): { balance: Map<string, number>; lastActivity: string } {
     const e = friendAgg.get(id) ?? { balance: new Map<string, number>(), lastActivity: createdAt }
     if (createdAt > e.lastActivity) e.lastActivity = createdAt
@@ -93,6 +109,12 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     const e = groupAgg.get(id) ?? { balance: new Map<string, number>(), lastActivity: createdAt }
     if (createdAt > e.lastActivity) e.lastActivity = createdAt
     groupAgg.set(id, e)
+    return e
+  }
+  function touchMoment(id: number, createdAt: string): { balance: Map<string, number>; lastActivity: string } {
+    const e = momentAgg.get(id) ?? { balance: new Map<string, number>(), lastActivity: createdAt }
+    if (createdAt > e.lastActivity) e.lastActivity = createdAt
+    momentAgg.set(id, e)
     return e
   }
 
@@ -157,6 +179,18 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
         }
       }
     }
+
+    // Saldo líquido comigo por Momento NOMEADO (linha "onde" no card). Mesmo
+    // delta do amigo, só que agregado pelo Momento em vez de pela pessoa.
+    if (info && !info.isPairDefault) {
+      const magg = touchMoment((e as any).moment_id as number, createdAt)
+      if (payer === userId) {
+        for (const s of shares) { if (s.user_id !== userId) magg.balance.set(currency, (magg.balance.get(currency) ?? 0) + s.share_amount) }
+      } else {
+        const mine = shares.find(s => s.user_id === userId)
+        if (mine) magg.balance.set(currency, (magg.balance.get(currency) ?? 0) - mine.share_amount)
+      }
+    }
   }
 
   for (const t of sharedCatsResult.txns ?? []) {
@@ -175,7 +209,34 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     membersByGroup.set(gid, list)
   }
 
-  const allDisplayIds = new Set<string>([...friendIds, ...[...membersByGroup.values()].flat()])
+  // Membros ativos dos Momentos nomeados que TÊM saldo pendente — só estes
+  // viram linha, então só busco membro/avatar deles. Inclui o dono (pode não
+  // estar em finance_moment_members) na frente da pilha.
+  const namedWithBalance = namedMomentIds.filter((id: number) => {
+    const agg = momentAgg.get(id)
+    return agg && topBalance(agg.balance) != null
+  })
+  const membersByMoment = new Map<number, string[]>()
+  if (namedWithBalance.length > 0) {
+    const { data: mMembers } = await supabaseAdmin
+      .from('finance_moment_members')
+      .select('moment_id, user_id').in('moment_id', namedWithBalance).eq('status', 'active').not('user_id', 'is', null)
+    for (const m of mMembers ?? []) {
+      const mid = (m as any).moment_id as number
+      const list = membersByMoment.get(mid) ?? []
+      list.push((m as any).user_id as string)
+      membersByMoment.set(mid, list)
+    }
+    for (const mid of namedWithBalance) {
+      const owner = momentInfo.get(mid)?.ownerId
+      if (!owner) continue
+      const list = membersByMoment.get(mid) ?? []
+      if (!list.includes(owner)) list.unshift(owner)
+      membersByMoment.set(mid, list)
+    }
+  }
+
+  const allDisplayIds = new Set<string>([...friendIds, ...[...membersByGroup.values()].flat(), ...[...membersByMoment.values()].flat()])
   const displays = await Promise.all([...allDisplayIds].map(id => userDisplay(id).then(d => ({ id, ...d }))))
   const displayMap = new Map(displays.map(d => [d.id, d]))
 
@@ -199,7 +260,21 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     }
   }).sort((a, b) => (b.last_activity ?? '').localeCompare(a.last_activity ?? ''))
 
-  return { friends, groups }
+  const moments: HomeMomentEntry[] = namedWithBalance.map((id: number) => {
+    const info = momentInfo.get(id)!
+    const agg = momentAgg.get(id)
+    // Exclui o próprio usuário da pilha de avatares — a linha mostra COM QUEM
+    // você divide, não você. Sem isso, você (muitas vezes sem foto) virava o "+1".
+    const memberIds = (membersByMoment.get(id) ?? []).filter(mid => mid !== userId)
+    return {
+      type: 'moment' as const, id, name: info.name, icon: info.icon,
+      balance: agg ? topBalance(agg.balance) : null, last_activity: agg?.lastActivity ?? null,
+      members: memberIds.slice(0, 4).map(mid => { const d = displayMap.get(mid); return { name: d?.name ?? d?.email, avatar_url: d?.avatar_url } }),
+      member_count: memberIds.length,
+    }
+  }).sort((a, b) => (b.last_activity ?? '').localeCompare(a.last_activity ?? ''))
+
+  return { friends, groups, moments }
 }
 
 // Tópicos quentes da comunidade: atividade mais recente primeiro.
@@ -326,7 +401,7 @@ router.get('/today', async (req: any, res: any) => {
       loadActiveMoment(userId, todayStr),
       getCurrentMonthFinance(userId).catch(() => null),
       loadCommunityUnseen(userId),
-      computeFriendsAndGroups(userId).catch(() => ({ friends: [], groups: [] })),
+      computeFriendsAndGroups(userId).catch(() => ({ friends: [], groups: [], moments: [] })),
     ])
     const firstName = (display.name ?? display.email).split(' ')[0]
 
@@ -339,6 +414,7 @@ router.get('/today', async (req: any, res: any) => {
       community_unseen: communityUnseen,
       top_friends: friendsAndGroups.friends,
       top_groups: friendsAndGroups.groups,
+      top_moments: friendsAndGroups.moments,
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

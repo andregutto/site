@@ -1330,6 +1330,7 @@
     "splitNameJoinLast": " e ",
     "splitPickAdd": "Adicionar",
     "splitCreateCta": "Criar e convidar",
+    "splitIconLabel": "Ícone",
     "splitInviteFailed": "Não foi possível convidar: {names}. Tente de novo."
   },
   "classes": {
@@ -3219,6 +3220,7 @@
     "goalCreate": "Criar plano",
     "splitExpense": "Dividir despesa",
     "splitWithWho": "Dividir com quem?",
+    "splitMomentsHeading": "Momentos",
     "splitNoFriends": "Você ainda não tem amigos conectados para dividir.",
     "inMonth": "no mês",
     "forecastLabel": "Previsão",

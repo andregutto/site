@@ -2742,7 +2742,7 @@ export async function getOrCreateDefaultGroupMoment(userId: string, groupId: num
 // O endpoint /promote acima fica dormente (nenhuma UI chama; possível uso futuro).
 router.post('/moments/split-group', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { name, from_moment_id } = req.body as { name?: string; from_moment_id?: number }
+  const { name, from_moment_id, icon } = req.body as { name?: string; from_moment_id?: number; icon?: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
   const fromId = Number(from_moment_id)
   if (!fromId) { res.status(400).json({ error: 'from_moment_id obrigatório' }); return }
@@ -2751,9 +2751,12 @@ router.post('/moments/split-group', requireAuth, async (req, res: Response) => {
   const { data: fromMoment } = await supabaseAdmin
     .from('finance_moments').select('is_pair_default').eq('id', fromId).maybeSingle()
   if (!fromMoment?.is_pair_default) { res.status(400).json({ error: 'Só a partir de uma divisão 1:1' }); return }
+  // Ícone escolhido pelo usuário (chave de ícone desenhado, ex.: 'utensils').
+  // Default 'sparkle' — o mesmo neutro do sistema; nunca mais o emoji 🤝, que
+  // destoava dos ícones desenhados usados no resto dos Momentos.
   const { data: created, error } = await supabaseAdmin
     .from('finance_moments')
-    .insert({ user_id: userId, name: name.trim(), icon: '🤝' })
+    .insert({ user_id: userId, name: name.trim(), icon: (icon?.trim() || 'sparkle') })
     .select('id').single()
   if (error || !created) { res.status(500).json({ error: error?.message ?? 'Falha ao criar momento' }); return }
   res.json({ moment_id: created.id })

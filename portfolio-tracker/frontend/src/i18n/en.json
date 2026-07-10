@@ -1330,6 +1330,7 @@
     "splitNameJoinLast": " and ",
     "splitPickAdd": "Add",
     "splitCreateCta": "Create and invite",
+    "splitIconLabel": "Icon",
     "splitInviteFailed": "Couldn't invite: {names}. Try again."
   },
   "classes": {
@@ -3219,6 +3220,7 @@
     "goalCreate": "Create plan",
     "splitExpense": "Split an expense",
     "splitWithWho": "Split with whom?",
+    "splitMomentsHeading": "Moments",
     "splitNoFriends": "You don't have connected friends to split with yet.",
     "inMonth": "this month",
     "forecastLabel": "Forecast",

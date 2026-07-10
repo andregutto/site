@@ -13,13 +13,15 @@ import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
+import { PairMomentModal, GroupExpensesModal, MomentExpensesModal, type MomentBalance } from './PeoplePage'
 import type { ResourceItem } from './ResourcesPage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
 import Avatar from './voyage/_shared/Avatar'
 import CategoryIcon from './community/_shared/CategoryIcon'
+import { Icon } from '../components/icons'
+import { resolveMomentIcon } from '../lib/momentIcons'
 import type { PortfolioValue } from '../lib/types'
 
 /* Página "Hoje": abertura do app. O que está vivo agora — patrimônio (obedece
@@ -30,6 +32,14 @@ import type { PortfolioValue } from '../lib/types'
 interface HomeFriendEntry { type: 'friend'; user_id: string; name: string; avatar_url?: string; balance: { currency: string; amount: number } | null; last_activity: string | null }
 interface HomeGroupEntry {
   type: 'group'; id: number; name: string; balance: { currency: string; amount: number } | null; last_activity: string | null
+  members: { name?: string; avatar_url?: string }[]
+  member_count: number
+}
+// Momento nomeado com saldo pendente (ex.: Eurotrip) — linha própria "onde" no
+// card, ao lado das linhas "com quem" (amigo/grupo). O mesmo saldo pode aparecer
+// no amigo e aqui: lentes complementares (Splitwise), não repetição-erro.
+interface HomeMomentEntry {
+  type: 'moment'; id: number; name: string; icon: string; balance: { currency: string; amount: number } | null; last_activity: string | null
   members: { name?: string; avatar_url?: string }[]
   member_count: number
 }
@@ -57,6 +67,129 @@ function GroupAvatarStack({ members, memberCount }: { members: { name?: string; 
   )
 }
 
+const splitIcon = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+)
+
+// Uma linha do card "Entre amigos" — amigo, momento (com saldo) ou grupo.
+// Extraído porque o card aparece em dois lugares (bento não-free e coluna free)
+// e as três variantes de avatar/rótulo eram idênticas nos dois.
+function SplitEntryRow({ entry, hideValues, fmtCur, splitTitle, onOpen }: {
+  entry: HomeSplitEntry
+  hideValues: boolean
+  fmtCur: (n: number, c: string) => string
+  splitTitle: string
+  onOpen: (entry: HomeSplitEntry) => void
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      {entry.type === 'friend'
+        ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
+        : entry.members.length > 0
+          ? <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />
+          : <span style={{ width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--arvo-fg-muted)' }}>{entry.type === 'moment' ? <Icon name={resolveMomentIcon(entry.icon)} size={19} /> : '👥'}</span>}
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+        {entry.type === 'group' && (
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+        )}
+        {entry.type === 'moment' && entry.members.length > 0 && (
+          <span style={{ display: 'inline-flex', flexShrink: 0, color: 'var(--arvo-fg-soft)' }}><Icon name={resolveMomentIcon(entry.icon)} size={13} /></span>
+        )}
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
+      </span>
+      {entry.balance && (
+        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
+          {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={() => onOpen(entry)}
+        title={splitTitle}
+        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}
+      >
+        {splitIcon}
+      </button>
+    </div>
+  )
+}
+
+// Modal "Dividir com quem?" — abre pelo botão do rodapé do card "Entre amigos".
+// Lista amigos, grupos e TODOS os momentos nomeados (inclusive os já quitados,
+// pra poder lançar despesa lá). Extraído porque aparece em dois lugares (coluna
+// free e bento). Momentos com saldo já aparecem em linha no próprio card; aqui
+// entram todos, como destino de "onde lançar".
+interface PickerMoment { id: number; name: string; icon: string }
+function SplitPickerModal({ friends, groups, moments, labels, onFriend, onGroup, onMoment, onClose }: {
+  friends: ActiveFriend[]
+  groups: { id: number; name: string }[]
+  moments: PickerMoment[]
+  labels: { title: string; noFriends: string; peopleLabel: string; momentsHeading: string }
+  onFriend: (f: ActiveFriend) => void
+  onGroup: (g: { id: number; name: string }) => void
+  onMoment: (m: PickerMoment) => void
+  onClose: () => void
+}) {
+  const rowStyle: React.CSSProperties = { padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }
+  const iconBubble: React.CSSProperties = { width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-fg-muted)', overflow: 'hidden' }
+  const nameStyle: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }
+  const hover = (on: boolean) => (e: React.MouseEvent<HTMLButtonElement>) => (e.currentTarget.style.background = on ? 'var(--arvo-hover-bg)' : '')
+  const sectionDivider = (show: boolean): React.CSSProperties => ({ marginTop: show ? 6 : 0, paddingTop: show ? 10 : 0, borderTop: show ? '1px solid var(--arvo-border-soft)' : 'none' })
+  const empty = friends.length === 0 && groups.length === 0 && moments.length === 0
+  return (
+    <div onClick={onClose} className="flex items-end sm:items-center justify-center sm:p-4" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)' }}>
+      <div onClick={e => e.stopPropagation()} className="rounded-t-2xl sm:rounded-2xl" style={{ width: '100%', maxWidth: 400, maxHeight: '92vh', overflowY: 'auto', background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <p style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>{labels.title}</p>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
+          </button>
+        </div>
+        {empty ? (
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+            {labels.noFriends}{' '}
+            <Link to="/people" style={{ color: '#8C6A28' }}>{labels.peopleLabel} →</Link>
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {friends.map(f => (
+              <button key={`f-${f.user_id}`} type="button" onClick={() => onFriend(f)} className="w-full text-left flex items-center gap-3" style={rowStyle} onMouseEnter={hover(true)} onMouseLeave={hover(false)}>
+                <span style={{ ...iconBubble, fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600 }}>
+                  {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
+                </span>
+                <span style={nameStyle}>{f.name ?? f.email}</span>
+              </button>
+            ))}
+            {moments.length > 0 && (
+              <div style={sectionDivider(friends.length > 0)}>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)', padding: '2px 10px 6px' }}>{labels.momentsHeading}</p>
+                {moments.map(m => (
+                  <button key={`m-${m.id}`} type="button" onClick={() => onMoment(m)} className="w-full text-left flex items-center gap-3" style={rowStyle} onMouseEnter={hover(true)} onMouseLeave={hover(false)}>
+                    <span style={iconBubble}><Icon name={resolveMomentIcon(m.icon)} size={15} /></span>
+                    <span style={nameStyle}>{m.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {groups.length > 0 && (
+              <div style={sectionDivider(friends.length > 0 || moments.length > 0)}>
+                {groups.map(g => (
+                  <button key={`g-${g.id}`} type="button" onClick={() => onGroup(g)} className="w-full text-left flex items-center gap-3" style={rowStyle} onMouseEnter={hover(true)} onMouseLeave={hover(false)}>
+                    <span style={iconBubble}>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                    </span>
+                    <span style={nameStyle}>{g.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
@@ -66,29 +199,36 @@ interface TodayData {
   community_unseen: number
   top_friends: HomeFriendEntry[]
   top_groups: HomeGroupEntry[]
+  top_moments: HomeMomentEntry[]
 }
 
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
 
-// Card "Entre amigos": 3 amigos + 2 grupos por padrão, mas preenche até 5 com
-// o outro tipo quando um lado tem menos (ex: só 1 grupo → 4 amigos + 1 grupo).
-// Ambas as listas já chegam ordenadas por atividade recente (não por saldo).
+// Card "Entre amigos": mistura amigos (lente "com quem"), momentos nomeados com
+// saldo (lente "onde") e grupos. Cotas-base garantem presença de cada tipo que
+// tenha itens (o André quer "pelo menos alguns momentos"), e a sobra preenche
+// na ordem amigos → momentos → grupos até o teto. Todas as listas já chegam
+// ordenadas por atividade recente (não por saldo).
+type HomeSplitEntry = HomeFriendEntry | HomeGroupEntry | HomeMomentEntry
 function allocateFriendsAndGroups(
-  friends: HomeFriendEntry[], groups: HomeGroupEntry[], max = 5, friendShare = 3, groupShare = 2,
-): (HomeFriendEntry | HomeGroupEntry)[] {
+  friends: HomeFriendEntry[], groups: HomeGroupEntry[], moments: HomeMomentEntry[] = [],
+  max = 6, friendShare = 3, momentShare = 2, groupShare = 2,
+): HomeSplitEntry[] {
   let friendCount = Math.min(friends.length, friendShare)
+  let momentCount = Math.min(moments.length, momentShare)
   let groupCount = Math.min(groups.length, groupShare)
-  let remaining = max - friendCount - groupCount
-  if (remaining > 0) {
-    const extraFriends = Math.min(friends.length - friendCount, remaining)
-    friendCount += extraFriends
-    remaining -= extraFriends
+  // Se as cotas-base já estouram o teto, corta primeiro grupos, depois momentos.
+  while (friendCount + momentCount + groupCount > max) {
+    if (groupCount > 0) groupCount--
+    else if (momentCount > 0) momentCount--
+    else friendCount--
   }
-  if (remaining > 0) {
-    const extraGroups = Math.min(groups.length - groupCount, remaining)
-    groupCount += extraGroups
-  }
-  return [...friends.slice(0, friendCount), ...groups.slice(0, groupCount)]
+  let remaining = max - friendCount - momentCount - groupCount
+  const grow = (have: number, count: number) => { const add = Math.min(have - count, remaining); remaining -= add; return count + add }
+  friendCount = grow(friends.length, friendCount)
+  momentCount = grow(moments.length, momentCount)
+  groupCount = grow(groups.length, groupCount)
+  return [...friends.slice(0, friendCount), ...moments.slice(0, momentCount), ...groups.slice(0, groupCount)]
 }
 
 const GOLD_RGB = '200,184,154'
@@ -176,7 +316,11 @@ export default function HomePage() {
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const [splitGroup, setSplitGroup] = useState<{ id: number; name: string } | null>(null)
+  const [splitMoment, setSplitMoment] = useState<{ id: number; name: string; icon?: string } | null>(null)
   const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
+  // Todos os momentos nomeados do usuário (inclusive quitados) — destino no
+  // seletor "Dividir despesa". Os com saldo já viram linha no card; aqui entram todos.
+  const [splitMoments, setSplitMoments] = useState<PickerMoment[]>([])
   const [resources, setResources] = useState<ResourceItem[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
 
@@ -233,6 +377,9 @@ export default function HomePage() {
         .catch(() => {}),
       apiFetch<{ id: number; name: string }[]>('/shared/groups')
         .then(setSplitGroups)
+        .catch(() => {}),
+      apiFetch<{ id: number; name: string; icon: string }[]>('/finances/moments')
+        .then(ms => setSplitMoments((ms ?? []).map(m => ({ id: m.id, name: m.name, icon: m.icon }))))
         .catch(() => {}),
       apiFetch<{ resources: ResourceItem[] }>('/resources')
         .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 1)))
@@ -337,7 +484,13 @@ export default function HomePage() {
   // gate `loading`), então não há mais carregamento assíncrono separado pra
   // sincronizar aqui (evita o piscar que existia quando isso dependia de
   // fetches independentes terminando em momentos diferentes).
-  const friendsAndGroups = allocateFriendsAndGroups(data?.top_friends ?? [], data?.top_groups ?? [])
+  const friendsAndGroups = allocateFriendsAndGroups(data?.top_friends ?? [], data?.top_groups ?? [], data?.top_moments ?? [])
+  const splitEntryKey = (entry: HomeSplitEntry) => entry.type === 'friend' ? `f-${entry.user_id}` : entry.type === 'moment' ? `m-${entry.id}` : `g-${entry.id}`
+  const openSplitEntry = (entry: HomeSplitEntry) => {
+    if (entry.type === 'friend') setSplitFriend({ email: '', name: entry.name, user_id: entry.user_id } as ActiveFriend)
+    else if (entry.type === 'moment') setSplitMoment({ id: entry.id, name: entry.name, icon: entry.icon })
+    else setSplitGroup({ id: entry.id, name: entry.name })
+  }
 
   // Metas (Liberdade financeira) só aparece quando falta conteúdo pra
   // preencher a coluna — se já tem Viagem + Momento + Recursos + Entre
@@ -419,32 +572,7 @@ export default function HomePage() {
       <div style={{ padding: '14px 20px 18px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {friendsAndGroups.map(entry => (
-            <div key={entry.type === 'friend' ? `f-${entry.user_id}` : `g-${entry.id}`} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              {entry.type === 'friend'
-                ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
-                : <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />}
-              <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
-                {entry.type === 'group' && (
-                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
-                )}
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
-              </span>
-              {entry.balance && (
-                <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
-                  {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => entry.type === 'friend'
-                  ? setSplitFriend({ email: '', name: entry.name, user_id: entry.user_id } as ActiveFriend)
-                  : setSplitGroup({ id: entry.id, name: entry.name })}
-                title={th.splitExpense ?? 'Dividir despesa'}
-                style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-              </button>
-            </div>
+            <SplitEntryRow key={splitEntryKey(entry)} entry={entry} hideValues={hideValues} fmtCur={fmtCur} splitTitle={th.splitExpense ?? 'Dividir despesa'} onOpen={openSplitEntry} />
           ))}
         </div>
         <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, cursor: 'pointer' }}>
@@ -567,54 +695,12 @@ export default function HomePage() {
           </div>
 
           {/* Modais de divisão (mesmos do bento) */}
-          {splitPicker && !splitFriend && !splitGroup && (
-            <div onClick={() => setSplitPicker(false)} className="flex items-end sm:items-center justify-center sm:p-4" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)' }}>
-              <div onClick={e => e.stopPropagation()} className="rounded-t-2xl sm:rounded-2xl" style={{ width: '100%', maxWidth: 400, maxHeight: '92vh', overflowY: 'auto', background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                  <p style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{th.splitWithWho ?? 'Dividir com quem?'}</p>
-                  <button type="button" onClick={() => setSplitPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
-                  </button>
-                </div>
-                {activeFriends.length === 0 && splitGroups.length === 0 ? (
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-                    {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
-                    <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {activeFriends.map(f => (
-                      <button key={`f-${f.user_id}`} type="button" onClick={() => setSplitFriend(f)} className="w-full text-left flex items-center gap-3"
-                        style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '')}
-                      >
-                        <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
-                          {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
-                        </span>
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
-                      </button>
-                    ))}
-                    {splitGroups.length > 0 && (
-                      <div style={{ marginTop: activeFriends.length > 0 ? 6 : 0, paddingTop: activeFriends.length > 0 ? 10 : 0, borderTop: activeFriends.length > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
-                        {splitGroups.map(g => (
-                          <button key={`g-${g.id}`} type="button" onClick={() => setSplitGroup(g)} className="w-full text-left flex items-center gap-3"
-                            style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = '')}
-                          >
-                            <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
-                            </span>
-                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+          {splitPicker && !splitFriend && !splitGroup && !splitMoment && (
+            <SplitPickerModal
+              friends={activeFriends} groups={splitGroups} moments={splitMoments}
+              labels={{ title: th.splitWithWho ?? 'Dividir com quem?', noFriends: th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.', peopleLabel: t.nav.people, momentsHeading: th.splitMomentsHeading ?? 'Momentos' }}
+              onFriend={setSplitFriend} onGroup={setSplitGroup} onMoment={m => setSplitMoment(m)} onClose={() => setSplitPicker(false)}
+            />
           )}
           {splitGroup && (
             <GroupExpensesModal
@@ -622,6 +708,14 @@ export default function HomePage() {
               groupName={splitGroup.name}
               initialMomentId={null}
               onClose={() => { setSplitGroup(null); setSplitPicker(false) }}
+            />
+          )}
+          {splitMoment && (
+            <MomentExpensesModal
+              momentId={splitMoment.id}
+              momentName={splitMoment.name}
+              momentIcon={splitMoment.icon}
+              onClose={() => { setSplitMoment(null); setSplitPicker(false); loadHome() }}
             />
           )}
           {splitFriend?.user_id && (
@@ -852,32 +946,7 @@ export default function HomePage() {
               <div style={{ padding: '14px 20px 18px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {friendsAndGroups.map(entry => (
-                    <div key={entry.type === 'friend' ? `f-${entry.user_id}` : `g-${entry.id}`} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      {entry.type === 'friend'
-                        ? <Avatar name={entry.name} avatarUrl={entry.avatar_url} size={26} />
-                        : <GroupAvatarStack members={entry.members} memberCount={entry.member_count} />}
-                      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
-                        {entry.type === 'group' && (
-                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8} style={{ flexShrink: 0 }}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
-                        )}
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
-                      </span>
-                      {entry.balance && (
-                        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
-                          {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => entry.type === 'friend'
-                          ? setSplitFriend({ email: '', name: entry.name, user_id: entry.user_id } as ActiveFriend)
-                          : setSplitGroup({ id: entry.id, name: entry.name })}
-                        title={th.splitExpense ?? 'Dividir despesa'}
-                        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-                      </button>
-                    </div>
+                    <SplitEntryRow key={splitEntryKey(entry)} entry={entry} hideValues={hideValues} fmtCur={fmtCur} splitTitle={th.splitExpense ?? 'Dividir despesa'} onOpen={openSplitEntry} />
                   ))}
                 </div>
                 <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, cursor: 'pointer' }}>
@@ -916,54 +985,12 @@ export default function HomePage() {
       </div>
 
       {/* Seletor de amigo OU grupo pra dividir despesa */}
-      {splitPicker && !splitFriend && !splitGroup && (
-        <div onClick={() => setSplitPicker(false)} className="flex items-end sm:items-center justify-center sm:p-4" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.45)' }}>
-          <div onClick={e => e.stopPropagation()} className="rounded-t-2xl sm:rounded-2xl" style={{ width: '100%', maxWidth: 400, maxHeight: '92vh', overflowY: 'auto', background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <p style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{th.splitWithWho ?? 'Dividir com quem?'}</p>
-              <button type="button" onClick={() => setSplitPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" /></svg>
-              </button>
-            </div>
-            {activeFriends.length === 0 && splitGroups.length === 0 ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-                {th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.'}{' '}
-                <Link to="/people" style={{ color: '#8C6A28' }}>{t.nav.people} →</Link>
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {activeFriends.map(f => (
-                  <button key={`f-${f.user_id}`} type="button" onClick={() => setSplitFriend(f)} className="w-full text-left flex items-center gap-3"
-                    style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
-                  >
-                    <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg-muted)', overflow: 'hidden' }}>
-                      {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (f.name ?? f.email).slice(0, 1).toUpperCase()}
-                    </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{f.name ?? f.email}</span>
-                  </button>
-                ))}
-                {splitGroups.length > 0 && (
-                  <div style={{ marginTop: activeFriends.length > 0 ? 6 : 0, paddingTop: activeFriends.length > 0 ? 10 : 0, borderTop: activeFriends.length > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
-                    {splitGroups.map(g => (
-                      <button key={`g-${g.id}`} type="button" onClick={() => setSplitGroup(g)} className="w-full text-left flex items-center gap-3"
-                        style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '')}
-                      >
-                        <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
-                        </span>
-                        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+      {splitPicker && !splitFriend && !splitGroup && !splitMoment && (
+        <SplitPickerModal
+          friends={activeFriends} groups={splitGroups} moments={splitMoments}
+          labels={{ title: th.splitWithWho ?? 'Dividir com quem?', noFriends: th.splitNoFriends ?? 'Você ainda não tem amigos conectados para dividir.', peopleLabel: t.nav.people, momentsHeading: th.splitMomentsHeading ?? 'Momentos' }}
+          onFriend={setSplitFriend} onGroup={setSplitGroup} onMoment={m => setSplitMoment(m)} onClose={() => setSplitPicker(false)}
+        />
       )}
       {splitGroup && (
         <GroupExpensesModal
@@ -971,6 +998,14 @@ export default function HomePage() {
           groupName={splitGroup.name}
           initialMomentId={null}
           onClose={() => { setSplitGroup(null); setSplitPicker(false) }}
+        />
+      )}
+      {splitMoment && (
+        <MomentExpensesModal
+          momentId={splitMoment.id}
+          momentName={splitMoment.name}
+          momentIcon={splitMoment.icon}
+          onClose={() => { setSplitMoment(null); setSplitPicker(false); loadHome() }}
         />
       )}
       {splitFriend?.user_id && (

@@ -8,6 +8,7 @@ import Avatar from '../voyage/_shared/Avatar'
 import ArvoLoader from '../../components/ArvoLoader'
 import { MembersPanel, PersonPicker, type MomentMember, type PickedPerson } from './FinancesMomentsPage'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
+import { Icon, type IconName } from '../../components/icons'
 
 const CURRENCIES = ['BRL', 'EUR', 'USD'] as const
 const CURRENCY_SYMBOLS: Record<string, string> = { BRL: 'R$', EUR: '€', USD: '$' }
@@ -602,6 +603,11 @@ function joinFirstNames(names: string[], lastJoin: string): string {
   return `${firsts.slice(0, -1).join(', ')}${lastJoin}${firsts[firsts.length - 1]}`
 }
 
+// Ícones curados pro momento de divisão — os eventos mais comuns de "rachar
+// conta" (jantar, festa, viagem, casa, compras…), do sistema de ícones
+// desenhados (não emoji). Usuário escolhe um; default 'sparkle'.
+const SPLIT_ICON_CHOICES: IconName[] = ['sparkle', 'utensils', 'party', 'plane', 'beach', 'home', 'cart', 'car', 'music', 'gift', 'cake', 'trophy']
+
 // "Dividir com mais pessoas" (modelo B, ordem invertida 2026-07-10): primeiro
 // QUEM participa, depois o NOME — só assim a sugestão de nome pode incluir todo
 // mundo (antes ela nascia só com os dois do 1:1, porque a 3ª pessoa ainda não
@@ -632,6 +638,7 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
   })
   const [step, setStep] = useState<'people' | 'name'>('people')
   const [name, setName] = useState('')
+  const [icon, setIcon] = useState<IconName>('sparkle')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   // Se um convite falhar depois do Momento já criado, guardamos o id pra não
@@ -656,7 +663,7 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
     try {
       let momentIdNew = createdId
       if (momentIdNew == null) {
-        const res = await apiFetch<{ moment_id: number }>(`/finances/moments/split-group`, { method: 'POST', body: JSON.stringify({ name: name.trim(), from_moment_id: momentId }) })
+        const res = await apiFetch<{ moment_id: number }>(`/finances/moments/split-group`, { method: 'POST', body: JSON.stringify({ name: name.trim(), from_moment_id: momentId, icon }) })
         momentIdNew = res.moment_id
         setCreatedId(momentIdNew)
       }
@@ -776,6 +783,31 @@ function AddPersonFlow({ momentId, meta, pairFriend, onClose, onDone }: {
                 ))}
               </div>
             )}
+            {/* Escolha do ícone do momento — ícones desenhados do sistema (nunca
+                mais o emoji 🤝 fixo). Default 'sparkle'; o resto do app usa os
+                mesmos. */}
+            <div>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
+                {(t as any).finances?.splitIconLabel ?? 'Ícone'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {SPLIT_ICON_CHOICES.map(k => (
+                  <button
+                    key={k} type="button" onClick={() => setIcon(k)}
+                    title={k}
+                    style={{
+                      width: 40, height: 40, borderRadius: 12, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${icon === k ? 'var(--arvo-gold-line)' : 'var(--arvo-border)'}`,
+                      background: icon === k ? 'var(--arvo-gold-tint)' : 'var(--arvo-surface-2)',
+                      color: icon === k ? 'var(--arvo-gold-text)' : 'var(--arvo-fg-muted)',
+                    }}
+                  >
+                    <Icon name={k} size={19} />
+                  </button>
+                ))}
+              </div>
+            </div>
             {error && <p className="text-[13px] text-[var(--arvo-red)]">{error}</p>}
             <div className="flex gap-2.5">
               <button onClick={() => { setStep('people'); setError('') }} disabled={saving} className="arvo-pill-btn arvo-pill-btn--ghost flex-1">

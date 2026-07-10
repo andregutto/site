@@ -11,6 +11,8 @@ import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
 import ExpensesPanel, { type MomentMeta } from './finances/ExpensesPanel'
 import ArvoLoader from '../components/ArvoLoader'
+import { Icon } from '../components/icons'
+import { resolveMomentIcon } from '../lib/momentIcons'
 import { _fmt } from './finances/FinancesMomentsPage'
 import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from '../components/SharedGroupModals'
 import GroupSplitSection from '../components/GroupSplitSection'
@@ -931,6 +933,66 @@ export function GroupExpensesModal({ groupId, groupName, initialMomentId, onClos
         ) : null}
       </div>
     </div>
+  )
+}
+
+// Modal de despesas de um Momento NOMEADO acessado direto (ex.: linha "Eurotrip"
+// no card Entre amigos da Hoje) — o momentId já é conhecido, então abre o
+// ExpensesPanel sem resolver nada. Header: emoji do momento + pilha de
+// participantes + nome. Mesma casca bottom-sheet dos outros modais de despesa.
+export function MomentExpensesModal({ momentId, momentName, momentIcon, onClose }: {
+  momentId: number
+  momentName: string
+  momentIcon?: string
+  onClose: () => void
+}) {
+  const { user } = useAuth()
+  const { currency, hideValues } = useCurrency()
+  const { resolvedTheme } = useTheme()
+  const [headerMeta, setHeaderMeta] = useState<MomentMeta | null>(null)
+  const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
+  const others = (headerMeta?.participants ?? []).filter(p => p.user_id !== user?.id)
+
+  return createPortal(
+    <div className={`fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 ${resolvedTheme === 'dark' ? 'dark' : ''}`} style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div
+        className="relative w-full sm:max-w-[480px] max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        style={{ background: 'var(--arvo-surface)', boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px calc(28px + env(safe-area-inset-bottom, 0px))' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          {momentIcon && <span style={{ display: 'inline-flex', flexShrink: 0, color: 'var(--arvo-fg-muted)' }}><Icon name={resolveMomentIcon(momentIcon)} size={20} /></span>}
+          {others.length > 0 && (
+            <div className="flex -space-x-2" style={{ flexShrink: 0 }}>
+              {others.slice(0, 3).map(p => (
+                <div key={p.user_id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                  <Avatar name={p.name} email={p.email} avatarUrl={p.avatar_url} size={26} />
+                </div>
+              ))}
+              {others.length > 3 && (
+                <div style={{
+                  width: 30, height: 30, borderRadius: '50%', border: '2px solid var(--arvo-surface)',
+                  background: 'var(--arvo-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)',
+                }}>
+                  +{others.length - 3}
+                </div>
+              )}
+            </div>
+          )}
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
+            {headerMeta?.name ?? momentName}
+          </p>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" />
+            </svg>
+          </button>
+        </div>
+        <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} onMetaChange={setHeaderMeta} />
+      </div>
+    </div>,
+    document.body
   )
 }
 
