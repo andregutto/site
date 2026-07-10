@@ -83,7 +83,12 @@ ilimitado em tudo.
   oculto real) e convida os participantes nele, aceite explícito inclusive pro
   amigo do 1:1. O 1:1 fica intocado e privado. Naming: verbo no botão, nunca
   "momento em grupo" (colidiria com Grupo de Pessoas). `/promote` fica
-  dormente no backend.
+  dormente no backend. Ordem do fluxo invertida no mesmo dia (feedback do
+  André): primeiro QUEM participa (amigo do 1:1 pré-selecionado, PersonPicker),
+  depois o NOME — sugerido pelos primeiros nomes de todos + pills de sugestões
+  (i18n `splitNameSuggestions`); criação + convites juntos no final. Copy do
+  1:1 oculto nunca cita "Momento" (o usuário não sabe que ele existe):
+  `expenseSectionHintPair` / `expenseBalancesPair` ("Saldos entre vocês").
 - **5 despesas de divisão/dia no free**: é o que o Splitwise faz (~4/dia) e o
   produto deles provou tolerância. Conta despesas *criadas* pelo usuário;
   participar/acertar não conta.
