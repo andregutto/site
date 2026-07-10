@@ -2906,7 +2906,8 @@
     "shareButton": "+ Compartilhar",
     "splitExpenseButton": "Dividir despesa",
     "expensesWithPrefix": "Despesas com",
-    "splitWhereTitle": "Onde você quer lançar essa despesa? Há saldo pendente num grupo em comum.",
+    "splitWhereTitle": "Onde você quer lançar essa despesa?",
+    "splitGroupTag": "Grupo",
     "splitOnlyBetween": "Só entre vocês dois"
   },
   "invite": {

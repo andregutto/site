@@ -169,6 +169,8 @@ export default function HomePage() {
   const [wealthDegraded, setWealthDegraded] = useState<string[] | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balancesByMomentMap, setBalancesByMomentMap] = useState<Record<string, MomentBalance[]>>({})
+  // Grupos em comum por amigo (ambos ativos) — sugestões de destino no PairMomentModal.
+  const [sharedGroupsMap, setSharedGroupsMap] = useState<Record<string, { group_id: number; name: string }[]>>({})
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -207,14 +209,20 @@ export default function HomePage() {
       // Só balancesByMomentMap importa aqui — o resumo pro card "Entre amigos"
       // agora vem pronto (e junto com o resto) em data.top_friends/top_groups.
       // Isso ainda alimenta o PairMomentModal do fluxo de "dividir despesa".
-      apiFetch<{ contacts: Array<{ user_id: string | null; balancesByMoment?: MomentBalance[] }> }>('/people')
+      apiFetch<{ contacts: Array<{ user_id: string | null; balancesByMoment?: MomentBalance[]; contexts?: { type: string; group_id?: number; group_name?: string; member_status?: string }[] }> }>('/people')
         .then(({ contacts }) => {
           const bbmMap: Record<string, MomentBalance[]> = {}
+          const sgMap: Record<string, { group_id: number; name: string }[]> = {}
           for (const c of contacts ?? []) {
             if (!c.user_id) continue
             if (c.balancesByMoment) bbmMap[c.user_id] = c.balancesByMoment
+            const groups = (c.contexts ?? [])
+              .filter(x => x.type === 'shared_finance' && x.member_status === 'active' && x.group_id != null)
+              .map(x => ({ group_id: x.group_id as number, name: x.group_name ?? '' }))
+            if (groups.length > 0) sgMap[c.user_id] = groups
           }
           setBalancesByMomentMap(bbmMap)
+          setSharedGroupsMap(sgMap)
         })
         .catch(() => {}),
       apiFetch<FreedomPlan[]>('/finances/freedom-plans')
@@ -623,6 +631,7 @@ export default function HomePage() {
               friendAvatarUrl={splitFriend.avatar_url}
               initialMomentId={null}
               balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
+              sharedGroups={sharedGroupsMap[splitFriend.user_id]}
               onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
               onPromoted={loadHome}
             />
@@ -971,6 +980,7 @@ export default function HomePage() {
           friendAvatarUrl={splitFriend.avatar_url}
           initialMomentId={null}
           balancesByMoment={balancesByMomentMap[splitFriend.user_id]}
+          sharedGroups={sharedGroupsMap[splitFriend.user_id]}
           onClose={() => { setSplitFriend(null); setSplitPicker(false) }}
           onPromoted={loadHome}
         />

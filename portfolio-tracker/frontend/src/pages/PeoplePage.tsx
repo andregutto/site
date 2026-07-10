@@ -111,7 +111,7 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
 // amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
 // despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
 // já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
-export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, initialMomentId, balancesByMoment, onClose, onPromoted }: {
+export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, initialMomentId, balancesByMoment, sharedGroups, onClose, onPromoted }: {
   friendUserId: string
   friendName: string
   friendAvatarUrl?: string
@@ -121,6 +121,9 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
   // pertence a esse grupo — perguntamos antes de abrir direto o 1:1, senão a despesa some
   // dentro do saldo do grupo sem o usuário entender de onde veio (bug real relatado).
   balancesByMoment?: MomentBalance[]
+  // Grupos em comum com esse amigo (ambos membros ativos) — entram como sugestão
+  // de destino mesmo sem saldo pendente: são o contexto natural de "despesa da galera".
+  sharedGroups?: { group_id: number; name: string }[]
   onClose: () => void
   // Disparado quando o par 1:1 oculto é promovido a Momento nomeado (3ª pessoa) —
   // o pai recarrega listas de amigos/momentos pra refletir a mudança de estrutura.
@@ -129,22 +132,27 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
   const { t } = useI18n()
   const { user } = useAuth()
   // Meta do Momento aberto (vinda do ExpensesPanel): nome quando não é o 1:1
-  // puro, e participantes ativos pros avatares do header.
+  // puro (Momento nomeado ou Momento padrão de grupo), e participantes ativos
+  // pros avatares do header.
   const [headerMeta, setHeaderMeta] = useState<MomentMeta | null>(null)
-  const promotedName = headerMeta && !headerMeta.is_pair_default ? headerMeta.name : null
+  const promotedName = headerMeta && (!headerMeta.is_pair_default || headerMeta.shared_group_id != null) ? headerMeta.name : null
   const { currency, hideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
-  // Qualquer Momento com saldo pendente que NÃO seja o 1:1 puro entra na escolha —
-  // Momentos nomeados (ex.: uma viagem) e Momentos de grupo compartilhado. Antes só
-  // grupos (shared_group_id) apareciam: com saldo vivo num Momento nomeado, o card da
-  // pessoa mostrava €X mas o modal abria o 1:1 vazio ("0 despesas") sem explicação.
-  // O 1:1 puro = is_pair_default sem shared_group_id (o flag também marca o Momento
-  // padrão de grupos compartilhados, então precisa das duas condições).
-  const groupOptions = (balancesByMoment ?? []).filter(m => !(m.is_pair_default && m.shared_group_id == null) && m.balances.some(b => Math.abs(b.amount) >= 0.01))
-  const needsChoice = initialMomentId == null && groupOptions.length > 0
+  // Sugestões de destino da despesa (pedido do André 2026-07-10):
+  //  1. Momentos com saldo EM ABERTO com esse amigo — quitados ficam de fora de
+  //     propósito ("medo de ficar coisa demais"). Momentos nomeados e de grupo;
+  //     o 1:1 puro (is_pair_default sem shared_group_id) nunca é sugestão, é o destino padrão.
+  //  2. Grupos em comum ainda sem saldo (os com saldo já aparecem pela via 1,
+  //     dedupe por shared_group_id).
+  //  3. "Só entre vocês dois" (o 1:1 oculto).
+  const momentOptions = (balancesByMoment ?? []).filter(m => !(m.is_pair_default && m.shared_group_id == null) && m.balances.some(b => Math.abs(b.amount) >= 0.01))
+  const balanceGroupIds = new Set(momentOptions.map(m => m.shared_group_id).filter((id): id is number => id != null))
+  const plainGroups = (sharedGroups ?? []).filter((g, i, arr) => !balanceGroupIds.has(g.group_id) && arr.findIndex(x => x.group_id === g.group_id) === i)
+  const needsChoice = initialMomentId == null && (momentOptions.length > 0 || plainGroups.length > 0)
   const [momentId, setMomentId] = useState<number | null>(initialMomentId)
   const [choiceMade, setChoiceMade] = useState(!needsChoice)
   const [loading, setLoading] = useState(!initialMomentId && !needsChoice)
+  const [groupBusy, setGroupBusy] = useState(false)
   const [error, setError] = useState('')
   const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
 
@@ -157,6 +165,17 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
       .catch((ex: unknown) => setError((ex as Error).message ?? t.people.loadErrorDefault))
       .finally(() => setLoading(false))
   }, [friendUserId, momentId, choiceMade])
+
+  // Grupo escolhido como destino: resolve (ou cria) o Momento padrão do grupo —
+  // mesma rota que o GroupExpensesModal usa.
+  function openGroup(groupId: number) {
+    setGroupBusy(true)
+    setError('')
+    apiFetch<{ moment_id: number }>(`/shared/groups/${groupId}/default-moment`, { method: 'POST' })
+      .then(r => setMomentId(r.moment_id))
+      .catch((ex: unknown) => setError((ex as Error).message ?? t.people.loadErrorDefault))
+      .finally(() => setGroupBusy(false))
+  }
 
   return createPortal(
     // O portal renderiza direto em document.body, fora do wrapper com a classe
@@ -212,10 +231,11 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
               {t.people.splitWhereTitle}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {groupOptions.map(m => (
+              {momentOptions.map(m => (
                 <button
                   key={m.moment_id}
                   type="button"
+                  disabled={groupBusy}
                   onClick={() => setMomentId(m.moment_id)}
                   className="w-full text-left flex items-center gap-3"
                   style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer' }}
@@ -230,8 +250,26 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
                   ))}
                 </button>
               ))}
+              {plainGroups.map(g => (
+                <button
+                  key={`g${g.group_id}`}
+                  type="button"
+                  disabled={groupBusy}
+                  onClick={() => openGroup(g.group_id)}
+                  className="w-full text-left flex items-center gap-3"
+                  style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', opacity: groupBusy ? 0.5 : 1 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+                >
+                  <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{g.name}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 8px' }}>
+                    {(t as any).people?.splitGroupTag ?? 'Grupo'}
+                  </span>
+                </button>
+              ))}
               <button
                 type="button"
+                disabled={groupBusy}
                 onClick={() => setChoiceMade(true)}
                 className="w-full text-left flex items-center gap-3"
                 style={{ padding: '10px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--arvo-border-soft)', marginTop: 4, paddingTop: 14 }}
@@ -241,6 +279,7 @@ export function PairMomentModal({ friendUserId, friendName, friendAvatarUrl, ini
                 <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)' }}>{t.people.splitOnlyBetween}</span>
               </button>
             </div>
+            {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED, marginTop: 8 }}>{error}</p>}
           </div>
         ) : loading ? (
           <div className="flex justify-center py-5"><ArvoLoader size={26} style={{ color: 'var(--arvo-gold)' }} /></div>
@@ -533,6 +572,9 @@ function ContactCard({
           friendAvatarUrl={contact.avatar_url}
           initialMomentId={pairModal.momentId}
           balancesByMoment={contact.balancesByMoment}
+          sharedGroups={contact.contexts
+            .filter((c): c is FinanceContext => c.type === 'shared_finance' && c.member_status === 'active')
+            .map(c => ({ group_id: c.group_id, name: c.group_name }))}
           onClose={() => { setPairModal(null); onFriendChanged() }}
           onPromoted={onFriendChanged}
         />

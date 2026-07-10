@@ -2906,7 +2906,8 @@
     "shareButton": "+ Share",
     "splitExpenseButton": "Split expense",
     "expensesWithPrefix": "Expenses with",
-    "splitWhereTitle": "Where do you want to log this expense? There's a pending balance in a shared group.",
+    "splitWhereTitle": "Where do you want to log this expense?",
+    "splitGroupTag": "Group",
     "splitOnlyBetween": "Just between the two of you"
   },
   "invite": {

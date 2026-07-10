@@ -2906,7 +2906,8 @@
     "shareButton": "+ Partager",
     "splitExpenseButton": "Diviser une dépense",
     "expensesWithPrefix": "Dépenses avec",
-    "splitWhereTitle": "Où voulez-vous enregistrer cette dépense ? Il y a un solde en attente dans un groupe commun.",
+    "splitWhereTitle": "Où voulez-vous enregistrer cette dépense ?",
+    "splitGroupTag": "Groupe",
     "splitOnlyBetween": "Seulement entre vous deux"
   },
   "invite": {
