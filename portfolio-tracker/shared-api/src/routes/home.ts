@@ -53,7 +53,7 @@ function topBalance(balance: Map<string, number>): { currency: string; amount: n
 // Consultas independentes são agrupadas em Promise.all por "onda" — cada
 // onda só espera o resultado da anterior quando existe dependência real de
 // dado (ex.: buscar detalhes dos grupos só depois de saber os IDs).
-async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeFriendEntry[]; groups: HomeGroupEntry[]; moments: HomeMomentEntry[] }> {
+async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeFriendEntry[]; groups: HomeGroupEntry[]; moments: HomeMomentEntry[]; total_balance: { currency: string; amount: number }[] }> {
   const [
     { data: friendRowsA }, { data: friendRowsB },
     { data: memberRows }, { data: createdRows },
@@ -94,11 +94,15 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
   // as linhas de amigo/grupo). Só estes viram linha própria "onde".
   const namedMomentIds = allMoments.filter((m: any) => !m.is_pair_default).map((m: any) => m.id)
 
-  if (friendIds.size === 0 && groupMap.size === 0 && namedMomentIds.length === 0) return { friends: [], groups: [], moments: [] }
+  if (friendIds.size === 0 && groupMap.size === 0 && namedMomentIds.length === 0) return { friends: [], groups: [], moments: [], total_balance: [] }
 
   const friendAgg = new Map<string, { balance: Map<string, number>; lastActivity: string }>()
   const groupAgg = new Map<number, { balance: Map<string, number>; lastActivity: string }>()
   const momentAgg = new Map<number, { balance: Map<string, number>; lastActivity: string }>()
+  // Saldo líquido TOTAL comigo, por moeda — soma o meu delta de cada despesa UMA
+  // vez (não por amigo nem por momento), então nada é contado em dobro mesmo que
+  // o mesmo valor apareça na linha do amigo e na do momento. Vira o número do header.
+  const totalBalance = new Map<string, number>()
   function touchFriend(id: string, createdAt: string): { balance: Map<string, number>; lastActivity: string } {
     const e = friendAgg.get(id) ?? { balance: new Map<string, number>(), lastActivity: createdAt }
     if (createdAt > e.lastActivity) e.lastActivity = createdAt
@@ -166,6 +170,14 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     } else {
       const mine = shares.find(s => s.user_id === userId)
       if (mine) applyFriendDelta(payer, -mine.share_amount)
+    }
+
+    // Total líquido (todas as contrapartes, cada despesa uma vez).
+    if (payer === userId) {
+      for (const s of shares) { if (s.user_id !== userId) totalBalance.set(currency, (totalBalance.get(currency) ?? 0) + s.share_amount) }
+    } else {
+      const mine = shares.find(s => s.user_id === userId)
+      if (mine) totalBalance.set(currency, (totalBalance.get(currency) ?? 0) - mine.share_amount)
     }
 
     if (info?.groupId != null && groupMap.has(info.groupId)) {
@@ -274,7 +286,14 @@ async function computeFriendsAndGroups(userId: string): Promise<{ friends: HomeF
     }
   }).sort((a, b) => (b.last_activity ?? '').localeCompare(a.last_activity ?? ''))
 
-  return { friends, groups, moments }
+  // Saldo líquido total por moeda (só as com valor relevante), ordenado por
+  // magnitude — o header mostra a principal; o resto vive na página Pessoas.
+  const total_balance = [...totalBalance.entries()]
+    .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
+    .filter(b => Math.abs(b.amount) >= 0.01)
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+
+  return { friends, groups, moments, total_balance }
 }
 
 // Tópicos quentes da comunidade: atividade mais recente primeiro.
@@ -401,7 +420,7 @@ router.get('/today', async (req: any, res: any) => {
       loadActiveMoment(userId, todayStr),
       getCurrentMonthFinance(userId).catch(() => null),
       loadCommunityUnseen(userId),
-      computeFriendsAndGroups(userId).catch(() => ({ friends: [], groups: [], moments: [] })),
+      computeFriendsAndGroups(userId).catch(() => ({ friends: [], groups: [], moments: [], total_balance: [] })),
     ])
     const firstName = (display.name ?? display.email).split(' ')[0]
 
@@ -415,6 +434,7 @@ router.get('/today', async (req: any, res: any) => {
       top_friends: friendsAndGroups.friends,
       top_groups: friendsAndGroups.groups,
       top_moments: friendsAndGroups.moments,
+      total_balance: friendsAndGroups.total_balance,
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

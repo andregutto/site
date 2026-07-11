@@ -95,10 +95,10 @@ function SplitEntryRow({ entry, hideValues, fmtCur, splitTitle, onOpen }: {
         {entry.type === 'moment' && entry.members.length > 0 && (
           <span style={{ display: 'inline-flex', flexShrink: 0, color: 'var(--arvo-fg-soft)' }}><Icon name={resolveMomentIcon(entry.icon)} size={13} /></span>
         )}
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
       </span>
       {entry.balance && (
-        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, fontWeight: 600, flexShrink: 0 }}>
+        <span className={hideValues ? undefined : entry.balance.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 600, flexShrink: 0 }}>
           {entry.balance.amount < 0 ? '−' : ''}{fmtCur(Math.abs(entry.balance.amount), entry.balance.currency)}
         </span>
       )}
@@ -111,6 +111,49 @@ function SplitEntryRow({ entry, hideValues, fmtCur, splitTitle, onOpen }: {
         {splitIcon}
       </button>
     </div>
+  )
+}
+
+// Cabeçalho do card "Entre amigos" — mesmo dourado vivo da Comunidade (#E8A020,
+// antes era o mostarda apagado #8C6A28) e o saldo LÍQUIDO total à direita (verde
+// a receber / vermelho a pagar), calculado sem contar duplicados. Idêntico nos
+// dois lugares onde o card aparece (coluna free e bento), por isso é componente.
+function FriendsCardHeader({ label, seeAll, totalLabel, totalBalance, hideValues, fmtCur }: {
+  label: string
+  seeAll: string
+  totalLabel: string
+  totalBalance: { currency: string; amount: number }[]
+  hideValues: boolean
+  fmtCur: (n: number, c: string) => string
+}) {
+  const top = totalBalance[0]
+  // O header inteiro é o link pra Pessoas — clicar em qualquer ponto da faixa
+  // abre o detalhe (sem seta/"Ver tudo" separado competindo com o saldo).
+  return (
+    <Link
+      to="/people"
+      title={seeAll}
+      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 12px', textDecoration: 'none', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(90deg, rgba(232,160,32,0.18), rgba(232,160,32,0.03) 70%)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)')}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ color: '#E8A020', display: 'inline-flex' }}>
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+        </span>
+        <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{label}</p>
+      </div>
+      {top && !hideValues && (
+        // marginRight reserva o espaço do botão ↔ (16px) + gap das linhas, pra o
+        // valor do header cair na MESMA coluna dos valores das despesas embaixo.
+        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5, marginRight: 31 }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{totalLabel}</span>
+          <span className={top.amount >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} title={top.amount >= 0 ? 'A receber no total' : 'A pagar no total'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, fontWeight: 700 }}>
+            {top.amount < 0 ? '−' : '+'}{fmtCur(Math.abs(top.amount), top.currency)}
+          </span>
+        </span>
+      )}
+    </Link>
   )
 }
 
@@ -200,6 +243,7 @@ interface TodayData {
   top_friends: HomeFriendEntry[]
   top_groups: HomeGroupEntry[]
   top_moments: HomeMomentEntry[]
+  total_balance: { currency: string; amount: number }[]
 }
 
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
@@ -560,15 +604,7 @@ export default function HomePage() {
 
   const friendsBlock = friendsAndGroups.length > 0 && (
     <div style={{ ...card, overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(140,106,40,0.12), transparent 70%)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: '#8C6A28', display: 'inline-flex' }}>
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-          </span>
-          <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
-        </div>
-        <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-      </div>
+      <FriendsCardHeader label={th.balancesLabel ?? "Entre amigos"} seeAll={th.seeAll ?? "Ver tudo"} totalLabel={t.common.total ?? "Total"} totalBalance={data?.total_balance ?? []} hideValues={hideValues} fmtCur={fmtCur} />
       <div style={{ padding: '14px 20px 18px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {friendsAndGroups.map(entry => (
@@ -856,7 +892,14 @@ export default function HomePage() {
               No free não há teaser de comunidade (gate = plus): esconde por tier. */}
           {!isFree && data && data.hot_topics.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}>
+              {/* Header inteiro clicável → Comunidade (mesmo padrão do "Entre amigos"). */}
+              <Link
+                to="/community"
+                title={th.seeAll ?? 'Ver tudo'}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 12px', textDecoration: 'none', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'linear-gradient(90deg, rgba(232,160,32,0.18), rgba(232,160,32,0.03) 70%)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)')}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#E8A020', display: 'inline-flex' }}>
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
@@ -868,8 +911,7 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-              </div>
+              </Link>
               {data.hot_topics.map(topic => (
                 <button
                   key={topic.id}
@@ -934,15 +976,7 @@ export default function HomePage() {
               juntos como bloco de conteúdo, sem intercalar. */}
           {friendsAndGroups.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(140,106,40,0.12), transparent 70%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#8C6A28', display: 'inline-flex' }}>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-                  </span>
-                  <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
-                </div>
-                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-              </div>
+              <FriendsCardHeader label={th.balancesLabel ?? "Entre amigos"} seeAll={th.seeAll ?? "Ver tudo"} totalLabel={t.common.total ?? "Total"} totalBalance={data?.total_balance ?? []} hideValues={hideValues} fmtCur={fmtCur} />
               <div style={{ padding: '14px 20px 18px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {friendsAndGroups.map(entry => (
