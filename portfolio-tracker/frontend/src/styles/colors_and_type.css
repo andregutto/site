@@ -427,6 +427,12 @@
 }
 .arvo-btn--link:hover:not(:disabled) { color: var(--arvo-gold-text); }
 
+/* "Respiro" suave do glifo INTEIRO (opacidade do todo) — pro loader de conteúdo
+   dar sinal de vida sem piscar as 6 partes em sequência como o ArvoLoader, que
+   destoava do splash sólido. Mesma arte do splash, só respirando devagar. */
+@keyframes arvoBreathe { 0%, 100% { opacity: 0.5 } 50% { opacity: 1 } }
+.arvo-breathe { animation: arvoBreathe 1.6s ease-in-out infinite; }
+
 /* Botão de AÇÃO de modal/form — pill legível de caixa-normal, ao contrário do
    .arvo-btn (CTA em uppercase tracked, pesado demais pra "Cancelar/Salvar"
    dentro de um formulário). Fonte grande e presença clara (pedido do André

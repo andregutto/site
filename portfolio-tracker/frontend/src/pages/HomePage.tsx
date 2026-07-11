@@ -8,8 +8,6 @@ import { useUpgrade } from '../contexts/UpgradeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import TierBadge from '../components/upgrade/TierBadge'
 import { TIER_IDENTITY } from '../components/upgrade/tierMeta'
-import { PageLoader } from '../components/ArvoLoader'
-import ArvoSplash from '../components/ArvoSplash'
 import DegradedTotalNote from '../components/DegradedTotalNote'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import PullToRefresh from '../components/PullToRefresh'
@@ -327,12 +325,6 @@ function CoverCard({ to, coverUrl, icon, label, title, subtitle }: {
   )
 }
 
-// Uma vez por sessão: no PRIMEIRO load da Home (cold boot do PWA) o loader é o
-// ArvoSplash de tela cheia — que casa com o splash nativo e cobre o header/nav
-// ainda vazios. Depois de bootar, voltar pra Home usa o PageLoader normal (o
-// chrome já é familiar, um splash cheio a cada navegação seria exagero).
-let homeBooted = false
-
 export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
@@ -554,8 +546,15 @@ export default function HomePage() {
     friendsAndGroups.length > 0
   const showGoals = !hasAllFillers
 
-  if (loading) return homeBooted ? <PageLoader /> : <ArvoSplash />
-  homeBooted = true
+  // Header/nav (AppLayout) já estão em volta — mostrar só um glifo sólido
+  // "respirando" no lugar do conteúdo dá sensação de progresso (o usuário vê a
+  // estrutura na hora) e casa com o splash, em vez de cobrir tudo e parecer
+  // travado. Mesmo glifo do splash, nunca o ArvoLoader pulsante (que "piscava").
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '55vh' }}>
+      <img src="/brand/logo/arvo-symbol-gold.svg" width={46} alt="" className="arvo-breathe" style={{ display: 'block' }} />
+    </div>
+  )
 
   // Patrimônio é gate 'patrimonio' (plus) — no free some por TIER, não por dados.
   const showWealth = hasAssets !== false && !isFree

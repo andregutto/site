@@ -35,6 +35,9 @@ export interface UpgradeExtra {
 
 interface UpgradeCtx {
   entitlements: Entitlements | null
+  /** Tier "provável" já no boot: o real quando carregado, senão o da última
+   *  sessão (localStorage). Evita o header nascer free e pular pro tier real. */
+  knownTier: Tier | null
   loading: boolean
   refetch: () => Promise<void>
   /** Abre o modal de upgrade para um gate/quota específico. */
@@ -53,6 +56,10 @@ interface UpgradeCtx {
 
 const Ctx = createContext<UpgradeCtx | null>(null)
 
+// Último tier conhecido, por dispositivo — lido no boot pra o header já nascer
+// no plano certo (o fetch confirma logo em seguida). Só uma dica visual.
+const LAST_TIER_KEY = 'arvo-last-tier'
+
 interface ModalState {
   gate: string
   requiredTier: GateTier
@@ -65,11 +72,17 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
   const [modal, setModal] = useState<ModalState | null>(null)
   const [interestedGates, setInterestedGates] = useState<Set<string>>(new Set())
   const fetchedRef = useRef(false)
+  // Tier da última sessão neste dispositivo (lido 1x). Some do estado assim que
+  // o fetch real chega — daí em diante manda o entitlements.
+  const [cachedTier, setCachedTier] = useState<Tier | null>(() => {
+    try { return (localStorage.getItem(LAST_TIER_KEY) as Tier | null) ?? null } catch { return null }
+  })
 
   const refetch = useCallback(async () => {
     try {
       const data = await apiFetch<Entitlements>('/entitlements')
       setEntitlements(data)
+      try { localStorage.setItem(LAST_TIER_KEY, data.tier) } catch { /* modo privado */ }
     } catch {
       // Falha silenciosa: sem entitlements o app segue funcionando (os gates
       // ainda são reforçados pelo backend via 403). Não bloquear a UI.
@@ -136,9 +149,13 @@ export function UpgradeProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const knownTier: Tier | null = entitlements?.tier ?? cachedTier
+  // Zera a dica cacheada quando o real chega (evita divergência se o tier mudou).
+  useEffect(() => { if (entitlements && cachedTier !== entitlements.tier) setCachedTier(entitlements.tier) }, [entitlements, cachedTier])
+
   return (
     <Ctx.Provider value={{
-      entitlements, loading, refetch,
+      entitlements, knownTier, loading, refetch,
       openUpgrade, closeUpgrade, hasGate, handleUpgradeError,
       registerInterest, interestedGates,
     }}>

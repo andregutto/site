@@ -62,18 +62,20 @@ export default function AppLayout() {
   const { t, locale } = useI18n()
   const { active: activeNotifications, unreadCount, dismissAll, acceptInvite } = useNotificationsContext()
   const { unreadTotal: messagesUnreadTotal } = useMessagingContext()
-  const { hasGate, entitlements } = useUpgrade()
+  const { hasGate, knownTier } = useUpgrade()
   // Tier do usuário no header (glifo ao lado do logo). Beta lê como Pro
-  // visualmente por ora; Free não ganha glifo extra.
+  // visualmente por ora; Free não ganha glifo extra. Usa knownTier (cache da
+  // última sessão) pra o glifo já nascer no plano certo — sem piscar free→pro
+  // no boot enquanto o fetch de entitlements ainda não voltou.
   const headerTier: 'plus' | 'pro' | null =
-    entitlements?.tier === 'pro' || entitlements?.tier === 'beta' ? 'pro'
-      : entitlements?.tier === 'plus' ? 'plus'
+    knownTier === 'pro' || knownTier === 'beta' ? 'pro'
+      : knownTier === 'plus' ? 'plus'
       : null
   // Pill de upgrade fixo no topo direito (padrão Finary), SÓ pro free e SÓ no
   // desktop. Quem paga comprou também o silêncio (decisão 2026-07-09): o Plus
   // não vê upsell permanente; o convite pro Pro acontece contextualmente nos
   // gates Pro (Insights/Diversification/IR) e na /planos.
-  const upsellTier: 'plus' | null = entitlements?.tier === 'free' ? 'plus' : null
+  const upsellTier: 'plus' | null = knownTier === 'free' ? 'plus' : null
   // Alterna direto light↔dark (sem passar por 'auto') — o ícone reflete o
   // estado atual: sol no dark (clica → light), lua no light (clica → dark).
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
