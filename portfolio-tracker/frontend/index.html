@@ -9,7 +9,11 @@
          apple-touch-startup-image, not fixable from CSS). Mirrors index.css's own
          html{#0D0D0D}/body{--arvo-offwhite} rule so there's no visible handoff once
          the real stylesheet loads. -->
-    <style>html{background-color:#0D0D0D}body{background-color:#FAF8F4;margin:0}</style>
+    <!-- Fundo ESCURO no boot pra casar com o splash nativo (#0D0D0D) e o tema
+         padrão dark — antes o body nascia claro (#FAF8F4) e piscava branco entre
+         o splash escuro e o app. Quem usa light só vê a troca depois que o React
+         monta (o splash nativo do iOS já é escuro pra todo mundo mesmo). -->
+    <style>html,body{background-color:#0D0D0D;margin:0}</style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/logo/apple-touch-icon.png" />
