@@ -456,7 +456,9 @@
     "s7body": "We implement technical and organizational measures to protect your data against unauthorized access, alteration, disclosure, or destruction. All data is transmitted via HTTPS.",
     "s8title": "8. Supervisory Authority",
     "s8body": "If you reside in France, you have the right to file a complaint with the CNIL (Commission Nationale de l'Informatique et des Libertés) at cnil.fr if you believe your personal data is not being processed in accordance with the GDPR.",
-    "s9title": "9. Contact",
+    "scookiestitle": "9. Cookies and Local Storage",
+    "scookiesbody": "arvo does not use cookies or third-party tracking tools (such as Google Analytics or social media pixels). The app stores some information locally in your browser, such as your login, language, currency and display preferences, solely to function and remember your choices. This data stays only on your device, is not shared, and can be deleted at any time by clearing your browser data. As it is strictly necessary for the app to work, it does not require a consent banner.",
+    "s9title": "10. Contact",
     "s9body": "For any questions regarding this policy or the processing of your data, please contact: andre@andregutto.com",
     "s10title": "10. Data Portability",
     "s10body": "You can export all your financial data at any time in CSV or JSON format directly from the platform. Access to your data is guaranteed regardless of your account status."
@@ -1326,7 +1328,12 @@
     "expenseBalancesPair": "Balances between you",
     "splitPeopleHint": "Choose who joins the new split. Your split with {name} stays as it is, separate and private. Everyone gets an invite to accept.",
     "splitNameHint": "Name this split. It becomes a Moment in your list, starting from scratch.",
-    "splitNameSuggestions": ["Group trip", "Dinner with friends", "Weekend away", "Beach house"],
+    "splitNameSuggestions": [
+      "Group trip",
+      "Dinner with friends",
+      "Weekend away",
+      "Beach house"
+    ],
     "splitNameJoinLast": " and ",
     "splitPickAdd": "Add",
     "splitCreateCta": "Create and invite",

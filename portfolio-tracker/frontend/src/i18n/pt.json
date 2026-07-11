@@ -456,7 +456,9 @@
     "s7body": "Adotamos medidas técnicas e organizacionais para proteger seus dados contra acesso não autorizado, alteração, divulgação ou destruição. Todos os dados são transmitidos via HTTPS.",
     "s8title": "8. Autoridade de Supervisão",
     "s8body": "Se você reside na França, tem o direito de apresentar uma reclamação junto à CNIL (Commission Nationale de l'Informatique et des Libertés) em cnil.fr caso considere que seus dados pessoais não estão sendo tratados de acordo com o RGPD.",
-    "s9title": "9. Contato",
+    "scookiestitle": "9. Cookies e Armazenamento Local",
+    "scookiesbody": "O arvo não utiliza cookies nem ferramentas de rastreamento de terceiros (como Google Analytics ou pixels de redes sociais). O aplicativo guarda algumas informações localmente no seu navegador, como o seu login, idioma, moeda e preferências de exibição, exclusivamente para funcionar e lembrar as suas escolhas. Esses dados ficam apenas no seu dispositivo, não são compartilhados e podem ser apagados a qualquer momento limpando os dados do navegador. Por serem estritamente necessários ao funcionamento, não exigem um aviso de consentimento.",
+    "s9title": "10. Contato",
     "s9body": "Para qualquer questão relativa a esta política ou ao tratamento dos seus dados, entre em contato: andre@andregutto.com",
     "s10title": "10. Portabilidade de Dados",
     "s10body": "Você pode exportar todos os seus dados financeiros a qualquer momento, em formato CSV ou JSON, diretamente pela plataforma. O acesso aos dados é garantido independentemente do status da sua conta."
@@ -1326,7 +1328,12 @@
     "expenseBalancesPair": "Saldos entre vocês",
     "splitPeopleHint": "Escolha quem entra na nova divisão. Sua divisão com {name} continua como está, separada e privada. Todo mundo recebe um convite pra aceitar.",
     "splitNameHint": "Dê um nome pra essa divisão. Ela vira um Momento na sua lista, começando do zero.",
-    "splitNameSuggestions": ["Viagem da turma", "Jantar entre amigos", "Fim de semana", "Casa de praia"],
+    "splitNameSuggestions": [
+      "Viagem da turma",
+      "Jantar entre amigos",
+      "Fim de semana",
+      "Casa de praia"
+    ],
     "splitNameJoinLast": " e ",
     "splitPickAdd": "Adicionar",
     "splitCreateCta": "Criar e convidar",

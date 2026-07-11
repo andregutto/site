@@ -16,6 +16,7 @@ export default function PrivacyPolicyPage() {
     { title: p.s6title, body: p.s6body },
     { title: p.s7title, body: p.s7body },
     { title: p.s8title, body: p.s8body },
+    { title: (p as any).scookiestitle, body: (p as any).scookiesbody },
     { title: p.s9title, body: p.s9body },
     { title: p.s10title, body: p.s10body },
   ]

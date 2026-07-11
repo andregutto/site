@@ -456,7 +456,9 @@
     "s7body": "Nous mettons en œuvre des mesures techniques et organisationnelles pour protéger vos données contre tout accès non autorisé, toute altération, divulgation ou destruction. Toutes les données sont transmises via HTTPS.",
     "s8title": "8. Autorité de contrôle",
     "s8body": "Si vous résidez en France, vous avez le droit d'introduire une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) sur cnil.fr si vous estimez que vos données personnelles ne sont pas traitées conformément au RGPD.",
-    "s9title": "9. Contact",
+    "scookiestitle": "9. Cookies et stockage local",
+    "scookiesbody": "arvo n'utilise ni cookies ni outils de suivi tiers (comme Google Analytics ou les pixels des réseaux sociaux). L'application conserve certaines informations localement dans votre navigateur, comme votre connexion, votre langue, votre devise et vos préférences d'affichage, uniquement pour fonctionner et mémoriser vos choix. Ces données restent sur votre appareil, ne sont pas partagées et peuvent être supprimées à tout moment en effaçant les données du navigateur. Étant strictement nécessaires au fonctionnement, elles ne nécessitent pas de bandeau de consentement.",
+    "s9title": "10. Contact",
     "s9body": "Pour toute question relative à cette politique ou au traitement de vos données, veuillez nous contacter : andre@andregutto.com",
     "s10title": "10. Portabilité des données",
     "s10body": "Vous pouvez exporter toutes vos données financières à tout moment au format CSV ou JSON, directement depuis la plateforme. L'accès à vos données est garanti quel que soit le statut de votre compte."
@@ -1326,7 +1328,12 @@
     "expenseBalancesPair": "Soldes entre vous",
     "splitPeopleHint": "Choisissez qui rejoint le nouveau partage. Votre partage avec {name} reste tel quel, séparé et privé. Chacun reçoit une invitation à accepter.",
     "splitNameHint": "Donnez un nom à ce partage. Il devient un Moment dans votre liste, en partant de zéro.",
-    "splitNameSuggestions": ["Voyage entre amis", "Dîner entre amis", "Week-end", "Maison de vacances"],
+    "splitNameSuggestions": [
+      "Voyage entre amis",
+      "Dîner entre amis",
+      "Week-end",
+      "Maison de vacances"
+    ],
     "splitNameJoinLast": " et ",
     "splitPickAdd": "Ajouter",
     "splitCreateCta": "Créer et inviter",
