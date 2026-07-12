@@ -3,131 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>
-    {{ if eq .Data.preferred_locale "fr" }}Confirmez votre compte arvo{{ else if eq .Data.preferred_locale "en" }}Confirm your arvo account{{ else }}Confirme sua conta arvo{{ end }}
-  </title>
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>{{ if eq .Data.preferred_locale "fr" }}Confirmez votre compte arvo{{ else if eq .Data.preferred_locale "en" }}Confirm your arvo account{{ else }}Confirme sua conta arvo{{ end }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tenor+Sans&family=DM+Sans:wght@400;500;700&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap');
+    body { margin:0; padding:0; -webkit-text-size-adjust:100%; }
+    table { border-collapse:collapse; }
+    img { border:0; line-height:100%; }
+    @media only screen and (max-width: 620px) {
+      .container { width:100% !important; }
+      .px { padding-left:24px !important; padding-right:24px !important; }
+      .hero-title { font-size:24px !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0; padding:0; background-color:#FAF8F4;">
 
-  <!-- outer wrapper -->
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;padding:40px 0;">
-    <tr>
-      <td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF8F4;">
+    <tr><td align="center" style="padding:32px 16px;">
 
-        <!-- card -->
-        <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#FFFFFF; border-radius:16px; overflow:hidden; box-shadow:0 8px 30px rgba(13,13,13,0.08);">
 
-          <!-- header -->
-          <tr>
-            <td style="background-color:#0d0d0d;padding:28px 40px;text-align:center;">
-              <!-- logo + wordmark side by side -->
-              <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
-                <tr>
-                  <td style="vertical-align:middle;padding-right:10px;">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTc0IiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE3NCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgYXJpYS1sYWJlbD0iYXJ2byBzeW1ib2wg4oCUIGdvbGQgb24gZGFyayI+CiAgPHBhdGggZD0iTTk2Ljk2NDIgODIuNTc2MkM4My43NjQyIDI4LjE3NjIgMTQxLjc5OCA1LjI0MjkgMTcyLjQ2NCAwLjU3NjIzM0MxNzMuNDY0IDE1Ljc0MjkgMTU5Ljc2NCA1My4zNzYyIDk2Ljk2NDIgODIuNTc2MloiIGZpbGw9IiNDOEI4OUEiPjwvcGF0aD4KICA8cGF0aCBkPSJNMTY1LjQ2NCA4Mi41NzYyVjUzLjU3NjJMMTM2Ljk2NCA3My45NjMxVjExMS42NzRDMTQ0LjI2MyAxMDYuMDE1IDE1MS43NzggMTAwLjEwMiAxNTUuOTY0IDk2LjU3NjJDMTYzLjU2NCA5MC4xNzYyIDE2NS40NjQgODQuNTc2MiAxNjUuNDY0IDgyLjU3NjJaIiBmaWxsPSIjQzhCODlBIiBvcGFjaXR5PSIwLjg1Ij48L3BhdGg+CiAgPHBhdGggZD0iTTEyMS40NjQgODUuMDUwN1YxMjMuNTc2QzEyNS4yMDcgMTIwLjczMiAxMzEuMDE0IDExNi4yODcgMTM2Ljk2NCAxMTEuNjc0VjczLjk2MzFMMTIxLjQ2NCA4NS4wNTA3WiIgZmlsbD0iI0M4Qjg5QSIgb3BhY2l0eT0iMC43Ij48L3BhdGg+CiAgPHBhdGggZD0iTTk2Ljk2NDIgMTAyLjU3NkwxMjEuNDY0IDEyMy41NzZWODUuMDUwN0w5Ni45NjQyIDEwMi41NzZaIiBmaWxsPSIjQzhCODlBIiBvcGFjaXR5PSIwLjYiPjwvcGF0aD4KICA8cGF0aCBkPSJNMTIxLjQ2NCAxNTUuNTc2VjEyMy41NzZMOTYuOTY0MiAxMDIuNTc2VjE3OC41NzZMMTIxLjQ2NCAxNTUuNTc2WiIgZmlsbD0iI0M4Qjg5QSIgb3BhY2l0eT0iMC44Ij48L3BhdGg+CiAgPHBhdGggZD0iTTAuNTEzOTg1IDI0LjU3NjJWNTEuNTc2MkMwLjUxMzk4NSA1My41NzYyIC0wLjEzNTc1OSA2Ni42NzYyIDcuNDY0MjQgNzMuMDc2Mkw0NC41MTQgMTAxLjU3NlYxNTUuMDc2TDY5LjAxNCAxNzguMDc2VjgyLjA3NjJMMzcuOTY0MiA1Ni4wNzYyTDAuNTEzOTg1IDI0LjU3NjJaIiBmaWxsPSIjQzhCODlBIiBvcGFjaXR5PSIwLjkiPjwvcGF0aD4KPC9zdmc+" width="34" height="35" alt="arvo" style="display:block;border:0;" />
-                  </td>
-                  <td style="vertical-align:middle;">
-                    <span style="font-size:26px;font-weight:700;letter-spacing:4px;color:#C8B89A;text-transform:lowercase;">arvo</span>
-                  </td>
-                </tr>
+        <!-- faixa de foto autoral, lockup no canto inferior esquerdo -->
+        <tr><td style="background-color:#0D0D0D;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+            background="https://arvo.andregutto.com/brand/imagery/01-broto-floresta.jpg"
+            style="background-image:url('https://arvo.andregutto.com/brand/imagery/01-broto-floresta.jpg'); background-size:cover; background-position:center; background-color:#0D0D0D;">
+            <tr><td style="padding:96px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                style="background-image:linear-gradient(180deg, rgba(13,13,13,0) 0%, rgba(13,13,13,0.62) 100%);">
+                <tr><td style="padding:34px 26px 16px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                    <td valign="middle"><img src="https://arvo.andregutto.com/brand/logo/arvo-symbol-email.png" width="20" height="21" alt="arvo" style="display:block;" /></td>
+                    <td valign="middle" style="padding-left:10px; font-family:'Tenor Sans','Times New Roman',serif; font-size:14px; letter-spacing:0.30em; color:#F2EDE4; text-transform:lowercase;">arvo</td>
+                  </tr></table>
+                </td></tr>
               </table>
-              <p style="margin:0;font-size:12px;color:#9ca3af;letter-spacing:0.04em;">
-                {{ if eq .Data.preferred_locale "fr" }}Cultivez ce qui est vôtre.{{ else if eq .Data.preferred_locale "en" }}Grow what is yours.{{ else }}Cultive o que é seu.{{ end }}
-              </p>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <!-- eyebrow -->
+        <tr><td class="px" align="center" style="padding:36px 48px 0;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:11px; font-weight:500; letter-spacing:0.22em; text-transform:uppercase; color:#8C6A28;">
+            {{ if eq .Data.preferred_locale "fr" }}Compte{{ else if eq .Data.preferred_locale "en" }}Account{{ else }}Conta{{ end }}
+          </div>
+        </td></tr>
+
+        <!-- título -->
+        <tr><td class="px" align="center" style="padding:14px 48px 0;">
+          <div class="hero-title" style="font-family:'Tenor Sans','Times New Roman',serif; font-size:27px; line-height:1.25; color:rgba(13,13,13,0.92);">
+            {{ if eq .Data.preferred_locale "fr" }}Bienvenue sur arvo{{ else if eq .Data.preferred_locale "en" }}Welcome to arvo{{ else }}Bem-vindo ao arvo{{ end }}
+          </div>
+        </td></tr>
+
+        <!-- acento editorial -->
+        <tr><td class="px" align="center" style="padding:12px 56px 0;">
+          <div style="font-family:'Fraunces',Georgia,serif; font-style:italic; font-size:18px; line-height:1.5; color:#8C6A28;">
+            {{ if eq .Data.preferred_locale "fr" }}Cultivez ce qui est vôtre.{{ else if eq .Data.preferred_locale "en" }}Grow what is yours.{{ else }}Cultive o que é seu.{{ end }}
+          </div>
+        </td></tr>
+
+        <!-- corpo -->
+        <tr><td class="px" align="center" style="padding:18px 56px 0;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:15px; line-height:1.65; color:rgba(13,13,13,0.65);">
+            {{ if eq .Data.preferred_locale "fr" }}
+              {{ if .Data.first_name }}Bonjour, {{ .Data.first_name }} !{{ else }}Bonjour !{{ end }}
+              Confirmez votre adresse e-mail pour activer votre compte et commencer à cultiver.
+            {{ else if eq .Data.preferred_locale "en" }}
+              {{ if .Data.first_name }}Hi, {{ .Data.first_name }}!{{ else }}Hi there!{{ end }}
+              Confirm your email address to activate your account and start growing.
+            {{ else }}
+              {{ if .Data.first_name }}Olá, {{ .Data.first_name }}!{{ else }}Olá!{{ end }}
+              Confirme seu endereço de email para ativar sua conta e começar a cultivar.
+            {{ end }}
+          </div>
+        </td></tr>
+
+        <!-- CTA -->
+        <tr><td align="center" style="padding:30px 48px 8px;">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+            <td align="center" style="background-color:#0D0D0D; border-radius:999px;">
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block; padding:14px 34px; font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:15px; font-weight:500; color:#FAF8F4; text-decoration:none; border-radius:999px;">
+                {{ if eq .Data.preferred_locale "fr" }}Confirmer mon compte{{ else if eq .Data.preferred_locale "en" }}Confirm my account{{ else }}Confirmar minha conta{{ end }}
+              </a>
             </td>
-          </tr>
+          </tr></table>
+        </td></tr>
 
-          <!-- body -->
-          <tr>
-            <td style="padding:36px 40px 32px;">
+        <!-- validade -->
+        <tr><td align="center" style="padding:14px 48px 8px;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:13.5px; color:rgba(13,13,13,0.58);">
+            {{ if eq .Data.preferred_locale "fr" }}Ce lien est valable 24 heures.{{ else if eq .Data.preferred_locale "en" }}This link is valid for 24 hours.{{ else }}Este link é válido por 24 horas.{{ end }}
+          </div>
+        </td></tr>
 
-              <!-- greeting -->
-              <p style="margin:0 0 20px;font-size:16px;color:#111827;font-weight:600;">
-                {{ if eq .Data.preferred_locale "fr" }}
-                  {{ if .Data.first_name }}Bonjour, {{ .Data.first_name }} !{{ else }}Bonjour !{{ end }}
-                {{ else if eq .Data.preferred_locale "en" }}
-                  {{ if .Data.first_name }}Hi, {{ .Data.first_name }}!{{ else }}Hi there!{{ end }}
-                {{ else }}
-                  {{ if .Data.first_name }}Olá, {{ .Data.first_name }}!{{ else }}Olá!{{ end }}
-                {{ end }}
-              </p>
+        <!-- link alternativo -->
+        <tr><td class="px" align="center" style="padding:10px 48px 40px;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:12.5px; line-height:1.6; color:rgba(13,13,13,0.58);">
+            {{ if eq .Data.preferred_locale "fr" }}Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur&nbsp;:{{ else if eq .Data.preferred_locale "en" }}If the button doesn't work, copy and paste this link into your browser:{{ else }}Se o botão não funcionar, copie e cole este link no seu navegador:{{ end }}
+            <br />
+            <a href="{{ .ConfirmationURL }}" style="color:#8C6A28; word-break:break-all;">{{ .ConfirmationURL }}</a>
+          </div>
+        </td></tr>
 
-              <!-- body text -->
-              <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#374151;">
-                {{ if eq .Data.preferred_locale "fr" }}
-                  Merci de vous être inscrit sur <strong style="color:#0d0d0d;">arvo</strong>. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.
-                {{ else if eq .Data.preferred_locale "en" }}
-                  Thanks for signing up for <strong style="color:#0d0d0d;">arvo</strong>. Click the button below to confirm your email address and activate your account.
-                {{ else }}
-                  Obrigado por criar sua conta no <strong style="color:#0d0d0d;">arvo</strong>. Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.
-                {{ end }}
-              </p>
+      </table>
 
-              <!-- CTA button -->
-              <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 28px;">
-                <tr>
-                  <td align="center" style="background-color:#0d0d0d;border-radius:8px;">
-                    <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.01em;">
-                      {{ if eq .Data.preferred_locale "fr" }}Confirmer mon compte{{ else if eq .Data.preferred_locale "en" }}Confirm my account{{ else }}Confirmar minha conta{{ end }}
-                    </a>
-                  </td>
-                </tr>
-              </table>
+      <!-- rodapé -->
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px;">
+        <tr><td align="center" style="padding:28px 32px 8px;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:12.5px; line-height:1.7; color:rgba(13,13,13,0.58);">
+            {{ if eq .Data.preferred_locale "fr" }}Vous recevez cet e-mail parce que quelqu'un a créé un compte arvo avec cette adresse. Si ce n'était pas vous, ignorez simplement ce message.{{ else if eq .Data.preferred_locale "en" }}You're receiving this email because someone signed up for an arvo account with this address. If this wasn't you, you can safely ignore this message.{{ else }}Você recebe este email porque alguém criou uma conta arvo com este endereço. Se não foi você, pode ignorar esta mensagem com segurança.{{ end }}
+          </div>
+        </td></tr>
+        <tr><td align="center" style="padding:20px 32px 0;">
+          <div style="font-family:'Tenor Sans','Times New Roman',serif; font-size:13px; letter-spacing:0.30em; color:rgba(13,13,13,0.28);">arvo</div>
+        </td></tr>
+        <tr><td align="center" style="padding:8px 32px 0;">
+          <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif; font-size:11.5px; color:rgba(13,13,13,0.28);">arvo.andregutto.com</div>
+        </td></tr>
+      </table>
 
-              <!-- expiry note -->
-              <p style="margin:0 0 24px;font-size:13px;color:#6b7280;text-align:center;">
-                {{ if eq .Data.preferred_locale "fr" }}
-                  Ce lien est valable <strong>24 heures</strong>.
-                {{ else if eq .Data.preferred_locale "en" }}
-                  This link is valid for <strong>24 hours</strong>.
-                {{ else }}
-                  Este link é válido por <strong>24 horas</strong>.
-                {{ end }}
-              </p>
-
-              <!-- divider -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
-                <tr>
-                  <td style="border-top:1px solid #e5e7eb;"></td>
-                </tr>
-              </table>
-
-              <!-- fallback link -->
-              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;">
-                {{ if eq .Data.preferred_locale "fr" }}
-                  Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur&nbsp;:
-                {{ else if eq .Data.preferred_locale "en" }}
-                  If the button doesn't work, copy and paste this link into your browser:
-                {{ else }}
-                  Se o botão não funcionar, copie e cole este link no seu navegador:
-                {{ end }}
-                <br />
-                <a href="{{ .ConfirmationURL }}" style="color:#6b7280;word-break:break-all;">{{ .ConfirmationURL }}</a>
-              </p>
-
-            </td>
-          </tr>
-
-          <!-- footer -->
-          <tr>
-            <td style="background-color:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#9ca3af;line-height:1.6;">
-                {{ if eq .Data.preferred_locale "fr" }}
-                  Vous recevez cet e-mail parce que quelqu'un a créé un compte arvo avec cette adresse. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message.
-                {{ else if eq .Data.preferred_locale "en" }}
-                  You're receiving this email because someone signed up for an arvo account with this address. If this wasn't you, you can safely ignore this message.
-                {{ else }}
-                  Você está recebendo este e-mail porque alguém criou uma conta arvo com este endereço. Se não foi você, pode ignorar esta mensagem com segurança.
-                {{ end }}
-              </p>
-            </td>
-          </tr>
-
-        </table>
-        <!-- /card -->
-
-      </td>
-    </tr>
+    </td></tr>
   </table>
 
 </body>
