@@ -1,9 +1,0 @@
-{
-  "name": "portfolio-tracker-monorepo",
-  "private": true,
-  "workspaces": [
-    "backend",
-    "frontend",
-    "shared-api"
-  ]
-}
