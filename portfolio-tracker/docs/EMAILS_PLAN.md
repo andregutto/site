@@ -10,9 +10,10 @@ de foto, gradiente só na base, blocos variáveis). Segue `DESIGN_SYSTEM.md`.
   (subdomínio de envio a definir na configuração, ex. `mail.arvo.andregutto.com`).
 - **Supabase Auth** (confirmação/reset) passa a sair pelo SMTP do Resend com os
   templates novos de `supabase/email-templates/`.
-- **Kit**: recomendação de aposentar (sem envio transacional; sequências e
-  broadcasts cobertos pelo Resend + cron próprio). DECISÃO PENDENTE do André.
-  Enquanto isso, `newsletter.ts` continua inscrevendo no Kit.
+- **Kit: APOSENTADO** (decisão do André, 2026-07-12). Sem envio transacional;
+  sequências e broadcasts cobertos pelo Resend + cron próprio. Na Fase 5,
+  `newsletter.ts` migra a inscrição pra Supabase + Resend Audience e o Kit é
+  cancelado. Até lá continua inscrevendo no Kit (não quebra nada).
 - Templates transacionais vivem no código: 1 layout master + "recheios" finos
   por tipo (Fase 3), em `shared-api/src/lib/email/`. Tags por categoria no
   Resend pra métricas.
@@ -71,6 +72,13 @@ padrão: Convites e social, Comunidade, Mensagens, Despesas compartilhadas
 (+ freq diário/semanal), Resumo de alertas (+ freq), Fechamento mensal,
 Novidades. Todo email leva "Ajustar preferências" + unsubscribe de 1 clique
 por categoria via token.
+
+## Identidade de tier nos emails (decisão 2026-07-12)
+
+Lockup neutro (offwhite) por padrão. Lockup com identidade do tier (glifo com
+degradê do `tierMeta.ts` + nome do plano, padrão variante C do header) só em:
+**upgrade confirmado (#10)** e **Seu mês no Arvo (#13b)**. Gerar PNGs dos
+glifos Plus/Pro pra fundo escuro na Fase 4.
 
 ## Fases
 
